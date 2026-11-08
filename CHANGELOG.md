@@ -9,6 +9,7 @@
 - Declared the mod as client side to Jotunn, so servers and other players are never required to have it installed.
 - Messages and key hints can now be translated (`Translations/English.json`).
 - Added a CI check that the version matches in every file.
+- Moved `package.sh` into `.github/scripts` and made it the same for every mod: the name, version and DLL now come from `manifest.json` and the `.csproj`.
 
 ## 0.12.0
 
