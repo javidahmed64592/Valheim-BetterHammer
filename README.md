@@ -32,7 +32,17 @@ While placing a piece, a grid is drawn on the surface you are aiming at and piec
 ## Configuration
 
 Settings are in the BepInEx config file `javidahmed64592.nohammerbuildmenu.cfg`.
-You can change the key that opens the build menu, how the build grid looks and snaps, and how far away chests and ground items are used for building materials.
+Settings marked "(Synced with server)" use the server's values when the server has the mod installed.
+
+## Compatibility
+
+- Mods that also build from nearby chests or ground items (such as AzuCraftyBoxes, or the craft from chests option in Valheim Plus) overlap with this mod's materials feature. Turn one of them off: here, set `Use Nearby Chests` to false and the ground items `Radius` to 0.
+- Mods that change how pieces snap or add their own build key hints may clash with the build grid or its hints.
+- This mod has not been tested with a gamepad, only with keyboard and mouse.
+
+## Uninstalling
+
+Nothing is saved to your world or character, so the mod can be removed at any time.
 
 ## License
 

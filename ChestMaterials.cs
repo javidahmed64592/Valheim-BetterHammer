@@ -39,20 +39,32 @@ internal static class ChestMaterials
     /// True while the resources of the placed piece are being consumed.
     /// </summary>
     private static bool _consuming;
+    /// <summary>
+    /// True while the build panel's total is counted: it includes ground items owned by other players.
+    /// </summary>
+    private static bool _countAllGround;
 
     public static void BindConfig(ConfigFile config)
     {
         // Chests
         _enabled = config.Bind("Chests", "Use Nearby Chests", true,
-            "When building, take any materials you are missing from your inventory out of nearby chests.");
+            new ConfigDescription(
+                "When building, take any materials you are missing from your inventory out of nearby chests. (Synced with server)",
+                null, Synced()));
         _radius = config.Bind("Chests", "Radius", 30f,
-            new ConfigDescription("Distance in metres from the player within which chests are used for building materials.",
-                new AcceptableValueRange<float>(1f, 128f)));
+            new ConfigDescription("Distance in metres from the player within which chests are used for building materials. (Synced with server)",
+                new AcceptableValueRange<float>(1f, 128f), Synced()));
 
         // Ground items
         _groundRange = config.Bind("Ground Items", "Radius", 30f,
-            new ConfigDescription("Distance in metres from the player within which items lying on the ground are used for building materials. Set to 0 to disable.",
-                new AcceptableValueRange<float>(0f, 64f)));
+            new ConfigDescription("Distance in metres from the player within which items lying on the ground are used for building materials. Set to 0 to disable. (Synced with server)",
+                new AcceptableValueRange<float>(0f, 64f), Synced()));
+    }
+
+    /// <summary>Settings that use the server's value when the server has the mod.</summary>
+    private static ConfigurationManagerAttributes Synced()
+    {
+        return new ConfigurationManagerAttributes { IsAdminOnly = true };
     }
 
     private static bool Active(Player player)
@@ -97,6 +109,22 @@ internal static class ChestMaterials
         return result;
     }
 
+    /// <summary>
+    /// Whether this client may use a ground item now. Like vanilla pickup, only the item's owner may remove it,
+    /// so an item owned by someone else is asked for (vanilla's RequestOwn) and becomes usable once it is
+    /// handed over, usually within a moment. This way nobody can pick up an item that was also used to build.
+    /// </summary>
+    private static bool OwnedOrRequest(ItemDrop drop)
+    {
+        if (DropNviewRef(drop).IsOwner())
+        {
+            return true;
+        }
+
+        drop.RequestOwn();
+        return false;
+    }
+
     private static int TakeFromGround(Player player, string name, int amount, int quality, bool matchWorldLevel)
     {
         foreach (ItemDrop drop in GetGroundMatches(player, name, quality, matchWorldLevel))
@@ -107,9 +135,9 @@ internal static class ChestMaterials
             }
 
             ZNetView nview = DropNviewRef(drop);
-            if (!nview.IsOwner())
+            if (!OwnedOrRequest(drop))
             {
-                nview.ClaimOwnership();
+                continue;
             }
 
             int take = Mathf.Min(drop.m_itemData.m_stack, amount);
@@ -166,7 +194,6 @@ internal static class ChestMaterials
     private static bool CanTakeFrom(Container container)
     {
         if (container.GetInventory() == null
-            || container.IsInUse()
             || container.m_wagon != null
             || container.m_autoDestroyEmpty
             || container.GetComponent<TombStone>() != null)
@@ -180,29 +207,22 @@ internal static class ChestMaterials
             return false;
         }
 
-        Piece piece = container.GetComponent<Piece>();
-        if (piece == null)
+        if (container.GetComponent<Piece>() == null)
         {
             return false;
         }
 
-        switch (container.m_privacy)
+        // IsInUse is only true on the client that owns the chest; everyone else sees the synced flag. Taking
+        // from a chest another player has open would fight with their copy of its contents.
+        if (container.IsInUse() || nview.GetZDO().GetInt(ZDOVars.s_inUse) == 1)
         {
-            case Container.PrivacySetting.Public:
-                break;
-            case Container.PrivacySetting.Private:
-                if (piece.GetCreator() != Game.instance.GetPlayerProfile().GetPlayerID())
-                {
-                    return false;
-                }
-
-                break;
-            default:
-                return false;
+            return false;
         }
 
-        return !container.m_checkGuardStone
-            || PrivateArea.CheckAccess(container.transform.position, 0f, false);
+        // The same privacy rules as opening the chest yourself.
+        return container.CheckAccess(Game.instance.GetPlayerProfile().GetPlayerID())
+            && (!container.m_checkGuardStone
+            || PrivateArea.CheckAccess(container.transform.position, 0f, false));
     }
 
     private static void TakeFromChests(Player player, string name, int amount, int quality, bool matchWorldLevel)
@@ -314,6 +334,7 @@ internal static class ChestMaterials
 
             Player player = Player.m_localPlayer;
             _countDepth++;
+            _countAllGround = true;
             try
             {
                 for (int i = 0; i < piece.m_resources.Length && i < __instance.m_requirementItems.Length; i++)
@@ -339,6 +360,7 @@ internal static class ChestMaterials
             finally
             {
                 _countDepth--;
+                _countAllGround = false;
             }
         }
 
@@ -371,7 +393,10 @@ internal static class ChestMaterials
 
             foreach (ItemDrop drop in GetGroundMatches(player, name, quality, matchWorldLevel))
             {
-                __result += drop.m_itemData.m_stack;
+                if (_countAllGround || OwnedOrRequest(drop))
+                {
+                    __result += drop.m_itemData.m_stack;
+                }
             }
         }
     }

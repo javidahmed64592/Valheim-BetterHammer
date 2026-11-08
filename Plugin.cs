@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 
 using BepInEx;
@@ -8,6 +9,7 @@ using HarmonyLib;
 
 using Jotunn.Configs;
 using Jotunn.Managers;
+using Jotunn.Utils;
 
 using UnityEngine;
 
@@ -15,11 +17,12 @@ namespace NoHammerBuildMenu;
 
 [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
 [BepInDependency(Jotunn.Main.ModGuid)]
+[NetworkCompatibility(CompatibilityLevel.NotEnforced, VersionStrictness.None)]
 public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "javidahmed64592.nohammerbuildmenu";
     public const string PluginName = "No Hammer Build Menu";
-    public const string PluginVersion = "0.12.0";
+    public const string PluginVersion = "0.13.0";
 
     private const string HammerPrefabName = "Hammer";
     private const string ButtonName = "NoHammerBuildMenu_Toggle";
@@ -79,6 +82,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 
         GridOverlay.BindConfig(Config);
         ChestMaterials.BindConfig(Config);
+        Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.
         if (Array.IndexOf(GridSizes, _gridSize.Value) < 0)
@@ -154,7 +158,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
     private static void ToggleGrid(Player player)
     {
         _gridEnabled.Value = !_gridEnabled.Value;
-        player.Message(MessageHud.MessageType.TopLeft, "Build grid " + (_gridEnabled.Value ? "on" : "off"));
+        player.Message(MessageHud.MessageType.TopLeft, _gridEnabled.Value ? "$nhbm_grid_on" : "$nhbm_grid_off");
     }
 
     private static void UpdateGrid(Player player)
@@ -250,7 +254,8 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
         }
 
         _gridSize.Value = size;
-        player.Message(MessageHud.MessageType.TopLeft, $"Grid distance: {size:0.###}m");
+        player.Message(MessageHud.MessageType.TopLeft,
+            Localization.instance.Localize("$nhbm_grid_distance", size.ToString("0.###", CultureInfo.InvariantCulture)));
     }
 
     private void ToggleRepairMode(Player player)

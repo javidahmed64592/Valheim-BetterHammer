@@ -1,7 +1,7 @@
 {
   "name": "NoHammerBuildMenu",
   "description": "Open the build menu without needing a hammer in your inventory, now with a build grid and a repair toggle!",
-  "version_number": "0.12.0",
+  "version_number": "0.13.0",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2360",
     "ValheimModding-Jotunn-2.30.2"

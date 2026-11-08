@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0
+
+- Building no longer takes materials from a chest another player has open. Previously the chest's contents could get out of step between the two players, which could duplicate or lose items.
+- Chests now follow the same privacy rules as opening them yourself, so chests shared with your group are used too.
+- Items on the ground are only used once your game has been handed them, the same way picking an item up works, so another player can't pick up an item that was also used to build. This normally takes a moment.
+- `Use Nearby Chests`, the chest `Radius` and the ground items `Radius` are now synced from the server when it has the mod.
+- Declared the mod as client side to Jotunn, so servers and other players are never required to have it installed.
+- Messages and key hints can now be translated (`Translations/English.json`).
+- Added a CI check that the version matches in every file.
+
 ## 0.12.0
 
 - The requirement list in the build panel now shows the total available before the amount needed (e.g. `Wood 64/2`). The total includes your inventory, nearby chests and ground items within range.
