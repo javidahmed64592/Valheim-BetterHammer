@@ -3,7 +3,7 @@
 ## 0.14.0
 
 - Added moving built pieces: look at a piece and press `Ctrl+Mouse3` (middle-click) to pick it up, then left-click to put it down or right-click to cancel. Chest contents, damage, sign text and the rest of the piece's state move with it, and nothing is dropped.
-- Added a key hint for moving pieces.
+- Added a key hint for moving pieces, shown in repair mode too. While moving a piece, the right-click hint says "Abort" instead of "Build Menu".
 
 ## 0.13.0
 

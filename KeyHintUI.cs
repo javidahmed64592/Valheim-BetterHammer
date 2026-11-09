@@ -55,7 +55,7 @@ internal static class KeyHintUI
     /// </summary>
     private static readonly List<Hint> Hints =
     [
-        new Hint { Label = "$nhbm_hint_move", Column = 0, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.BuildOnly },
+        new Hint { Label = "$nhbm_hint_move", Column = 0, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.Always },
         new Hint { Label = "$nhbm_hint_grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
         new Hint { Label = "$nhbm_hint_repair", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
         new Hint { Label = "$nhbm_hint_grid_distance", Column = 1, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
@@ -69,8 +69,16 @@ internal static class KeyHintUI
     private static bool _createFailed;
     private static bool _layoutDirty;
 
+    /// <summary>
+    /// The vanilla right-click ("Build Menu") hint's label, and its text before it was changed to "Abort".
+    /// </summary>
+    private static TextMeshProUGUI _buildMenuLabel;
+    private static string _buildMenuText;
+
     public static void Update(KeyHints keyHints, Player player)
     {
+        UpdateAbortHint(keyHints);
+
         bool show = keyHints.m_buildHints != null
             && keyHints.m_buildHints.activeInHierarchy
             && player != null
@@ -132,6 +140,36 @@ internal static class KeyHintUI
         }
 
         AlignToRotateHint();
+    }
+
+    /// <summary>
+    /// While moving a piece, right-click aborts the move instead of opening the build menu, so its
+    /// vanilla hint says so. The vanilla text is put back afterwards.
+    /// </summary>
+    private static void UpdateAbortHint(KeyHints keyHints)
+    {
+        if (_buildMenuLabel == null && keyHints.m_buildHints != null)
+        {
+            Transform label = keyHints.m_buildHints.transform.Find("Keyboard/BuildMenu/Text");
+            _buildMenuLabel = label != null ? label.GetComponent<TextMeshProUGUI>() : null;
+            _buildMenuText = null;
+        }
+
+        if (_buildMenuLabel == null)
+        {
+            return;
+        }
+
+        if (PieceMover.Moving)
+        {
+            _buildMenuText ??= _buildMenuLabel.text;
+            _buildMenuLabel.text = Localization.instance.Localize("$nhbm_hint_abort");
+        }
+        else if (_buildMenuText != null)
+        {
+            _buildMenuLabel.text = _buildMenuText;
+            _buildMenuText = null;
+        }
     }
 
     /// <summary>
@@ -340,6 +378,8 @@ internal static class KeyHintUI
         _rotateIcon = null;
         _rotateIconImage = null;
         _createFailed = false;
+        _buildMenuLabel = null;
+        _buildMenuText = null;
         foreach (Hint hint in Hints)
         {
             hint.Item = null;

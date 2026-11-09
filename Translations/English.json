@@ -7,6 +7,7 @@
   "nhbm_hint_grid_distance": "Grid distance",
   "nhbm_hint_zoom": "Zoom",
   "nhbm_hint_move": "Move piece",
+  "nhbm_hint_abort": "Abort",
   "nhbm_move_started": "Moving $1",
   "nhbm_move_cancelled": "Move cancelled",
   "nhbm_move_cant": "This can't be moved",
