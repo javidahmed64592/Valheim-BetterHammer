@@ -55,6 +55,7 @@ internal static class KeyHintUI
     /// </summary>
     private static readonly List<Hint> Hints =
     [
+        new Hint { Label = "$nhbm_hint_move", Column = 0, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.BuildOnly },
         new Hint { Label = "$nhbm_hint_grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
         new Hint { Label = "$nhbm_hint_repair", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
         new Hint { Label = "$nhbm_hint_grid_distance", Column = 1, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },

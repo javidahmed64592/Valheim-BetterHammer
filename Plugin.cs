@@ -22,7 +22,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "javidahmed64592.nohammerbuildmenu";
     public const string PluginName = "No Hammer Build Menu";
-    public const string PluginVersion = "0.13.0";
+    public const string PluginVersion = "0.14.0";
 
     private const string HammerPrefabName = "Hammer";
     private const string ButtonName = "NoHammerBuildMenu_Toggle";
@@ -114,6 +114,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
             _phantomHammer = null;
             _knownRecipesRefreshed = false;
             _lastBuildPiece = null;
+            PieceMover.Reset();
             Overlay.Hide();
             return;
         }
@@ -140,7 +141,8 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
             ToggleBuildMenu(player);
         }
 
-        if (player.InPlaceMode() && Input.GetMouseButtonDown(1))
+        // While moving a piece, right-click only cancels the move.
+        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !PieceMover.RightClickConsumed)
         {
             if (ShiftHeld())
             {

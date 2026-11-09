@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>NoHammerBuildMenu</AssemblyName>
     <Description>Open the build menu without needing a hammer in your inventory, now with a build grid and a repair toggle!</Description>
-    <Version>0.13.0</Version>
+    <Version>0.14.0</Version>
     <LangVersion>latest</LangVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>

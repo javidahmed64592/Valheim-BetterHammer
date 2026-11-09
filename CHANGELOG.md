@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.14.0
+
+- Added moving built pieces: look at a piece and press `Ctrl+Mouse3` (middle-click) to pick it up, then left-click to put it down or right-click to cancel. Chest contents, damage, sign text and the rest of the piece's state move with it, and nothing is dropped.
+- Added a key hint for moving pieces.
+
 ## 0.13.0
 
 - Building no longer takes materials from a chest another player has open. Previously the chest's contents could get out of step between the two players, which could duplicate or lose items.

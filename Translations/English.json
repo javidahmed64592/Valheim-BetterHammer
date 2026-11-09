@@ -5,5 +5,10 @@
   "nhbm_hint_grid": "Build grid",
   "nhbm_hint_repair": "Repair mode",
   "nhbm_hint_grid_distance": "Grid distance",
-  "nhbm_hint_zoom": "Zoom"
+  "nhbm_hint_zoom": "Zoom",
+  "nhbm_hint_move": "Move piece",
+  "nhbm_move_started": "Moving $1",
+  "nhbm_move_cancelled": "Move cancelled",
+  "nhbm_move_cant": "This can't be moved",
+  "nhbm_move_failed": "Couldn't move this here"
 }
