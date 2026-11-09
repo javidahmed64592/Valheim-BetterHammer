@@ -55,10 +55,10 @@ internal static class KeyHintUI
     /// </summary>
     private static readonly List<Hint> Hints =
     [
-        new Hint { Label = "Build grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
-        new Hint { Label = "Repair mode", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
-        new Hint { Label = "Grid distance", Column = 1, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
-        new Hint { Label = "Zoom", Column = 1, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
+        new Hint { Label = "$nhbm_hint_grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
+        new Hint { Label = "$nhbm_hint_repair", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$nhbm_hint_grid_distance", Column = 1, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
+        new Hint { Label = "$nhbm_hint_zoom", Column = 1, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
     ];
 
     private static GameObject _container;
@@ -210,14 +210,14 @@ internal static class KeyHintUI
         {
             // Start from a vanilla multi-key hint (for its row settings), then rebuild its contents.
             GameObject item = Object.Instantiate(copy.gameObject, columns[hint.Column], false);
-            item.name = "NoHammerBuildMenu_Hint_" + hint.Label;
+            item.name = "NoHammerBuildMenu_Hint_" + hint.Label.TrimStart('$');
             item.SetActive(true);
             for (int i = item.transform.childCount - 1; i >= 0; i--)
             {
                 Object.DestroyImmediate(item.transform.GetChild(i).gameObject);
             }
 
-            AddText(labelTemplate, item.transform, hint.Label);
+            AddText(labelTemplate, item.transform, Localization.instance.Localize(hint.Label));
 
             for (int i = 0; i < hint.Keys.Length; i++)
             {

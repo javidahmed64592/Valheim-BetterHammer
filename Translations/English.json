@@ -1,0 +1,9 @@
+{
+  "nhbm_grid_on": "Build grid on",
+  "nhbm_grid_off": "Build grid off",
+  "nhbm_grid_distance": "Grid distance: $1m",
+  "nhbm_hint_grid": "Build grid",
+  "nhbm_hint_repair": "Repair mode",
+  "nhbm_hint_grid_distance": "Grid distance",
+  "nhbm_hint_zoom": "Zoom"
+}
