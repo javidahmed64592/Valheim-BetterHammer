@@ -76,9 +76,11 @@ internal static class PieceMover
             }
         }
 
-        if (Moving && !StillMoving(player))
+        string abortReason = Moving ? AbortReason(player) : null;
+        if (abortReason != null)
         {
             Stop(player);
+            player.Message(MessageHud.MessageType.TopLeft, abortReason);
         }
 
         bool wasMoving = Moving;
@@ -99,11 +101,19 @@ internal static class PieceMover
             player.m_blockRemove = true;
             PickUp(player);
         }
+        else if (Moving && ZInput.GetButtonDown(RemoveButton) && player.GetHoveringPiece() == _source.GetComponent<Piece>())
+        {
+            // Removing the piece being moved would drop its materials and (for a public chest) its
+            // contents, so it's ignored. Other pieces can still be removed while moving.
+            _blockRemoveUntilReleased = true;
+            player.m_blockRemove = true;
+            player.Message(MessageHud.MessageType.Center, "$nhbm_move_cant_remove");
+        }
         else if (Moving && Input.GetMouseButtonDown(1))
         {
             _rightClickFrame = Time.frameCount;
             Stop(player);
-            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_move_cancelled");
+            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_move_aborted");
         }
         else if (Moving && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
         {
@@ -213,6 +223,8 @@ internal static class PieceMover
 
         _source = null;
         Stop(player);
+        player.Message(MessageHud.MessageType.TopLeft,
+            Localization.instance.Localize("$nhbm_moved", Localization.instance.Localize(piece.m_name)));
     }
 
     /// <summary>
@@ -388,16 +400,20 @@ internal static class PieceMover
     }
 
     /// <summary>
-    /// The move ends if the original is gone (removed by someone, or unloaded), the hammer is put away,
-    /// or a different piece got selected.
+    /// Why the move has to end, or null while it can carry on: the original is gone (removed by
+    /// someone else or destroyed), the hammer was put away, or a different piece got selected.
     /// </summary>
-    private static bool StillMoving(Player player)
+    private static string AbortReason(Player player)
     {
-        return _source != null
-            && _source.IsValid()
-            && player.InPlaceMode()
-            && NoHammerBuildMenuPlugin.IsHammerEquipped(player)
-            && SelectedIsMovedPiece(player);
+        bool gone = _source == null || !_source.IsValid();
+        bool unequipped = !player.InPlaceMode() || !NoHammerBuildMenuPlugin.IsHammerEquipped(player);
+        return (gone, unequipped) switch
+        {
+            (true, _) => "$nhbm_move_aborted_gone",
+            (_, true) => "$nhbm_move_aborted_unequipped",
+            _ when !SelectedIsMovedPiece(player) => "$nhbm_move_aborted_selection",
+            _ => null,
+        };
     }
 
     private static bool SelectedIsMovedPiece(Player player)
