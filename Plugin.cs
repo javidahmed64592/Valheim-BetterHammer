@@ -157,6 +157,12 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
         UpdateGrid(player);
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822", Justification = "Unity message")]
+    private void LateUpdate()
+    {
+        PieceMover.UpdateHighlight();
+    }
+
     private static void ToggleGrid(Player player)
     {
         _gridEnabled.Value = !_gridEnabled.Value;

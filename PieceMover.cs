@@ -32,6 +32,16 @@ internal static class PieceMover
     private static bool _blockRemoveUntilReleased;
     private static int _rightClickFrame = -10;
 
+    /// <summary>
+    /// The same Ember Gold BenchLink uses to highlight linked stations.
+    /// </summary>
+    private static readonly Color HighlightColor = new(0.941f, 0.690f, 0.290f);
+    private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
+
+    private static readonly List<Collider> SourceColliders = [];
+    private static readonly List<Collider> HiddenColliders = [];
+    private static StationExtension _hiddenExtension;
+
     private static readonly Dictionary<Player.PlacementStatus, string> StatusMessages = new()
     {
         [Player.PlacementStatus.NoBuildZone] = "$msg_nobuildzone",
@@ -135,6 +145,7 @@ internal static class PieceMover
 
     internal static void Reset()
     {
+        ClearHighlight();
         _source = null;
         _prefabName = null;
         _previousPiece = null;
@@ -164,6 +175,7 @@ internal static class PieceMover
         }
 
         player.m_placeRotation = (int)Math.Round(piece.transform.rotation.eulerAngles.y / player.m_placeRotationDegrees);
+        ClearHighlight();
         _source = nview;
         _prefabName = Utils.GetPrefabName(piece.gameObject);
         player.Message(MessageHud.MessageType.TopLeft,
@@ -208,6 +220,7 @@ internal static class PieceMover
         }
 
         // Removing the original only after the copy exists means a failure can't lose a chest's items.
+        ClearHighlight();
         _source.ClaimOwnership();
         ZNetScene.instance.Destroy(_source.gameObject);
 
@@ -225,6 +238,81 @@ internal static class PieceMover
         Stop(player);
         player.Message(MessageHud.MessageType.TopLeft,
             Localization.instance.Localize("$nhbm_moved", Localization.instance.Localize(piece.m_name)));
+    }
+
+    /// <summary>
+    /// Makes the piece being moved glow, pulsing, so it's easy to keep track of. Runs in LateUpdate so it
+    /// wins over the game's own hover highlight, which resets the glow from an Invoke after Update.
+    /// </summary>
+    internal static void UpdateHighlight()
+    {
+        if (!Moving || MaterialMan.instance == null)
+        {
+            return;
+        }
+
+        float pulse = Mathf.Lerp(0.3f, 0.7f, (Mathf.Sin(Time.time * 5f) + 1f) * 0.5f);
+        MaterialMan.instance.SetValue(_source.gameObject, EmissionColor, HighlightColor * pulse);
+    }
+
+    private static void ClearHighlight()
+    {
+        if (_source != null && MaterialMan.instance != null)
+        {
+            MaterialMan.instance.ResetValue(_source.gameObject, EmissionColor);
+        }
+    }
+
+    /// <summary>
+    /// Lets the piece be put down overlapping where it is now, so it can be nudged a little. While the
+    /// game checks the ghost's spot, the original's colliders are switched off (so the aim ray, snapping,
+    /// clipping and blocking checks don't see it) and, for a workbench extension, it's taken out of the
+    /// list used for the "too close to another extension" check. Both are put back straight afterwards,
+    /// within the same frame, before physics runs.
+    /// </summary>
+    internal static void HideFromPlacementChecks()
+    {
+        if (!Moving)
+        {
+            return;
+        }
+
+        _source.GetComponentsInChildren(SourceColliders);
+        foreach (Collider collider in SourceColliders)
+        {
+            if (collider.enabled)
+            {
+                collider.enabled = false;
+                HiddenColliders.Add(collider);
+            }
+        }
+
+        SourceColliders.Clear();
+
+        StationExtension extension = _source.GetComponentInChildren<StationExtension>();
+        if (extension != null && StationExtension.m_allExtensions.Remove(extension))
+        {
+            _hiddenExtension = extension;
+        }
+    }
+
+    internal static void RestoreAfterPlacementChecks()
+    {
+        foreach (Collider collider in HiddenColliders)
+        {
+            if (collider != null)
+            {
+                collider.enabled = true;
+            }
+        }
+
+        HiddenColliders.Clear();
+
+        if (_hiddenExtension != null)
+        {
+            StationExtension.m_allExtensions.Add(_hiddenExtension);
+            _hiddenExtension = null;
+        }
     }
 
     /// <summary>
@@ -438,6 +526,7 @@ internal static class PieceMover
             player.m_placeRotation = _previousRotation;
         }
 
+        ClearHighlight();
         _source = null;
         _prefabName = null;
         _previousPiece = null;
