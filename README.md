@@ -6,54 +6,41 @@
 
 This mod adds several improvements to the vanilla base hammer:
 
-| Key                          | Action                                                            |
-| ---------------------------- | ----------------------------------------------------------------- |
-| `B`                          | Open the build menu without a hammer in your inventory.           |
-| `Ctrl+Mouse2` (right-click)  | Toggle the build grid.                                            |
-| `Ctrl+Scroll`                | Adjust the grid distance.                                         |
-| `Shift+Mouse2` (right-click) | Toggle repair mode.                                               |
-| `Alt+Scroll`                 | Zoom the camera in and out without needing to unequip the hammer. |
-| `Ctrl+Mouse3` (middle-click) | Move the piece you are looking at.                                |
-| `Alt+Mouse3` (middle-click)  | Select the piece you are looking at for copying.                  |
-| `Alt+Mouse2` (right-click)   | Deselect the piece you are looking at.                            |
-| `Alt+Mouse1` (left-click)    | Save the selected pieces as a copy in the Copies tab.             |
-
-Additionally, the hammer also uses materials from the ground and nearby chests when your inventory runs short.
-The total quantity of each required material is displayed, including items in your inventory, nearby chests, and on the ground within range.
+- **No hammer required**: Open the build menu without a hammer in your inventory by pressing `B`.
+- **Use nearby materials**: Use materials from the ground and nearby chests when your inventory runs short.
+- **Build grid**: Toggle the build grid by pressing `Ctrl+Right-Click`. Adjust the grid distance by scrolling while holding `Ctrl`.
+- **Copying structures**: Select built pieces to copy by looking at them and pressing `Alt+Middle-Click`, and deselect them with `Alt+Right-Click`. Once you have selected the pieces you want to copy, save them as a copy in the Copies tab with `Alt+Left-Click`.
+- **Move pieces**: Move individual built pieces or entire selections with `Ctrl+Middle-Click`. Then left-click to put them down at a new location.
+- **Repair mode**: Toggle repair mode by pressing `Shift+Right-Click`.
+- **Zoom camera**: Zoom the camera in and out without needing to unequip the hammer by scrolling while holding `Alt`.
 
 ## Build Grid
 
-While placing a piece, a grid is drawn on the surface you are aiming at and pieces snap to its vertices, in the same way they snap to the snap points of other pieces.
+While placing a piece, a grid is drawn on the surface you are aiming at and pieces snap to its vertices.
 
-- On terrain, the grid follows the ground and pieces snap horizontally, with height coming from the ground.
-- On horizontal and vertical surfaces, the grid aligns with the surface and pieces snap accordingly.
-- The grid does not appear on diagonal surfaces and pieces only snap within the surface you are aiming at.
+- The grid aligns with the terrain and surfaces except for diagonal surfaces.
 - The chunk borders are drawn as red lines, and the centrelines of the chunk are green.
 
 ![Chunk Lines](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_1.png)
 ![Chunk Edges](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_2.png)
 
-## Moving Pieces
+## Copying and Moving
 
-Look at a built piece and press `Ctrl+Mouse3` (middle-click) to pick it up.
-Left-click to put it down there, or right-click to cancel.
+Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 
-- Moving is free, and everything stored in the piece comes with it, so chests and machines don't need emptying first.
-- You can move a piece if you could remove it with the hammer: ward and workbench rules apply. Chests also need you to be allowed to open them, and can't be moved while someone has them open.
-- Middle-click doesn't remove the piece you're moving, so a misclick can't spill a chest. Other pieces can still be removed while moving.
-- Ships, carts and items placed as decorations can't be moved.
+| Key                                     | Action                                                       |
+| --------------------------------------- | ------------------------------------------------------------ |
+| `Alt+Left-Click`                        | Save the selection as a copy in the hammer's **Copies** tab. |
+| `Ctrl+Middle-Click` on a selected piece | Move the whole selection.                                    |
+| `Alt+Right-Click`                       | Deselect the piece you are looking at.                       |
+| `Backspace`                             | Clear the selection.                                         |
+| `Delete`                                | Destroy every selected piece, dropping their materials.      |
 
-## Copying Several Pieces
-
-Look at a built piece and press `Alt+Mouse3` (middle-click) to select it for copying, and repeat for as many pieces as you like.
-`Alt+Mouse2` (right-click) deselects the piece you are looking at.
-When you're ready, press `Alt+Mouse1` (left-click) to save the selection as a new piece in the hammer's **Copies** tab, named `Copy 1`, `Copy 2` and so on.
-
-- Hold `Alt` to see the selection in the build panel, with the materials needed to build all of it.
-- `Q`/`E` steps through the snap points of each piece in turn, and `Shift+Q`/`Shift+E` jumps from piece to piece.
-- You can keep building as normal while selecting pieces. A selected piece that is removed or destroyed is dropped from the selection, and one you move stays selected at its new spot.
-- `Backspace` clears the selection. `Delete` removes every selected piece after a confirmation, dropping their materials as the hammer would.
-- Saved copies are kept in `BepInEx/config/BetterHammer/copies.json`, shared by all your characters and worlds. To delete one, hover it in the build menu and press `Delete`, then confirm.
+- Build a saved copy like any other piece. Hold `Alt` to see the selection's total materials.
+- `Ctrl+Middle-Click` on a piece that isn't selected moves just that piece. Left-click to put it down, right-click to cancel.
+- Moving is free and keeps everything inside, so chests don't need emptying. Ward and workbench rules apply, and ships and carts can't be moved.
+- While placing a copy or a moved selection, `Q`/`E` cycles snap points and `Shift+Q`/`Shift+E` switches which piece you snap by.
+- Copies are saved in `BepInEx/config/BetterHammer/copies.json` for all your characters and worlds. To delete one, hover it in the build menu and press `Delete`.
 
 ![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_3.png)
 
