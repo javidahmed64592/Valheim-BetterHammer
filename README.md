@@ -32,12 +32,12 @@ While placing a piece, a grid is drawn on the surface you are aiming at and piec
 
 ## Moving Pieces
 
-Look at a built piece and press `Ctrl+Mouse3` (middle-click) to pick it up. Its placement ghost appears, the same as when copying a piece with `Shift+Mouse3`. Left-click to put it down there, or right-click to cancel. The piece you're moving glows gold until it's put down, and it can be put down overlapping its old spot, so it can be nudged a little.
+Look at a built piece and press `Ctrl+Mouse3` (middle-click) to pick it up.
+Left-click to put it down there, or right-click to cancel.
 
-- Moving is free, and everything stored in the piece comes with it, so chests don't need emptying first.
+- Moving is free, and everything stored in the piece comes with it, so chests and machines don't need emptying first.
 - You can move a piece if you could remove it with the hammer: ward and workbench rules apply. Chests also need you to be allowed to open them, and can't be moved while someone has them open.
 - Middle-click doesn't remove the piece you're moving, so a misclick can't spill a chest. Other pieces can still be removed while moving.
-- Pieces resting on the one you move can lose their support, just as if it had been removed.
 - Ships, carts and items placed as decorations can't be moved.
 
 ## Configuration
