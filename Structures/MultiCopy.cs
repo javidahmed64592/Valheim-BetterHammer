@@ -319,7 +319,8 @@ internal static class MultiCopy
     }
 
     /// <summary>
-    /// Alt+left-click: saves the selection as a new copy in the Copies tab and selects it.
+    /// Alt+left-click: asks for a name, then saves the selection as a new copy in the Copies tab and
+    /// selects it.
     /// </summary>
     private static void Confirm(Player player)
     {
@@ -346,8 +347,14 @@ internal static class MultiCopy
             pieces.Add((prefabPiece, piece.transform.position, piece.transform.rotation));
         }
 
+        // The pieces are noted now; the copy is saved once a name is entered (cancelling saves nothing).
+        CopyLibrary.AskForName("$betterhammer_copy_name_title", CopyLibrary.NextDefaultName(), name => Save(player, pieces, name));
+    }
+
+    private static void Save(Player player, List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces, string name)
+    {
         PieceMover.Abort(player);
-        CopyLibrary.Copy copy = CopyLibrary.Add(player, pieces);
+        CopyLibrary.Copy copy = CopyLibrary.Add(player, pieces, name);
         if (copy == null)
         {
             player.Message(MessageHud.MessageType.Center, "$betterhammer_copy_failed");
@@ -552,7 +559,7 @@ internal static class MultiCopy
             return false;
         }
 
-        string description = menu ? copy.Description + "\n" + CopyLibrary.DeleteHint() : copy.Description;
+        string description = menu ? copy.Description + "\n" + CopyLibrary.MenuHint() : copy.Description;
         summary = Fill(player, copy.Name, description, copy.Piece.m_icon, copy.Piece.m_resources, copy.StationPieces);
         return true;
     }

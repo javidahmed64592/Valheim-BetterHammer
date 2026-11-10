@@ -145,7 +145,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
             return;
         }
 
-        CopyLibrary.UpdateDeleteInput(player);
+        CopyLibrary.UpdateMenuInput(player);
         MultiCopy.UpdateSelectionKeys(player);
 
         if (ZInput.GetButtonDown(ButtonQueryName))

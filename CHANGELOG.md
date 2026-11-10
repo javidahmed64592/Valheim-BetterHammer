@@ -7,6 +7,8 @@
 - The plugin GUID changed to `javidahmed64592.betterhammer`, so BetterHammer starts with a fresh config file (`javidahmed64592.betterhammer.cfg`). Settings from `javidahmed64592.nohammerbuildmenu.cfg` aren't carried over.
 - A custom key for "Open Build Menu" set in the game's controls menu resets to `B` once.
 - `Ctrl+Mouse3` (middle-click) on a piece selected for copying now moves the whole selection. It works like moving a single piece: everything stored in the pieces comes with them, nothing is dropped, the pieces glow gold, and right-click cancels. The ghost behaves like a saved copy's, so `Q`/`E` and `Shift+Q`/`Shift+E` cycle snap points and pieces. The moved pieces stay selected.
+- Saving a selection with `Alt+Mouse1` (left-click) now asks for a name. Leave it as it is, or blank, for the default "Copy N". Cancelling saves nothing.
+- Saved copies can be renamed: hover one in the build menu and press `Insert` (configurable as `Rename Copy`).
 - Updated the mod description.
 - Moved the source files into folders by feature (`Core`, `Grid`, `Materials`, `Structures`, `UI`, `Patches`), leaving only `Plugin.cs` at the root (no behaviour change).
 

@@ -33,7 +33,6 @@
   "betterhammer_copy_saved": "Saved as $1 in the Copies tab",
   "betterhammer_copy_failed": "Couldn't save this copy",
   "betterhammer_copy_materials_page": "Materials page $1 of $2",
-  "betterhammer_copy_delete_hint": "Press $1 to delete this copy",
   "betterhammer_copy_delete_title": "Delete copy",
   "betterhammer_copy_delete_text": "Delete $1? This can't be undone.",
   "betterhammer_copy_deleted": "Deleted $1",
@@ -45,5 +44,9 @@
   "betterhammer_selection_removed": "Removed $1 pieces",
   "betterhammer_selection_removed_some": "Removed $1 of $2 pieces. The rest couldn't be removed and are still selected.",
   "betterhammer_move_started_group": "Moving $1 pieces",
-  "betterhammer_moved_group": "Moved $1 pieces"
+  "betterhammer_moved_group": "Moved $1 pieces",
+  "betterhammer_copy_name_title": "Name this copy",
+  "betterhammer_copy_rename_title": "Rename copy",
+  "betterhammer_copy_renamed": "Renamed $1 to $2",
+  "betterhammer_copy_menu_hint": "Press $1 to rename or $2 to delete this copy"
 }
