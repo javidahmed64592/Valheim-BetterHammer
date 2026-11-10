@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>BetterHammer</AssemblyName>
-    <Description>Open the build menu without a hammer, snap to a build grid, move and copy structures, and build with nearby materials.</Description>
+    <Description>Open the build menu without a hammer, build with nearby materials, snap to a build grid, and copy and move structures.</Description>
     <Version>1.0.0</Version>
     <LangVersion>latest</LangVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
