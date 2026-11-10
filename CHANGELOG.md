@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15.0
+
+- Added copying several pieces at once. Look at a piece and press `Alt+Mouse3` (middle-click) to select it, or `Alt+Mouse2` (right-click) to deselect it. Then press `Alt+Mouse1` (left-click) to save the selection as a new piece in the hammer's **Copies** tab ("Copy 1", "Copy 2", ...), with a picture of the whole copy as its icon.
+- Building a saved copy shows a placement ghost of every piece, keeping their places relative to each other, and builds them all with one click. Like any piece, it stays selected when the hammer is put away and taken out again.
+- Saved copies are kept in `BepInEx/config/NoHammerBuildMenu/copies.json`, shared by all characters and worlds. Hover one in the build menu and press `Delete` to delete it, after a confirmation.
+- With pieces selected, `Backspace` clears the selection and `Delete` removes every selected piece after a confirmation, dropping their materials as the hammer would. Both keys are configurable (`Clear Selection` and `Delete`).
+- Moving a selected piece keeps it selected, so a copy saved afterwards uses its new spot.
+- Selected pieces glow teal. The selection survives putting the hammer away, and pieces that are removed or destroyed drop out of it.
+- Holding `Alt` shows the selection in the build panel with the combined materials and whether you have enough (nearby chests and ground items included). Saved copies are shown the same way. Long material lists page through a few at a time.
+- While placing a copy, `Q`/`E` steps through every piece's snap points in turn, and `Shift+Q`/`Shift+E` jumps from piece to piece.
+- Added key hints for selecting, deselecting, saving, clearing and removing the selection, and snapping to another piece.
+
 ## 0.14.0
 
 - Added moving built pieces: look at a piece and press `Ctrl+Mouse3` (middle-click) to pick it up, then left-click to put it down or right-click to cancel. Chest contents, damage, sign text and the rest of the piece's state move with it, and nothing is dropped.

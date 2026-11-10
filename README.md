@@ -14,6 +14,9 @@ This mod adds several improvements to the vanilla base hammer:
 | `Shift+Mouse2` (right-click) | Toggle repair mode.                                               |
 | `Alt+Scroll`                 | Zoom the camera in and out without needing to unequip the hammer. |
 | `Ctrl+Mouse3` (middle-click) | Move the piece you are looking at.                                |
+| `Alt+Mouse3` (middle-click)  | Select the piece you are looking at for copying.                  |
+| `Alt+Mouse2` (right-click)   | Deselect the piece you are looking at.                            |
+| `Alt+Mouse1` (left-click)    | Save the selected pieces as a copy in the Copies tab.             |
 
 Additionally, the hammer also uses materials from the ground and nearby chests when your inventory runs short.
 The total quantity of each required material is displayed, including items in your inventory, nearby chests, and on the ground within range.
@@ -39,6 +42,20 @@ Left-click to put it down there, or right-click to cancel.
 - You can move a piece if you could remove it with the hammer: ward and workbench rules apply. Chests also need you to be allowed to open them, and can't be moved while someone has them open.
 - Middle-click doesn't remove the piece you're moving, so a misclick can't spill a chest. Other pieces can still be removed while moving.
 - Ships, carts and items placed as decorations can't be moved.
+
+## Copying Several Pieces
+
+Look at a built piece and press `Alt+Mouse3` (middle-click) to select it for copying, and repeat for as many pieces as you like.
+`Alt+Mouse2` (right-click) deselects the piece you are looking at.
+When you're ready, press `Alt+Mouse1` (left-click) to save the selection as a new piece in the hammer's **Copies** tab, named `Copy 1`, `Copy 2` and so on.
+
+- Hold `Alt` to see the selection in the build panel, with the materials needed to build all of it.
+- `Q`/`E` steps through the snap points of each piece in turn, and `Shift+Q`/`Shift+E` jumps from piece to piece.
+- You can keep building as normal while selecting pieces. A selected piece that is removed or destroyed is dropped from the selection, and one you move stays selected at its new spot.
+- `Backspace` clears the selection. `Delete` removes every selected piece after a confirmation, dropping their materials as the hammer would.
+- Saved copies are kept in `BepInEx/config/NoHammerBuildMenu/copies.json`, shared by all your characters and worlds. To delete one, hover it in the build menu and press `Delete`, then confirm.
+
+![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu/raw/main/images/game_screenshot_3.png)
 
 ## Configuration
 

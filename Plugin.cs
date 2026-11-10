@@ -22,7 +22,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "javidahmed64592.nohammerbuildmenu";
     public const string PluginName = "No Hammer Build Menu";
-    public const string PluginVersion = "0.14.0";
+    public const string PluginVersion = "0.15.0";
 
     private const string HammerPrefabName = "Hammer";
     private const string ButtonName = "NoHammerBuildMenu_Toggle";
@@ -82,6 +82,8 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 
         GridOverlay.BindConfig(Config);
         ChestMaterials.BindConfig(Config);
+        CopyLibrary.BindConfig(Config);
+        MultiCopy.BindConfig(Config);
         Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.
@@ -115,12 +117,14 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
             _knownRecipesRefreshed = false;
             _lastBuildPiece = null;
             PieceMover.Reset();
+            MultiCopy.Reset();
             Overlay.Hide();
             return;
         }
 
         // Build the phantom as soon as ObjectDB is ready.
         EnsurePhantomHammer();
+        CopyLibrary.EnsureLoaded(player, _phantomHammer?.m_shared.m_buildPieces);
 
         // Force a recipe scan once per session with the phantom's piece table.
         if (!_knownRecipesRefreshed && _phantomHammer != null)
@@ -136,13 +140,16 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
             return;
         }
 
+        CopyLibrary.UpdateDeleteInput(player);
+        MultiCopy.UpdateSelectionKeys(player);
+
         if (ZInput.GetButtonDown(ButtonQueryName))
         {
             ToggleBuildMenu(player);
         }
 
         // While moving a piece, right-click only cancels the move.
-        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !PieceMover.RightClickConsumed)
+        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !PieceMover.RightClickConsumed && !MultiCopy.RightClickConsumed)
         {
             if (ShiftHeld())
             {
@@ -160,6 +167,8 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822", Justification = "Unity message")]
     private void LateUpdate()
     {
+        // The gold of a piece being moved goes on top of the teal of a selected one.
+        MultiCopy.UpdateHighlight();
         PieceMover.UpdateHighlight();
     }
 
@@ -230,7 +239,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
         return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
     }
 
-    private static bool AltHeld()
+    internal static bool AltHeld()
     {
         return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
     }
