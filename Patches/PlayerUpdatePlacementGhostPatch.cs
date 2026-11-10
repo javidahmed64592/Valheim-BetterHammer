@@ -2,7 +2,7 @@ using System;
 
 using HarmonyLib;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// While moving a piece, hides the original from the ghost's placement checks so it can be put down

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0
+
+- Renamed the mod from NoHammerBuildMenu to BetterHammer, to reflect everything it does now.
+- If you have NoHammerBuildMenu installed, uninstall it before installing BetterHammer. Running both at once would apply every feature twice.
+- The plugin GUID changed to `javidahmed64592.betterhammer`, so BetterHammer starts with a fresh config file (`javidahmed64592.betterhammer.cfg`). Settings from `javidahmed64592.nohammerbuildmenu.cfg` aren't carried over.
+- A custom key for "Open Build Menu" set in the game's controls menu resets to `B` once.
+
 ## 0.15.0
 
 - Added copying several pieces at once. Look at a piece and press `Alt+Mouse3` (middle-click) to select it, or `Alt+Mouse2` (right-click) to deselect it. Then press `Alt+Mouse1` (left-click) to save the selection as a new piece in the hammer's **Copies** tab ("Copy 1", "Copy 2", ...), with a picture of the whole copy as its icon.

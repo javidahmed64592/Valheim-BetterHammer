@@ -5,7 +5,7 @@ using BepInEx.Configuration;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer;
 
 /// <summary>
 /// Which surface the grid is drawn on. Terrain follows the ground height; the others are flat
@@ -208,17 +208,17 @@ internal sealed class GridOverlay
         {
             if (!_warned)
             {
-                Debug.LogWarning("NoHammerBuildMenu: no usable shader found for the build grid overlay.");
+                Debug.LogWarning("BetterHammer: no usable shader found for the build grid overlay.");
             }
 
             _warned = true;
             return false;
         }
 
-        _mesh = new Mesh { name = "NoHammerBuildMenu_Grid", indexFormat = IndexFormat.UInt32 };
+        _mesh = new Mesh { name = "BetterHammer_Grid", indexFormat = IndexFormat.UInt32 };
         _mesh.MarkDynamic();
 
-        _object = new GameObject("NoHammerBuildMenu_Grid");
+        _object = new GameObject("BetterHammer_Grid");
         Object.DontDestroyOnLoad(_object);
         _object.AddComponent<MeshFilter>().sharedMesh = _mesh;
 

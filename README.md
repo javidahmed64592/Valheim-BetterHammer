@@ -1,8 +1,8 @@
-[![CI](https://img.shields.io/github/actions/workflow/status/javidahmed64592/valheim-nohammerbuildmenu/ci.yml?branch=main&style=flat-square&label=CI&logo=github)](https://github.com/javidahmed64592/valheim-nohammerbuildmenu/actions/workflows/ci.yml)
-[![Package](https://img.shields.io/github/actions/workflow/status/javidahmed64592/valheim-nohammerbuildmenu/package.yml?branch=main&style=flat-square&label=Package&logo=github)](https://github.com/javidahmed64592/valheim-nohammerbuildmenu/actions/workflows/package.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/javidahmed64592/valheim-betterhammer/ci.yml?branch=main&style=flat-square&label=CI&logo=github)](https://github.com/javidahmed64592/valheim-betterhammer/actions/workflows/ci.yml)
+[![Package](https://img.shields.io/github/actions/workflow/status/javidahmed64592/valheim-betterhammer/package.yml?branch=main&style=flat-square&label=Package&logo=github)](https://github.com/javidahmed64592/valheim-betterhammer/actions/workflows/package.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# NoHammerBuildMenu
+# BetterHammer
 
 This mod adds several improvements to the vanilla base hammer:
 
@@ -30,8 +30,8 @@ While placing a piece, a grid is drawn on the surface you are aiming at and piec
 - The grid does not appear on diagonal surfaces and pieces only snap within the surface you are aiming at.
 - The chunk borders are drawn as red lines, and the centrelines of the chunk are green.
 
-![Chunk Lines](https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu/raw/main/images/game_screenshot_1.png)
-![Chunk Edges](https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu/raw/main/images/game_screenshot_2.png)
+![Chunk Lines](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_1.png)
+![Chunk Edges](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_2.png)
 
 ## Moving Pieces
 
@@ -53,13 +53,13 @@ When you're ready, press `Alt+Mouse1` (left-click) to save the selection as a ne
 - `Q`/`E` steps through the snap points of each piece in turn, and `Shift+Q`/`Shift+E` jumps from piece to piece.
 - You can keep building as normal while selecting pieces. A selected piece that is removed or destroyed is dropped from the selection, and one you move stays selected at its new spot.
 - `Backspace` clears the selection. `Delete` removes every selected piece after a confirmation, dropping their materials as the hammer would.
-- Saved copies are kept in `BepInEx/config/NoHammerBuildMenu/copies.json`, shared by all your characters and worlds. To delete one, hover it in the build menu and press `Delete`, then confirm.
+- Saved copies are kept in `BepInEx/config/BetterHammer/copies.json`, shared by all your characters and worlds. To delete one, hover it in the build menu and press `Delete`, then confirm.
 
-![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu/raw/main/images/game_screenshot_3.png)
+![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_3.png)
 
 ## Configuration
 
-Settings are in the BepInEx config file `javidahmed64592.nohammerbuildmenu.cfg`.
+Settings are in the BepInEx config file `javidahmed64592.betterhammer.cfg`.
 Settings marked "(Synced with server)" use the server's values when the server has the mod installed.
 
 ## Compatibility
@@ -74,4 +74,4 @@ Nothing is saved to your world or character, so the mod can be removed at any ti
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/javidahmed64592/Valheim-BetterHammer/blob/main/LICENSE) file for details.

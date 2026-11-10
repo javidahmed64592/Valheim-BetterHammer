@@ -5,7 +5,7 @@ using HarmonyLib;
 
 using UnityEngine;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// Whenever the game sets up the placement ghost (a new piece selected, the hammer equipped), a saved

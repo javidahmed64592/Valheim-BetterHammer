@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>NoHammerBuildMenu</AssemblyName>
+    <AssemblyName>BetterHammer</AssemblyName>
     <Description>Open the build menu without needing a hammer in your inventory, now with a build grid and a repair toggle!</Description>
-    <Version>0.15.0</Version>
+    <Version>1.0.0</Version>
     <LangVersion>latest</LangVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
@@ -23,7 +23,7 @@
 
   <!-- Translations/<Language>.json, embedded and loaded by Translations.Load. -->
   <ItemGroup>
-    <EmbeddedResource Include="Translations\*.json" LogicalName="NoHammerBuildMenu.Translations.%(Filename).json" />
+    <EmbeddedResource Include="Translations\*.json" LogicalName="BetterHammer.Translations.%(Filename).json" />
   </ItemGroup>
 
   <!-- In CI (GitHub Actions) there is no local Valheim install, so game/BepInEx DLLs

@@ -5,7 +5,7 @@ using UnityEngine;
 
 using Object = UnityEngine.Object;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer;
 
 /// <summary>
 /// <para>
@@ -100,12 +100,12 @@ internal static class PieceMover
             || Hud.IsPieceSelectionVisible()
             || Hud.InRadial()
             || ZInput.IsGamepadActive()
-            || !NoHammerBuildMenuPlugin.IsHammerEquipped(player))
+            || !BetterHammerPlugin.IsHammerEquipped(player))
         {
             return wasMoving;
         }
 
-        if (NoHammerBuildMenuPlugin.CtrlHeld() && ZInput.GetButtonDown(RemoveButton))
+        if (BetterHammerPlugin.CtrlHeld() && ZInput.GetButtonDown(RemoveButton))
         {
             BlockRemoveUntilReleased(player);
             PickUp(player);
@@ -115,15 +115,15 @@ internal static class PieceMover
             // Removing the piece being moved would drop its materials and (for a public chest) its
             // contents, so it's ignored. Other pieces can still be removed while moving.
             BlockRemoveUntilReleased(player);
-            player.Message(MessageHud.MessageType.Center, "$nhbm_move_cant_remove");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_move_cant_remove");
         }
         else if (Moving && Input.GetMouseButtonDown(1))
         {
             _rightClickFrame = Time.frameCount;
             Stop(player);
-            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_move_aborted");
+            player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_aborted");
         }
-        else if (Moving && !NoHammerBuildMenuPlugin.AltHeld() && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
+        else if (Moving && !BetterHammerPlugin.AltHeld() && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
         {
             PutDown(player);
         }
@@ -159,7 +159,7 @@ internal static class PieceMover
         if (Moving)
         {
             Stop(player);
-            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_move_aborted");
+            player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_aborted");
         }
     }
 
@@ -199,7 +199,7 @@ internal static class PieceMover
         _source = nview;
         _prefabName = Utils.GetPrefabName(piece.gameObject);
         player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_move_started", Localization.instance.Localize(piece.m_name)));
+            Localization.instance.Localize("$betterhammer_move_started", Localization.instance.Localize(piece.m_name)));
     }
 
     private static void PutDown(Player player)
@@ -235,7 +235,7 @@ internal static class PieceMover
         GameObject moved = Recreate(_source, position, rotation);
         if (moved == null)
         {
-            player.Message(MessageHud.MessageType.Center, "$nhbm_move_failed");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_move_failed");
             return;
         }
 
@@ -260,7 +260,7 @@ internal static class PieceMover
         _source = null;
         Stop(player);
         player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_moved", Localization.instance.Localize(piece.m_name)));
+            Localization.instance.Localize("$betterhammer_moved", Localization.instance.Localize(piece.m_name)));
     }
 
     /// <summary>
@@ -369,7 +369,7 @@ internal static class PieceMover
         }
         catch (Exception e)
         {
-            Debug.LogError("NoHammerBuildMenu: failed to move " + prefab.name + ": " + e);
+            Debug.LogError("BetterHammer: failed to move " + prefab.name + ": " + e);
         }
         finally
         {
@@ -453,7 +453,7 @@ internal static class PieceMover
         nview = piece.GetComponent<ZNetView>();
         if (nview == null || !nview.IsValid() || !piece.m_canBeRemoved || !IsMovableKind(piece))
         {
-            player.Message(MessageHud.MessageType.Center, "$nhbm_move_cant");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_move_cant");
             return false;
         }
 
@@ -517,12 +517,12 @@ internal static class PieceMover
     private static string AbortReason(Player player)
     {
         bool gone = _source == null || !_source.IsValid();
-        bool unequipped = !player.InPlaceMode() || !NoHammerBuildMenuPlugin.IsHammerEquipped(player);
+        bool unequipped = !player.InPlaceMode() || !BetterHammerPlugin.IsHammerEquipped(player);
         return (gone, unequipped) switch
         {
-            (true, _) => "$nhbm_move_aborted_gone",
-            (_, true) => "$nhbm_move_aborted_unequipped",
-            _ when !SelectedIsMovedPiece(player) => "$nhbm_move_aborted_selection",
+            (true, _) => "$betterhammer_move_aborted_gone",
+            (_, true) => "$betterhammer_move_aborted_unequipped",
+            _ when !SelectedIsMovedPiece(player) => "$betterhammer_move_aborted_selection",
             _ => null,
         };
     }

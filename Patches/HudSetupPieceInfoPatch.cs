@@ -1,6 +1,6 @@
 using HarmonyLib;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// The build panel describes the pieces selected for copying (while Alt is held) or a saved copy, with

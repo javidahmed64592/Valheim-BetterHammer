@@ -1,10 +1,10 @@
 {
-  "name": "NoHammerBuildMenu",
+  "name": "BetterHammer",
   "description": "Open the build menu without needing a hammer in your inventory, now with a build grid and a repair toggle!",
-  "version_number": "0.15.0",
+  "version_number": "1.0.0",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2360",
     "ValheimModding-Jotunn-2.30.2"
   ],
-  "website_url": "https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu"
+  "website_url": "https://github.com/javidahmed64592/Valheim-BetterHammer"
 }

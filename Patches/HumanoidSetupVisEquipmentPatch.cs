@@ -1,6 +1,6 @@
 using HarmonyLib;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// SetupVisEquipment in Valheim l-1.0.x crashes with a NullReferenceException when
@@ -13,7 +13,7 @@ internal static class Humanoid_SetupVisEquipment_Patch
     [HarmonyPrefix]
     private static void Prefix(Humanoid __instance, out ItemDrop.ItemData __state)
     {
-        ItemDrop.ItemData phantom = NoHammerBuildMenuPlugin._phantomHammer;
+        ItemDrop.ItemData phantom = BetterHammerPlugin._phantomHammer;
         __state = null;
         if (phantom != null && __instance.GetRightItem() == phantom)
         {

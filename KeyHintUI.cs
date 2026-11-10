@@ -7,7 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer;
 
 /// <summary>
 /// Adds this mod's controls to the vanilla build key hints (bottom of the screen while placing
@@ -17,7 +17,7 @@ namespace NoHammerBuildMenu;
 /// </summary>
 internal static class KeyHintUI
 {
-    private const string ContainerName = "NoHammerBuildMenu_KeyHints";
+    private const string ContainerName = "BetterHammer_KeyHints";
     private const string ScrollIcon = "@scroll";
 
     private const float LabelFontSize = 16f;
@@ -67,17 +67,17 @@ internal static class KeyHintUI
     /// </summary>
     private static readonly List<Hint> Hints =
     [
-        new Hint { Label = "$nhbm_hint_copy_selection", Column = 0, Keys = ["Left Alt", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$nhbm_hint_deselect", Column = 0, Keys = ["Left Alt", "$button_mouse1"], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$nhbm_hint_select", Column = 0, Keys = ["Left Alt", "$button_mouse2"], Visibility = HintVisibility.Always },
-        new Hint { Label = "$nhbm_hint_move", Column = 0, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.Always },
-        new Hint { Label = "$nhbm_hint_grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
-        new Hint { Label = "$nhbm_hint_repair", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
-        new Hint { Label = "$nhbm_hint_copy_piece", Column = 1, Keys = ["Left Shift", "$KEY_TabLeft", Or, "$KEY_TabRight"], Visibility = HintVisibility.CopyOnly },
-        new Hint { Label = "$nhbm_hint_delete_selection", Column = 1, Keys = [DeleteKey], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$nhbm_hint_clear_selection", Column = 1, Keys = [ClearKey], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$nhbm_hint_grid_distance", Column = 1, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
-        new Hint { Label = "$nhbm_hint_zoom", Column = 1, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_copy_selection", Column = 0, Keys = ["Left Alt", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_deselect", Column = 0, Keys = ["Left Alt", "$button_mouse1"], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_select", Column = 0, Keys = ["Left Alt", "$button_mouse2"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_move", Column = 0, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
+        new Hint { Label = "$betterhammer_hint_repair", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_copy_piece", Column = 1, Keys = ["Left Shift", "$KEY_TabLeft", Or, "$KEY_TabRight"], Visibility = HintVisibility.CopyOnly },
+        new Hint { Label = "$betterhammer_hint_delete_selection", Column = 1, Keys = [DeleteKey], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_clear_selection", Column = 1, Keys = [ClearKey], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_grid_distance", Column = 1, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
+        new Hint { Label = "$betterhammer_hint_zoom", Column = 1, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
     ];
 
     private static GameObject _container;
@@ -102,7 +102,7 @@ internal static class KeyHintUI
             && player != null
             && player.InPlaceMode()
             && !ZInput.IsGamepadActive()
-            && NoHammerBuildMenuPlugin.IsHammerEquipped(player);
+            && BetterHammerPlugin.IsHammerEquipped(player);
 
         if (!show)
         {
@@ -120,7 +120,7 @@ internal static class KeyHintUI
         }
 
         bool repairing = player.InRepairMode();
-        bool gridOn = NoHammerBuildMenuPlugin.GridEnabled;
+        bool gridOn = BetterHammerPlugin.GridEnabled;
 
         foreach (Hint hint in Hints)
         {
@@ -187,7 +187,7 @@ internal static class KeyHintUI
         if (PieceMover.Moving)
         {
             _buildMenuText ??= _buildMenuLabel.text;
-            _buildMenuLabel.text = Localization.instance.Localize("$nhbm_hint_abort");
+            _buildMenuLabel.text = Localization.instance.Localize("$betterhammer_hint_abort");
         }
         else if (_buildMenuText != null)
         {
@@ -227,7 +227,7 @@ internal static class KeyHintUI
         if (labelTemplate == null || plusTemplate == null || keyTemplate == null || iconTemplate == null || keyboardLayout == null)
         {
             _createFailed = true;
-            Debug.LogWarning("NoHammerBuildMenu: vanilla build key hints layout not as expected, not adding key hints.");
+            Debug.LogWarning("BetterHammer: vanilla build key hints layout not as expected, not adding key hints.");
             return false;
         }
 
@@ -273,7 +273,7 @@ internal static class KeyHintUI
         {
             // Start from a vanilla multi-key hint (for its row settings), then rebuild its contents.
             GameObject item = Object.Instantiate(copy.gameObject, columns[hint.Column], false);
-            item.name = "NoHammerBuildMenu_Hint_" + hint.Label.TrimStart('$');
+            item.name = "BetterHammer_Hint_" + hint.Label.TrimStart('$');
             item.SetActive(true);
             for (int i = item.transform.childCount - 1; i >= 0; i--)
             {

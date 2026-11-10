@@ -8,7 +8,7 @@ using TMPro;
 
 using UnityEngine;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer;
 
 /// <summary>
 /// Lets building draw materials from nearby chests after the player's own inventory runs out.

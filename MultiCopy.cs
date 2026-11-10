@@ -8,7 +8,7 @@ using UnityEngine;
 
 using Object = UnityEngine.Object;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer;
 
 /// <summary>
 /// <para>
@@ -113,12 +113,12 @@ internal static class MultiCopy
             || Hud.IsPieceSelectionVisible()
             || Hud.InRadial()
             || ZInput.IsGamepadActive()
-            || !NoHammerBuildMenuPlugin.IsHammerEquipped(player))
+            || !BetterHammerPlugin.IsHammerEquipped(player))
         {
             return wasPlacing;
         }
 
-        bool alt = NoHammerBuildMenuPlugin.AltHeld();
+        bool alt = BetterHammerPlugin.AltHeld();
         bool placePressed = ZInput.GetButtonDown(PlaceButton);
         bool block = wasPlacing;
         if (alt && ZInput.GetButtonDown(RemoveButton))
@@ -182,7 +182,7 @@ internal static class MultiCopy
             || Hud.IsPieceSelectionVisible()
             || UnifiedPopup.IsVisible()
             || !player.InPlaceMode()
-            || !NoHammerBuildMenuPlugin.IsHammerEquipped(player)
+            || !BetterHammerPlugin.IsHammerEquipped(player)
             || CopyLibrary.TypingInTextField())
         {
             return;
@@ -194,14 +194,14 @@ internal static class MultiCopy
             ClearHighlights();
             Selected.Clear();
             _selectionDirty = true;
-            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_selection_cleared", Count(count)));
+            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_selection_cleared", Count(count)));
         }
         else if (Input.GetKeyDown(CopyLibrary.DeleteKey))
         {
             Prune();
             UnifiedPopup.Push(new YesNoPopup(
-                "$nhbm_selection_delete_title",
-                Localization.instance.Localize("$nhbm_selection_delete_text", Count(Selected.Count)),
+                "$betterhammer_selection_delete_title",
+                Localization.instance.Localize("$betterhammer_selection_delete_text", Count(Selected.Count)),
                 () =>
                 {
                     UnifiedPopup.Pop();
@@ -236,8 +236,8 @@ internal static class MultiCopy
 
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft, removed == total
-            ? Localization.instance.Localize("$nhbm_selection_removed", Count(removed))
-            : Localization.instance.Localize("$nhbm_selection_removed_some", Count(removed), Count(total)));
+            ? Localization.instance.Localize("$betterhammer_selection_removed", Count(removed))
+            : Localization.instance.Localize("$betterhammer_selection_removed_some", Count(removed), Count(total)));
     }
 
     private static bool CanRemove(Player player, Piece piece)
@@ -303,7 +303,7 @@ internal static class MultiCopy
         string name = Localization.instance.Localize(piece.m_name);
         if (Selected.Contains(piece))
         {
-            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_already", name));
+            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_already", name));
             return;
         }
 
@@ -318,7 +318,7 @@ internal static class MultiCopy
         Selected.Add(piece);
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_copy_selected", name, Count(Selected.Count)));
+            Localization.instance.Localize("$betterhammer_copy_selected", name, Count(Selected.Count)));
     }
 
     private static void Deselect(Player player)
@@ -334,7 +334,7 @@ internal static class MultiCopy
         Selected.RemoveAt(index);
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_copy_deselected", Localization.instance.Localize(piece.m_name), Count(Selected.Count)));
+            Localization.instance.Localize("$betterhammer_copy_deselected", Localization.instance.Localize(piece.m_name), Count(Selected.Count)));
     }
 
     /// <summary>
@@ -345,7 +345,7 @@ internal static class MultiCopy
         Prune();
         if (Selected.Count == 0)
         {
-            player.Message(MessageHud.MessageType.Center, "$nhbm_copy_nothing");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_copy_nothing");
             return;
         }
 
@@ -358,7 +358,7 @@ internal static class MultiCopy
             {
                 // The hammer was swapped for one with different pieces since this one was selected.
                 player.Message(MessageHud.MessageType.Center,
-                    Localization.instance.Localize("$nhbm_copy_unavailable", Localization.instance.Localize(piece.m_name)));
+                    Localization.instance.Localize("$betterhammer_copy_unavailable", Localization.instance.Localize(piece.m_name)));
                 return;
             }
 
@@ -369,7 +369,7 @@ internal static class MultiCopy
         CopyLibrary.Copy copy = CopyLibrary.Add(player, pieces);
         if (copy == null)
         {
-            player.Message(MessageHud.MessageType.Center, "$nhbm_copy_failed");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_copy_failed");
             return;
         }
 
@@ -383,7 +383,7 @@ internal static class MultiCopy
             player.m_placeRotation = RotationSteps(player, copy.Parts[0].Rotation);
         }
 
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_saved", copy.Name));
+        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_saved", copy.Name));
     }
 
     /// <summary>
@@ -553,7 +553,7 @@ internal static class MultiCopy
         _snapFrame = Time.frameCount;
         int piece = _reference;
         int point = player.m_manualSnapPoint;
-        if (NoHammerBuildMenuPlugin.ShiftHeld())
+        if (BetterHammerPlugin.ShiftHeld())
         {
             piece = (piece + step + Group.Count) % Group.Count;
             point = Group[piece].Part.SnapCount > 0 ? 0 : -1;
@@ -570,7 +570,7 @@ internal static class MultiCopy
 
         // The game applies the same step to the snap point right after this, so start one step back.
         player.m_manualSnapPoint = point - step;
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_reference",
+        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_reference",
             Localization.instance.Localize(Group[piece].Part.Prefab.m_name),
             Count(piece + 1),
             Count(Group.Count)));
@@ -740,7 +740,7 @@ internal static class MultiCopy
         }
 
         _ = tool.m_shared.m_buildEffect.Create(player.transform.position, Quaternion.identity, null, 1f, -1, player.GetZDOID());
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_placed", Count(Group.Count)));
+        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_placed", Count(Group.Count)));
     }
 
     private static bool HaveStations(Player player, List<Piece> pieces)
@@ -778,7 +778,7 @@ internal static class MultiCopy
 
         bool menu = Hud.IsPieceSelectionVisible();
         Prune();
-        if (!menu && Selected.Count > 0 && NoHammerBuildMenuPlugin.AltHeld() && NoHammerBuildMenuPlugin.IsHammerEquipped(player))
+        if (!menu && Selected.Count > 0 && BetterHammerPlugin.AltHeld() && BetterHammerPlugin.IsHammerEquipped(player))
         {
             if (_selectionDirty)
             {
@@ -788,7 +788,7 @@ internal static class MultiCopy
             }
 
             summary = Fill(player,
-                Localization.instance.Localize("$nhbm_copy_summary_selected", Count(Selected.Count)),
+                Localization.instance.Localize("$betterhammer_copy_summary_selected", Count(Selected.Count)),
                 _selectionDescription,
                 Selected[0].m_icon,
                 _selectionRequirements,
@@ -811,7 +811,7 @@ internal static class MultiCopy
     {
         if (_summary == null)
         {
-            GameObject holder = new("NoHammerBuildMenu_CopySummary");
+            GameObject holder = new("BetterHammer_CopySummary");
             holder.SetActive(false);
             Object.DontDestroyOnLoad(holder);
             _summary = holder.AddComponent<Piece>();
@@ -823,7 +823,7 @@ internal static class MultiCopy
         int page = (int)(Time.time / MaterialPageSeconds) % pages;
         if (pages > 1)
         {
-            description += "\n" + Localization.instance.Localize("$nhbm_copy_materials_page", Count(page + 1), Count(pages));
+            description += "\n" + Localization.instance.Localize("$betterhammer_copy_materials_page", Count(page + 1), Count(pages));
         }
 
         _summary.m_name = name;
@@ -864,7 +864,7 @@ internal static class MultiCopy
             && MaterialMan.instance != null
             && player != null
             && player.InPlaceMode()
-            && NoHammerBuildMenuPlugin.IsHammerEquipped(player);
+            && BetterHammerPlugin.IsHammerEquipped(player);
         if (!show)
         {
             if (_lit)
