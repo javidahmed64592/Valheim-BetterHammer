@@ -10,7 +10,7 @@ This mod adds several improvements to the vanilla base hammer:
 - **Use nearby materials**: Use materials from the ground and nearby chests when your inventory runs short.
 - **Build grid**: Toggle the build grid by pressing `Ctrl+Right-Click`. Adjust the grid distance by scrolling while holding `Ctrl`.
 - **Copying structures**: Select built pieces to copy by looking at them and pressing `Alt+Middle-Click`, and deselect them with `Alt+Right-Click`. Once you have selected the pieces you want to copy, save them as a copy in the Copies tab with `Alt+Left-Click`.
-- **Move pieces**: Move individual built pieces or entire selections with `Ctrl+Middle-Click`. Then left-click to put them down at a new location.
+- **Move pieces**: Move individual built pieces or entire selections with `Ctrl+Middle-Click`. Then left-click to put them down at a new location, or right-click to abort.
 - **Repair mode**: Toggle repair mode by pressing `Shift+Right-Click`.
 - **Zoom camera**: Zoom the camera in and out without needing to unequip the hammer by scrolling while holding `Alt`.
 
