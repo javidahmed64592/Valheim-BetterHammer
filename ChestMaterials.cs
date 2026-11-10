@@ -412,8 +412,8 @@ internal static class ChestMaterials
         {
             __state = Active(__instance)
                 && __instance.InPlaceMode()
-                && __instance.GetSelectedPiece() != null
-                && __instance.GetSelectedPiece().m_resources == requirements;
+                && ((__instance.GetSelectedPiece() != null && __instance.GetSelectedPiece().m_resources == requirements)
+                || (MultiCopy.ConsumingRequirements != null && MultiCopy.ConsumingRequirements == requirements));
             if (__state)
             {
                 _consuming = true;

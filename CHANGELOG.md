@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.0
+
+- Added copying several pieces at once. Look at a piece and press `Alt+Mouse3` (middle-click) to select it, or `Alt+Mouse2` (right-click) to deselect it. Then press `Alt+Mouse1` (left-click) to pick up a placement ghost of every selected piece, keeping their places relative to each other. Left-click builds the copy, and right-click puts it away.
+- Selected pieces glow teal. The selection survives putting the hammer away, and pieces that are removed or destroyed drop out of it. Building the copy clears the selection, but the copy stays in hand to build again.
+- Holding `Alt` shows the selection in the build panel, with the combined materials and whether you have enough (nearby chests and ground items included). The copy being placed is shown the same way.
+- While placing a copy, `Q`/`E` steps through every piece's snap points in turn, and `Shift+Q`/`Shift+E` jumps from piece to piece.
+- Added key hints for selecting, deselecting, copying the selection and snapping to another piece. While placing a copy, the right-click hint says "Abort".
+
 ## 0.14.0
 
 - Added moving built pieces: look at a piece and press `Ctrl+Mouse3` (middle-click) to pick it up, then left-click to put it down or right-click to cancel. Chest contents, damage, sign text and the rest of the piece's state move with it, and nothing is dropped.

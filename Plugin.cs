@@ -22,7 +22,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "javidahmed64592.nohammerbuildmenu";
     public const string PluginName = "No Hammer Build Menu";
-    public const string PluginVersion = "0.14.0";
+    public const string PluginVersion = "0.15.0";
 
     private const string HammerPrefabName = "Hammer";
     private const string ButtonName = "NoHammerBuildMenu_Toggle";
@@ -115,6 +115,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
             _knownRecipesRefreshed = false;
             _lastBuildPiece = null;
             PieceMover.Reset();
+            MultiCopy.Reset();
             Overlay.Hide();
             return;
         }
@@ -142,7 +143,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
         }
 
         // While moving a piece, right-click only cancels the move.
-        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !PieceMover.RightClickConsumed)
+        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !PieceMover.RightClickConsumed && !MultiCopy.RightClickConsumed)
         {
             if (ShiftHeld())
             {
@@ -161,6 +162,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
     private void LateUpdate()
     {
         PieceMover.UpdateHighlight();
+        MultiCopy.UpdateHighlight();
     }
 
     private static void ToggleGrid(Player player)
@@ -230,7 +232,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
         return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
     }
 
-    private static bool AltHeld()
+    internal static bool AltHeld()
     {
         return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
     }

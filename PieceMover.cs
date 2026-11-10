@@ -42,7 +42,7 @@ internal static class PieceMover
     private static readonly List<Collider> HiddenColliders = [];
     private static StationExtension _hiddenExtension;
 
-    private static readonly Dictionary<Player.PlacementStatus, string> StatusMessages = new()
+    internal static readonly Dictionary<Player.PlacementStatus, string> StatusMessages = new()
     {
         [Player.PlacementStatus.NoBuildZone] = "$msg_nobuildzone",
         [Player.PlacementStatus.BlockedbyPlayer] = "$msg_blocked",
@@ -107,16 +107,14 @@ internal static class PieceMover
 
         if (NoHammerBuildMenuPlugin.CtrlHeld() && ZInput.GetButtonDown(RemoveButton))
         {
-            _blockRemoveUntilReleased = true;
-            player.m_blockRemove = true;
+            BlockRemoveUntilReleased(player);
             PickUp(player);
         }
         else if (Moving && ZInput.GetButtonDown(RemoveButton) && player.GetHoveringPiece() == _source.GetComponent<Piece>())
         {
             // Removing the piece being moved would drop its materials and (for a public chest) its
             // contents, so it's ignored. Other pieces can still be removed while moving.
-            _blockRemoveUntilReleased = true;
-            player.m_blockRemove = true;
+            BlockRemoveUntilReleased(player);
             player.Message(MessageHud.MessageType.Center, "$nhbm_move_cant_remove");
         }
         else if (Moving && Input.GetMouseButtonDown(1))
@@ -125,7 +123,7 @@ internal static class PieceMover
             Stop(player);
             player.Message(MessageHud.MessageType.TopLeft, "$nhbm_move_aborted");
         }
-        else if (Moving && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
+        else if (Moving && !NoHammerBuildMenuPlugin.AltHeld() && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
         {
             PutDown(player);
         }
@@ -141,6 +139,28 @@ internal static class PieceMover
         // The prefix pushed the last tool use to "now" (so vanilla's delay check fails this frame),
         // this drops the click vanilla buffered for the following frames.
         player.m_placePressedTime = -9999f;
+    }
+
+    /// <summary>
+    /// Vanilla removes the hovered piece when the remove button is released. Called when a modified
+    /// middle-click (or one on the piece being moved) is used for something else, so it doesn't.
+    /// </summary>
+    internal static void BlockRemoveUntilReleased(Player player)
+    {
+        _blockRemoveUntilReleased = true;
+        player.m_blockRemove = true;
+    }
+
+    /// <summary>
+    /// Ends a move in progress because another mode (copying a selection) is starting.
+    /// </summary>
+    internal static void Abort(Player player)
+    {
+        if (Moving)
+        {
+            Stop(player);
+            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_move_aborted");
+        }
     }
 
     internal static void Reset()
@@ -161,6 +181,7 @@ internal static class PieceMover
             return;
         }
 
+        MultiCopy.Abort(player);
         if (!Moving)
         {
             _previousPiece = player.GetSelectedPiece();
