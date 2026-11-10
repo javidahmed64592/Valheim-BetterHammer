@@ -5,7 +5,7 @@ using BepInEx.Configuration;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace BetterHammer;
+namespace BetterHammer.Grid;
 
 /// <summary>
 /// Which surface the grid is drawn on. Terrain follows the ground height; the others are flat

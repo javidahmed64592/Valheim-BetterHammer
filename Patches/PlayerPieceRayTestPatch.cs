@@ -1,3 +1,5 @@
+using BetterHammer.Grid;
+
 using HarmonyLib;
 
 using UnityEngine;

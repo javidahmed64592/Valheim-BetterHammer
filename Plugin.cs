@@ -5,6 +5,11 @@ using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 
+using BetterHammer.Core;
+using BetterHammer.Grid;
+using BetterHammer.Materials;
+using BetterHammer.Structures;
+
 using HarmonyLib;
 
 using Jotunn.Configs;

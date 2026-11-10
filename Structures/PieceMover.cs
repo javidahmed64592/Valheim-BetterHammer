@@ -6,7 +6,7 @@ using UnityEngine;
 
 using Object = UnityEngine.Object;
 
-namespace BetterHammer;
+namespace BetterHammer.Structures;
 
 /// <summary>
 /// <para>

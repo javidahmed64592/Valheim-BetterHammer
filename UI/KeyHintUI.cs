@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 
+using BetterHammer.Structures;
+
 using HarmonyLib;
 
 using TMPro;
@@ -7,7 +9,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace BetterHammer;
+namespace BetterHammer.UI;
 
 /// <summary>
 /// Adds this mod's controls to the vanilla build key hints (bottom of the screen while placing

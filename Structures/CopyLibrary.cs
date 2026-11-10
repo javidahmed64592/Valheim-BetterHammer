@@ -18,7 +18,7 @@ using UnityEngine.EventSystems;
 
 using Object = UnityEngine.Object;
 
-namespace BetterHammer;
+namespace BetterHammer.Structures;
 
 /// <summary>
 /// <para>

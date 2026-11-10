@@ -1,3 +1,5 @@
+using BetterHammer.Structures;
+
 using HarmonyLib;
 
 namespace BetterHammer.Patches;
