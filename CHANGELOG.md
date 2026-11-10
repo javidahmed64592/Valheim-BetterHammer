@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.0
+
+- Added moving built pieces: look at a piece and press `Ctrl+Mouse3` (middle-click) to pick it up, then left-click to put it down or right-click to cancel. Chest contents, damage, sign text and the rest of the piece's state move with it, and nothing is dropped.
+- The piece being moved glows gold, pulsing, so it's easy to keep track of.
+- A piece can be put down overlapping its old spot, so it can be nudged a little without moving it away and back.
+- A message says when a piece has been moved, and when a move is aborted and why (right-click, the piece was removed or destroyed, the hammer was put away, or a different piece was selected).
+- The piece being moved can't be removed with middle-click while moving it, so a misclick can't drop a chest's contents. Other pieces can still be removed.
+- Added a key hint for moving pieces, shown in repair mode too. While moving a piece, the right-click hint says "Abort" instead of "Build Menu".
+
 ## 0.13.0
 
 - Building no longer takes materials from a chest another player has open. Previously the chest's contents could get out of step between the two players, which could duplicate or lose items.

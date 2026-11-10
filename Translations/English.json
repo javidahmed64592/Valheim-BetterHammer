@@ -5,5 +5,16 @@
   "nhbm_hint_grid": "Build grid",
   "nhbm_hint_repair": "Repair mode",
   "nhbm_hint_grid_distance": "Grid distance",
-  "nhbm_hint_zoom": "Zoom"
+  "nhbm_hint_zoom": "Zoom",
+  "nhbm_hint_move": "Move piece",
+  "nhbm_hint_abort": "Abort",
+  "nhbm_move_started": "Moving $1",
+  "nhbm_moved": "Moved $1",
+  "nhbm_move_aborted": "Move aborted",
+  "nhbm_move_aborted_gone": "Move aborted: the piece no longer exists",
+  "nhbm_move_aborted_unequipped": "Move aborted: the hammer was put away",
+  "nhbm_move_aborted_selection": "Move aborted: a different piece was selected",
+  "nhbm_move_cant_remove": "Can't remove a piece while moving it",
+  "nhbm_move_cant": "This can't be moved",
+  "nhbm_move_failed": "Couldn't move this here"
 }

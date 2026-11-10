@@ -13,6 +13,7 @@ This mod adds several improvements to the vanilla base hammer:
 | `Ctrl+Scroll`                | Adjust the grid distance.                                         |
 | `Shift+Mouse2` (right-click) | Toggle repair mode.                                               |
 | `Alt+Scroll`                 | Zoom the camera in and out without needing to unequip the hammer. |
+| `Ctrl+Mouse3` (middle-click) | Move the piece you are looking at.                                |
 
 Additionally, the hammer also uses materials from the ground and nearby chests when your inventory runs short.
 The total quantity of each required material is displayed, including items in your inventory, nearby chests, and on the ground within range.
@@ -28,6 +29,16 @@ While placing a piece, a grid is drawn on the surface you are aiming at and piec
 
 ![Chunk Lines](https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu/raw/main/images/game_screenshot_1.png)
 ![Chunk Edges](https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu/raw/main/images/game_screenshot_2.png)
+
+## Moving Pieces
+
+Look at a built piece and press `Ctrl+Mouse3` (middle-click) to pick it up.
+Left-click to put it down there, or right-click to cancel.
+
+- Moving is free, and everything stored in the piece comes with it, so chests and machines don't need emptying first.
+- You can move a piece if you could remove it with the hammer: ward and workbench rules apply. Chests also need you to be allowed to open them, and can't be moved while someone has them open.
+- Middle-click doesn't remove the piece you're moving, so a misclick can't spill a chest. Other pieces can still be removed while moving.
+- Ships, carts and items placed as decorations can't be moved.
 
 ## Configuration
 
