@@ -181,7 +181,6 @@ internal static class PieceMover
             return;
         }
 
-        MultiCopy.Abort(player);
         if (!Moving)
         {
             _previousPiece = player.GetSelectedPiece();

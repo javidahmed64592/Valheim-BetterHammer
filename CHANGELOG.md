@@ -2,11 +2,13 @@
 
 ## 0.15.0
 
-- Added copying several pieces at once. Look at a piece and press `Alt+Mouse3` (middle-click) to select it, or `Alt+Mouse2` (right-click) to deselect it. Then press `Alt+Mouse1` (left-click) to pick up a placement ghost of every selected piece, keeping their places relative to each other. Left-click builds the copy, and right-click puts it away.
-- Selected pieces glow teal. The selection survives putting the hammer away, and pieces that are removed or destroyed drop out of it. Building the copy clears the selection, but the copy stays in hand to build again.
-- Holding `Alt` shows the selection in the build panel, with the combined materials and whether you have enough (nearby chests and ground items included). The copy being placed is shown the same way.
+- Added copying several pieces at once. Look at a piece and press `Alt+Mouse3` (middle-click) to select it, or `Alt+Mouse2` (right-click) to deselect it. Then press `Alt+Mouse1` (left-click) to save the selection as a new piece in the hammer's **Copies** tab ("Copy 1", "Copy 2", ...), with a picture of the whole copy as its icon.
+- Building a saved copy shows a placement ghost of every piece, keeping their places relative to each other, and builds them all with one click. Like any piece, it stays selected when the hammer is put away and taken out again.
+- Saved copies are kept in `BepInEx/config/NoHammerBuildMenu/copies.json`, shared by all characters and worlds. Hover one in the build menu and press `Delete` (configurable as `Delete Copy`) to delete it, after a confirmation.
+- Selected pieces glow teal. The selection survives putting the hammer away, and pieces that are removed or destroyed drop out of it.
+- Holding `Alt` shows the selection in the build panel with the combined materials and whether you have enough (nearby chests and ground items included). Saved copies are shown the same way. Long material lists page through a few at a time.
 - While placing a copy, `Q`/`E` steps through every piece's snap points in turn, and `Shift+Q`/`Shift+E` jumps from piece to piece.
-- Added key hints for selecting, deselecting, copying the selection and snapping to another piece. While placing a copy, the right-click hint says "Abort".
+- Added key hints for selecting, deselecting, saving the selection and snapping to another piece.
 
 ## 0.14.0
 

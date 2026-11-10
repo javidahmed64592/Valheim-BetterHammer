@@ -11,22 +11,26 @@ namespace NoHammerBuildMenu;
 /// <summary>
 /// <para>
 /// Copying several pieces at once. Alt+middle-click adds the piece you're looking at to the selection,
-/// Alt+right-click takes it out again, and Alt+left-click picks up a copy of the whole selection as one
-/// placement ghost. Left-click then builds it (as often as you like, like any piece) and right-click
-/// puts it away. Building works as normal while you're selecting, and the selection survives putting the
-/// hammer away. It's used up by the first copy you build.
+/// Alt+right-click takes it out again, and Alt+left-click saves the selection as a new entry in the
+/// hammer's Copies tab (see <see cref="CopyLibrary"/>) and selects it. Building works as normal while
+/// you're selecting, and the selection survives putting the hammer away.
 /// </para>
 /// <para>
-/// The game's own ghost is used for one of the copied pieces, the reference piece, so its placement
-/// checks, snapping and the build grid all apply to it as normal. The other pieces get their own ghosts
-/// that follow it, keeping their places relative to it. Q/E steps through the snap points of every piece
-/// in turn, and Shift+Q/E jumps from piece to piece.
+/// While a saved copy is the selected piece, the game's own ghost is used for one of its pieces, the
+/// reference piece, so its placement checks, snapping and the build grid all apply to it as normal. The
+/// other pieces get their own ghosts that follow it, keeping their places relative to it. Q/E steps
+/// through the snap points of every piece in turn, and Shift+Q/E jumps from piece to piece.
 /// </para>
 /// </summary>
 internal static class MultiCopy
 {
     private const string RemoveButton = "Remove";
     private const string PlaceButton = "Attack";
+
+    /// <summary>
+    /// How long each page of materials shows when there are more than the build panel has room for.
+    /// </summary>
+    private const float MaterialPageSeconds = 2.5f;
 
     /// <summary>
     /// Teal, so it stands apart from the game's pale blue hover glow and the gold of a piece being moved.
@@ -36,10 +40,7 @@ internal static class MultiCopy
 
     private sealed class GroupPiece
     {
-        public Piece Prefab;
-        public Vector3 Position;
-        public Quaternion Rotation;
-        public int SnapCount;
+        public CopyLibrary.Part Part;
 
         /// <summary>
         /// This piece's own ghost, or null for the reference piece, which uses the game's ghost.
@@ -53,40 +54,37 @@ internal static class MultiCopy
     private static readonly List<Piece> Selected = [];
 
     /// <summary>
-    /// The copy being placed, taken from the selection when it was confirmed.
+    /// The pieces of the saved copy being placed, with their ghosts.
     /// </summary>
     private static readonly List<GroupPiece> Group = [];
-    private static readonly List<Piece> GroupPrefabs = [];
-
+    private static CopyLibrary.Copy _active;
     private static int _reference;
-    private static Piece _previousPiece;
-    private static int _previousRotation;
+    private static bool _creatingGhosts;
+
     private static int _rightClickFrame = -10;
     private static int _snapFrame = -10;
     private static bool _lit;
 
     private static Piece _summary;
-    private static bool _summaryDirty = true;
-    private static bool _summaryOfSelection;
-    private static Piece.Requirement[] _allRequirements = [];
-    private static readonly List<Piece> SummaryStations = [];
-    private static readonly List<Transform> SnapPoints = [];
+    private static bool _selectionDirty = true;
+    private static List<Piece.Requirement> _selectionRequirements = [];
+    private static List<Piece> _selectionStations = [];
+    private static string _selectionDescription = "";
 
-    internal static bool Placing => Group.Count > 0;
+    internal static bool Placing => _active != null;
 
     internal static bool HasSelection => Selected.Count > 0;
 
     /// <summary>
-    /// Right-click puts the copy away, and Alt+right-click deselects, so neither may also open the build
-    /// menu or toggle repair mode or the grid.
+    /// Alt+right-click deselects, so it mustn't also open the build menu or toggle repair mode or the grid.
     /// </summary>
-    internal static bool RightClickConsumed => Placing || _rightClickFrame == Time.frameCount;
+    internal static bool RightClickConsumed => _rightClickFrame == Time.frameCount;
 
     /// <summary>
-    /// The combined materials while they're being taken for a copy, so the chest materials feature
-    /// knows it's a build cost.
+    /// While the game sets up a ghost for one of a copy's pieces, the prefab it should use instead of the
+    /// selected piece (see the PieceTable.GetSelectedPrefab patch).
     /// </summary>
-    internal static Piece.Requirement[] ConsumingRequirements { get; private set; }
+    internal static GameObject GhostPrefabOverride { get; private set; }
 
     /// <summary>
     /// Runs before Player.UpdatePlacement for the local player. Returns whether vanilla placing must be
@@ -96,11 +94,10 @@ internal static class MultiCopy
     {
         Prune();
 
-        string abortReason = Placing ? AbortReason(player) : null;
-        if (abortReason != null)
+        // The hammer was put away, or another piece selected without the ghost being set up again.
+        if (Placing && (!player.InPlaceMode() || player.m_placementGhost == null || CopyLibrary.Find(player.GetSelectedPiece()) != _active))
         {
-            Stop(player);
-            player.Message(MessageHud.MessageType.TopLeft, abortReason);
+            Deactivate();
         }
 
         bool wasPlacing = Placing;
@@ -135,12 +132,6 @@ internal static class MultiCopy
             block = true;
             Confirm(player);
         }
-        else if (Placing && Input.GetMouseButtonDown(1))
-        {
-            _rightClickFrame = Time.frameCount;
-            Stop(player);
-            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_copy_aborted");
-        }
         else if (Placing && placePressed && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
         {
             Place(player);
@@ -149,27 +140,12 @@ internal static class MultiCopy
         return block || Placing;
     }
 
-    /// <summary>
-    /// Ends the copy because a move is starting.
-    /// </summary>
-    internal static void Abort(Player player)
-    {
-        if (Placing)
-        {
-            Stop(player);
-            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_copy_aborted");
-        }
-    }
-
     internal static void Reset()
     {
         ClearHighlights();
         Selected.Clear();
-        DestroyGhosts();
-        Group.Clear();
-        GroupPrefabs.Clear();
-        _previousPiece = null;
-        _summaryDirty = true;
+        Deactivate();
+        _selectionDirty = true;
     }
 
     private static void Select(Player player)
@@ -196,7 +172,7 @@ internal static class MultiCopy
         }
 
         Selected.Add(piece);
-        _summaryDirty = true;
+        _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft,
             Localization.instance.Localize("$nhbm_copy_selected", name, Count(Selected.Count)));
     }
@@ -212,13 +188,13 @@ internal static class MultiCopy
 
         ResetHighlight(piece);
         Selected.RemoveAt(index);
-        _summaryDirty = true;
+        _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft,
             Localization.instance.Localize("$nhbm_copy_deselected", Localization.instance.Localize(piece.m_name), Count(Selected.Count)));
     }
 
     /// <summary>
-    /// Alt+left-click: picks up a copy of the selection, with the first piece selected as the reference.
+    /// Alt+left-click: saves the selection as a new copy in the Copies tab and selects it.
     /// </summary>
     private static void Confirm(Player player)
     {
@@ -229,7 +205,7 @@ internal static class MultiCopy
             return;
         }
 
-        List<GroupPiece> group = [];
+        List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces = [];
         foreach (Piece piece in Selected)
         {
             GameObject prefab = ZNetScene.instance.GetPrefab(Utils.GetPrefabName(piece.gameObject));
@@ -242,52 +218,78 @@ internal static class MultiCopy
                 return;
             }
 
-            SnapPoints.Clear();
-            prefabPiece.GetSnapPoints(SnapPoints);
-            group.Add(new GroupPiece
-            {
-                Prefab = prefabPiece,
-                Position = piece.transform.position,
-                Rotation = piece.transform.rotation,
-                SnapCount = SnapPoints.Count,
-            });
+            pieces.Add((prefabPiece, piece.transform.position, piece.transform.rotation));
         }
 
-        SnapPoints.Clear();
         PieceMover.Abort(player);
-
-        if (Placing)
+        CopyLibrary.Copy copy = CopyLibrary.Add(player, pieces);
+        if (copy == null)
         {
-            // Swapping one copy for another: keep the piece to go back to from before the first.
-            DestroyGhosts();
-            Group.Clear();
-        }
-        else
-        {
-            _previousPiece = player.GetSelectedPiece();
-            _previousRotation = player.m_placeRotation;
+            player.Message(MessageHud.MessageType.Center, "$nhbm_copy_failed");
+            return;
         }
 
+        ClearHighlights();
+        Selected.Clear();
+        _selectionDirty = true;
+
+        // Selecting it sets up its ghosts (see AfterSetupPlacementGhost), facing the way the originals do.
+        if (player.SetSelectedPiece(copy.Piece))
+        {
+            player.m_placeRotation = RotationSteps(player, copy.Parts[0].Rotation);
+        }
+
+        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_saved", copy.Name));
+    }
+
+    /// <summary>
+    /// Runs after Player.SetupPlacementGhost, which the game calls whenever the selected piece changes or
+    /// the hammer is equipped. If the selected piece is a saved copy, swaps the game's stand-in ghost for
+    /// ghosts of the copy's pieces.
+    /// </summary>
+    internal static void AfterSetupPlacementGhost(Player player)
+    {
+        if (_creatingGhosts)
+        {
+            return;
+        }
+
+        Deactivate();
+        CopyLibrary.Copy copy = CopyLibrary.Find(player.GetSelectedPiece());
+        if (copy != null && player.InPlaceMode() && !player.IsDead())
+        {
+            Activate(player, copy);
+        }
+    }
+
+    private static void Activate(Player player, CopyLibrary.Copy copy)
+    {
         if (player.m_placementGhost != null)
         {
             Object.Destroy(player.m_placementGhost);
             player.m_placementGhost = null;
         }
 
-        foreach (GroupPiece piece in group)
+        // Setting up a ghost for a piece that starts at a random turn re-rolls the build rotation.
+        int rotation = player.m_placeRotation;
+        _creatingGhosts = true;
+        try
         {
-            piece.Ghost = CreateGhost(player, piece.Prefab);
+            foreach (CopyLibrary.Part part in copy.Parts)
+            {
+                Group.Add(new GroupPiece { Part = part, Ghost = CreateGhost(player, part.Prefab) });
+            }
+        }
+        finally
+        {
+            _creatingGhosts = false;
+            GhostPrefabOverride = null;
         }
 
-        Group.AddRange(group);
-        GroupPrefabs.Clear();
-        GroupPrefabs.AddRange(group.Select(piece => piece.Prefab));
-        _summaryDirty = true;
-
+        player.m_placeRotation = rotation;
+        _active = copy;
         UseAsReference(player, 0);
-        player.m_placeRotation = RotationSteps(player, Group[0].Rotation);
         player.m_manualSnapPoint = -1;
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_started", Count(Group.Count)));
     }
 
     /// <summary>
@@ -296,15 +298,9 @@ internal static class MultiCopy
     /// </summary>
     private static GameObject CreateGhost(Player player, Piece prefab)
     {
-        if (!player.SetSelectedPiece(prefab))
-        {
-            return null;
-        }
-
-        if (player.m_placementGhost == null)
-        {
-            player.SetupPlacementGhost();
-        }
+        GhostPrefabOverride = prefab.gameObject;
+        player.SetupPlacementGhost();
+        GhostPrefabOverride = null;
 
         GameObject ghost = player.m_placementGhost;
         player.m_placementGhost = null;
@@ -317,18 +313,11 @@ internal static class MultiCopy
     }
 
     /// <summary>
-    /// Makes the piece the reference: selects it in the hammer and hands its ghost to the game.
-    /// Expects the game to have no ghost of its own at the time.
+    /// Hands the piece's ghost to the game. Expects the game to have no ghost of its own at the time.
     /// </summary>
     private static void UseAsReference(Player player, int index)
     {
         GroupPiece piece = Group[index];
-        _ = player.SetSelectedPiece(piece.Prefab);
-        if (player.m_placementGhost != null)
-        {
-            Object.Destroy(player.m_placementGhost);
-        }
-
         player.m_placementGhost = piece.Ghost;
         if (player.m_placementGhost != null)
         {
@@ -345,7 +334,7 @@ internal static class MultiCopy
     private static void SwitchReference(Player player, int index)
     {
         GameObject ghost = player.m_placementGhost;
-        Quaternion turn = ghost != null ? ghost.transform.rotation * Quaternion.Inverse(Group[_reference].Rotation) : Quaternion.identity;
+        Quaternion turn = ghost != null ? ghost.transform.rotation * Quaternion.Inverse(Group[_reference].Part.Rotation) : Quaternion.identity;
 
         Group[_reference].Ghost = ghost;
         if (ghost != null)
@@ -355,12 +344,29 @@ internal static class MultiCopy
 
         player.m_placementGhost = null;
         UseAsReference(player, index);
-        player.m_placeRotation = RotationSteps(player, turn * Group[index].Rotation);
+        player.m_placeRotation = RotationSteps(player, turn * Group[index].Part.Rotation);
     }
 
     private static int RotationSteps(Player player, Quaternion rotation)
     {
         return Mathf.RoundToInt(rotation.eulerAngles.y / player.m_placeRotationDegrees);
+    }
+
+    /// <summary>
+    /// Destroys the other pieces' ghosts. The reference ghost is the game's, which it replaces itself.
+    /// </summary>
+    private static void Deactivate()
+    {
+        foreach (GroupPiece piece in Group)
+        {
+            if (piece.Ghost != null)
+            {
+                Object.Destroy(piece.Ghost);
+            }
+        }
+
+        Group.Clear();
+        _active = null;
     }
 
     /// <summary>
@@ -406,7 +412,7 @@ internal static class MultiCopy
         if (NoHammerBuildMenuPlugin.ShiftHeld())
         {
             piece = (piece + step + Group.Count) % Group.Count;
-            point = Group[piece].SnapCount > 0 ? 0 : -1;
+            point = Group[piece].Part.SnapCount > 0 ? 0 : -1;
         }
         else
         {
@@ -421,7 +427,7 @@ internal static class MultiCopy
         // The game applies the same step to the snap point right after this, so start one step back.
         player.m_manualSnapPoint = point - step;
         player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_reference",
-            Localization.instance.Localize(Group[piece].Prefab.m_name),
+            Localization.instance.Localize(Group[piece].Part.Prefab.m_name),
             Count(piece + 1),
             Count(Group.Count)));
     }
@@ -435,7 +441,7 @@ internal static class MultiCopy
         List<(int Piece, int Point)> entries = [(-1, -1)];
         for (int i = 0; i < Group.Count; i++)
         {
-            for (int s = 0; s < Group[i].SnapCount; s++)
+            for (int s = 0; s < Group[i].Part.SnapCount; s++)
             {
                 entries.Add((i, s));
             }
@@ -470,8 +476,8 @@ internal static class MultiCopy
         GameObject reference = player.m_placementGhost;
         bool active = reference != null && reference.activeSelf;
         Player.PlacementStatus status = player.m_placementStatus;
-        Quaternion turn = reference != null ? reference.transform.rotation * Quaternion.Inverse(Group[_reference].Rotation) : Quaternion.identity;
-        Vector3 origin = Group[_reference].Position;
+        Quaternion turn = reference != null ? reference.transform.rotation * Quaternion.Inverse(Group[_reference].Part.Rotation) : Quaternion.identity;
+        Vector3 origin = Group[_reference].Part.Position;
 
         foreach (GroupPiece piece in Group)
         {
@@ -486,8 +492,8 @@ internal static class MultiCopy
                 continue;
             }
 
-            Vector3 position = reference.transform.position + (turn * (piece.Position - origin));
-            piece.Ghost.transform.SetPositionAndRotation(position, turn * piece.Rotation);
+            Vector3 position = reference.transform.position + (turn * (piece.Part.Position - origin));
+            piece.Ghost.transform.SetPositionAndRotation(position, turn * piece.Part.Rotation);
             if (status != Player.PlacementStatus.Valid)
             {
                 continue;
@@ -549,13 +555,15 @@ internal static class MultiCopy
             return;
         }
 
-        if (!HaveStations(player))
+        if (!HaveStations(player, _active.Prefabs))
         {
             player.Message(MessageHud.MessageType.Center, "$msg_missingstation");
             return;
         }
 
-        if (!HaveMaterials(player))
+        // The copy's menu entry carries the combined materials, so the game's own check (which the chest
+        // materials feature extends) covers them all.
+        if (!player.m_noPlacementCost && !player.HaveRequirements(_active.Piece, Player.RequirementMode.CanBuild))
         {
             player.Message(MessageHud.MessageType.Center, "$msg_missingrequirement");
             return;
@@ -566,22 +574,14 @@ internal static class MultiCopy
         foreach (GroupPiece piece in Group)
         {
             Transform ghost = piece.Ghost != null ? piece.Ghost.transform : reference.transform;
-            player.PlacePiece(piece.Prefab, ghost.position, ghost.rotation, doAttack: piece.Ghost == null);
+            player.PlacePiece(piece.Part.Prefab, ghost.position, ghost.rotation, doAttack: piece.Ghost == null);
         }
 
         player.m_placeRotation = rotation;
 
         if (!player.m_noPlacementCost && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoBuildCost))
         {
-            ConsumingRequirements = _allRequirements;
-            try
-            {
-                player.ConsumeResources(_allRequirements, 0);
-            }
-            finally
-            {
-                ConsumingRequirements = null;
-            }
+            player.ConsumeResources(_active.Piece.m_resources, 0);
         }
 
         player.UseStamina(player.GetBuildStamina());
@@ -597,21 +597,16 @@ internal static class MultiCopy
 
         _ = tool.m_shared.m_buildEffect.Create(player.transform.position, Quaternion.identity, null, 1f, -1, player.GetZDOID());
         player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_placed", Count(Group.Count)));
-
-        // The selection has served its purpose; the copy stays in hand to build again.
-        ClearHighlights();
-        Selected.Clear();
-        _summaryDirty = true;
     }
 
-    private static bool HaveStations(Player player)
+    private static bool HaveStations(Player player, List<Piece> pieces)
     {
         if (player.m_noPlacementCost || ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoWorkbench))
         {
             return true;
         }
 
-        foreach (Piece piece in GroupPrefabs)
+        foreach (Piece piece in pieces)
         {
             if (piece.m_craftingStation != null
                 && CraftingStation.HaveBuildStationInRange(piece.m_craftingStation.m_name, player.transform.position) == null)
@@ -623,63 +618,85 @@ internal static class MultiCopy
         return true;
     }
 
-    private static bool HaveMaterials(Player player)
-    {
-        if (player.m_noPlacementCost)
-        {
-            return true;
-        }
-
-        // The summary piece, with every material and no station (stations were checked separately), goes
-        // through the game's own check, which the chest materials feature extends.
-        Piece summary = Summary(GroupPrefabs, forSelection: false);
-        Piece.Requirement[] shown = summary.m_resources;
-        CraftingStation station = summary.m_craftingStation;
-        summary.m_resources = _allRequirements;
-        summary.m_craftingStation = null;
-        try
-        {
-            return player.HaveRequirements(summary, Player.RequirementMode.CanBuild);
-        }
-        finally
-        {
-            summary.m_resources = shown;
-            summary.m_craftingStation = station;
-        }
-    }
-
     /// <summary>
-    /// The piece the build panel should describe instead of the selected one: the selection while Alt is
-    /// held, or the copy while it's being placed.
+    /// What the build panel should describe instead of the given piece: the selection while Alt is held,
+    /// or a saved copy (selected, or hovered in the build menu). The materials are shown a page at a time
+    /// when there are more than the panel has room for.
     /// </summary>
-    internal static bool TryGetSummary(out Piece summary)
+    internal static bool TryGetSummary(Piece piece, out Piece summary)
     {
         summary = null;
         Player player = Player.m_localPlayer;
-        if (player == null || Hud.IsPieceSelectionVisible() || !NoHammerBuildMenuPlugin.IsHammerEquipped(player))
+        if (player == null)
         {
             return false;
         }
 
+        bool menu = Hud.IsPieceSelectionVisible();
         Prune();
-        bool forSelection = Selected.Count > 0 && NoHammerBuildMenuPlugin.AltHeld();
-        if (!forSelection && !Placing)
+        if (!menu && Selected.Count > 0 && NoHammerBuildMenuPlugin.AltHeld() && NoHammerBuildMenuPlugin.IsHammerEquipped(player))
+        {
+            if (_selectionDirty)
+            {
+                _selectionDirty = false;
+                _selectionRequirements = CopyLibrary.CombineRequirements(Selected, out _selectionStations);
+                _selectionDescription = CopyLibrary.DescribePieces(Selected);
+            }
+
+            summary = Fill(player,
+                Localization.instance.Localize("$nhbm_copy_summary_selected", Count(Selected.Count)),
+                _selectionDescription,
+                Selected[0].m_icon,
+                _selectionRequirements,
+                _selectionStations);
+            return true;
+        }
+
+        CopyLibrary.Copy copy = CopyLibrary.Find(piece);
+        if (copy == null)
         {
             return false;
         }
 
-        summary = Summary(forSelection ? Selected : GroupPrefabs, forSelection);
-        summary.m_craftingStation = StationToShow(player);
+        string description = menu ? copy.Description + "\n" + CopyLibrary.DeleteHint() : copy.Description;
+        summary = Fill(player, copy.Name, description, copy.Piece.m_icon, copy.Piece.m_resources, copy.StationPieces);
         return true;
+    }
+
+    private static Piece Fill(Player player, string name, string description, Sprite icon, IList<Piece.Requirement> requirements, List<Piece> stationPieces)
+    {
+        if (_summary == null)
+        {
+            GameObject holder = new("NoHammerBuildMenu_CopySummary");
+            holder.SetActive(false);
+            Object.DontDestroyOnLoad(holder);
+            _summary = holder.AddComponent<Piece>();
+        }
+
+        // One requirement slot is kept for the station.
+        int slots = Hud.instance != null ? Mathf.Max(1, Hud.instance.m_requirementItems.Length - 1) : Mathf.Max(1, requirements.Count);
+        int pages = Mathf.Max(1, Mathf.CeilToInt(requirements.Count / (float)slots));
+        int page = (int)(Time.time / MaterialPageSeconds) % pages;
+        if (pages > 1)
+        {
+            description += "\n" + Localization.instance.Localize("$nhbm_copy_materials_page", Count(page + 1), Count(pages));
+        }
+
+        _summary.m_name = name;
+        _summary.m_description = description;
+        _summary.m_icon = icon;
+        _summary.m_resources = [.. requirements.Skip(page * slots).Take(slots)];
+        _summary.m_craftingStation = StationToShow(player, stationPieces);
+        return _summary;
     }
 
     /// <summary>
     /// The build panel has room for one station: show one that's out of range if there is one.
     /// </summary>
-    private static CraftingStation StationToShow(Player player)
+    private static CraftingStation StationToShow(Player player, List<Piece> stationPieces)
     {
         CraftingStation first = null;
-        foreach (Piece piece in SummaryStations)
+        foreach (Piece piece in stationPieces)
         {
             CraftingStation station = piece.m_craftingStation;
             first ??= station;
@@ -690,85 +707,6 @@ internal static class MultiCopy
         }
 
         return first;
-    }
-
-    /// <summary>
-    /// A stand-in piece describing several: their count, what they are, and their combined materials.
-    /// </summary>
-    private static Piece Summary(List<Piece> pieces, bool forSelection)
-    {
-        if (_summary == null)
-        {
-            GameObject holder = new("NoHammerBuildMenu_CopySummary");
-            holder.SetActive(false);
-            Object.DontDestroyOnLoad(holder);
-            _summary = holder.AddComponent<Piece>();
-        }
-
-        if (!_summaryDirty && _summaryOfSelection == forSelection)
-        {
-            return _summary;
-        }
-
-        _summaryDirty = false;
-        _summaryOfSelection = forSelection;
-
-        List<Piece.Requirement> combined = [];
-        Dictionary<string, Piece.Requirement> byItem = [];
-        SummaryStations.Clear();
-        HashSet<string> stations = [];
-        foreach (Piece piece in pieces)
-        {
-            foreach (Piece.Requirement requirement in piece.m_resources)
-            {
-                if (requirement.m_resItem == null || requirement.m_amount <= 0)
-                {
-                    continue;
-                }
-
-                string item = requirement.m_resItem.m_itemData.m_shared.m_name;
-                if (byItem.TryGetValue(item, out Piece.Requirement total))
-                {
-                    total.m_amount += requirement.m_amount;
-                    continue;
-                }
-
-                total = new Piece.Requirement
-                {
-                    m_resItem = requirement.m_resItem,
-                    m_amount = requirement.m_amount,
-                    m_recover = requirement.m_recover,
-                };
-                byItem[item] = total;
-                combined.Add(total);
-            }
-
-            if (piece.m_craftingStation != null && stations.Add(piece.m_craftingStation.m_name))
-            {
-                SummaryStations.Add(piece);
-            }
-        }
-
-        _allRequirements = [.. combined];
-
-        // One requirement slot is kept for the station.
-        int slots = Hud.instance != null ? Mathf.Max(0, Hud.instance.m_requirementItems.Length - 1) : combined.Count;
-        _summary.m_resources = [.. combined.Take(slots)];
-
-        IEnumerable<string> counts = pieces
-            .GroupBy(piece => piece.m_name)
-            .Select(same => Count(same.Count()) + "× " + Localization.instance.Localize(same.Key));
-        string description = string.Join(", ", counts);
-        if (combined.Count > slots)
-        {
-            description += "\n" + Localization.instance.Localize("$nhbm_copy_more_materials", Count(combined.Count - slots));
-        }
-
-        _summary.m_name = Localization.instance.Localize(
-            forSelection ? "$nhbm_copy_summary_selected" : "$nhbm_copy_summary", Count(pieces.Count));
-        _summary.m_description = description;
-        _summary.m_icon = pieces.Count > 0 ? pieces[0].m_icon : null;
-        return _summary;
     }
 
     /// <summary>
@@ -829,61 +767,7 @@ internal static class MultiCopy
         int removed = Selected.RemoveAll(piece => piece == null || piece.GetComponent<ZNetView>() is not { } nview || !nview.IsValid());
         if (removed > 0)
         {
-            _summaryDirty = true;
-        }
-    }
-
-    private static string AbortReason(Player player)
-    {
-        bool unequipped = !player.InPlaceMode() || !NoHammerBuildMenuPlugin.IsHammerEquipped(player);
-        return (unequipped, ReferenceSelected(player)) switch
-        {
-            (true, _) => "$nhbm_copy_aborted_unequipped",
-            (_, false) => "$nhbm_copy_aborted_selection",
-            _ => null,
-        };
-    }
-
-    private static bool ReferenceSelected(Player player)
-    {
-        Piece selected = player.GetSelectedPiece();
-        return selected != null && Utils.GetPrefabName(selected.gameObject) == Group[_reference].Prefab.name;
-    }
-
-    /// <summary>
-    /// Puts the copy away and, if its reference piece is still the selected one, goes back to the piece
-    /// and rotation selected before it. The selection itself is kept.
-    /// </summary>
-    private static void Stop(Player player)
-    {
-        bool restore = player.InPlaceMode() && ReferenceSelected(player);
-        DestroyGhosts();
-        Group.Clear();
-        GroupPrefabs.Clear();
-        _summaryDirty = true;
-
-        if (restore)
-        {
-            if (_previousPiece != null)
-            {
-                _ = player.SetSelectedPiece(_previousPiece);
-            }
-
-            player.m_placeRotation = _previousRotation;
-        }
-
-        _previousPiece = null;
-    }
-
-    private static void DestroyGhosts()
-    {
-        foreach (GroupPiece piece in Group)
-        {
-            if (piece.Ghost != null)
-            {
-                Object.Destroy(piece.Ghost);
-                piece.Ghost = null;
-            }
+            _selectionDirty = true;
         }
     }
 

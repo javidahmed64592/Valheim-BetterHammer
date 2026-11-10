@@ -82,6 +82,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 
         GridOverlay.BindConfig(Config);
         ChestMaterials.BindConfig(Config);
+        CopyLibrary.BindConfig(Config);
         Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.
@@ -122,6 +123,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 
         // Build the phantom as soon as ObjectDB is ready.
         EnsurePhantomHammer();
+        CopyLibrary.EnsureLoaded(player, _phantomHammer?.m_shared.m_buildPieces);
 
         // Force a recipe scan once per session with the phantom's piece table.
         if (!_knownRecipesRefreshed && _phantomHammer != null)
@@ -136,6 +138,8 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
             Overlay.Hide();
             return;
         }
+
+        CopyLibrary.UpdateDeleteInput(player);
 
         if (ZInput.GetButtonDown(ButtonQueryName))
         {

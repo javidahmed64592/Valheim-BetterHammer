@@ -16,7 +16,7 @@ This mod adds several improvements to the vanilla base hammer:
 | `Ctrl+Mouse3` (middle-click) | Move the piece you are looking at.                                |
 | `Alt+Mouse3` (middle-click)  | Select the piece you are looking at for copying.                  |
 | `Alt+Mouse2` (right-click)   | Deselect the piece you are looking at.                            |
-| `Alt+Mouse1` (left-click)    | Copy all the selected pieces.                                     |
+| `Alt+Mouse1` (left-click)    | Save the selected pieces as a copy in the Copies tab.             |
 
 Additionally, the hammer also uses materials from the ground and nearby chests when your inventory runs short.
 The total quantity of each required material is displayed, including items in your inventory, nearby chests, and on the ground within range.
@@ -47,12 +47,13 @@ Left-click to put it down there, or right-click to cancel.
 
 Look at a built piece and press `Alt+Mouse3` (middle-click) to select it for copying, and repeat for as many pieces as you like.
 Selected pieces glow teal, and `Alt+Mouse2` (right-click) deselects the piece you are looking at.
-When you're ready, press `Alt+Mouse1` (left-click) to pick up a placement ghost of all of them, then left-click to build the copy, or right-click to put it away.
+When you're ready, press `Alt+Mouse1` (left-click) to save the selection as a new piece in the hammer's **Copies** tab, named `Copy 1`, `Copy 2` and so on.
+It's selected straight away, showing a placement ghost of every piece, and you can build it like any other piece.
 
-- Hold `Alt` to see the selection in the build panel, with the materials needed to build all of it.
+- Hold `Alt` to see the selection in the build panel, with the materials needed to build all of it. When there are more materials than fit, the list pages through them.
 - `Q`/`E` steps through the snap points of each piece in turn, and `Shift+Q`/`Shift+E` jumps from piece to piece.
-- The copy stays in hand after building it, so you can build it again. The selection is cleared by the first copy you build.
-- You can keep building and selecting as normal until you copy the selection, and putting the hammer away doesn't clear it. A selected piece that is removed or destroyed is dropped from the selection.
+- You can keep building as normal while selecting, and putting the hammer away doesn't clear the selection. A selected piece that is removed or destroyed is dropped from the selection.
+- Saved copies are kept in `BepInEx/config/NoHammerBuildMenu/copies.json`, shared by all your characters and worlds. To delete one, hover it in the build menu and press `Delete` (the `Delete Copy` key in the config), then confirm.
 
 ## Configuration
 

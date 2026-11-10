@@ -176,7 +176,7 @@ internal static class KeyHintUI
             return;
         }
 
-        if (PieceMover.Moving || MultiCopy.Placing)
+        if (PieceMover.Moving)
         {
             _buildMenuText ??= _buildMenuLabel.text;
             _buildMenuLabel.text = Localization.instance.Localize("$nhbm_hint_abort");
