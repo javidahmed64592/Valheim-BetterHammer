@@ -42,6 +42,12 @@ internal static class KeyHintUI
     /// </summary>
     private const string Or = "/";
 
+    /// <summary>
+    /// In a hint's keys, the configured delete and clear selection keys.
+    /// </summary>
+    private const string DeleteKey = "@delete";
+    private const string ClearKey = "@clear";
+
     private sealed class Hint
     {
         public string Label;
@@ -68,6 +74,8 @@ internal static class KeyHintUI
         new Hint { Label = "$nhbm_hint_grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
         new Hint { Label = "$nhbm_hint_repair", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
         new Hint { Label = "$nhbm_hint_copy_piece", Column = 1, Keys = ["Left Shift", "$KEY_TabLeft", Or, "$KEY_TabRight"], Visibility = HintVisibility.CopyOnly },
+        new Hint { Label = "$nhbm_hint_delete_selection", Column = 1, Keys = [DeleteKey], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$nhbm_hint_clear_selection", Column = 1, Keys = [ClearKey], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$nhbm_hint_grid_distance", Column = 1, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
         new Hint { Label = "$nhbm_hint_zoom", Column = 1, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
     ];
@@ -308,7 +316,7 @@ internal static class KeyHintUI
                 {
                     GameObject key = Object.Instantiate(keyTemplate.gameObject, item.transform, false);
                     key.SetActive(true);
-                    key.GetComponentInChildren<TextMeshProUGUI>().text = Localization.instance.Localize(hint.Keys[i]);
+                    key.GetComponentInChildren<TextMeshProUGUI>().text = KeyText(hint.Keys[i]);
                 }
             }
 
@@ -364,6 +372,16 @@ internal static class KeyHintUI
                 layout.minWidth = width;
             }
         }
+    }
+
+    private static string KeyText(string key)
+    {
+        return key switch
+        {
+            DeleteKey => CopyLibrary.DeleteKey.ToString(),
+            ClearKey => MultiCopy.ClearKey.ToString(),
+            _ => Localization.instance.Localize(key),
+        };
     }
 
     private static float SpriteAspect(Image image)

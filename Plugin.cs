@@ -83,6 +83,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
         GridOverlay.BindConfig(Config);
         ChestMaterials.BindConfig(Config);
         CopyLibrary.BindConfig(Config);
+        MultiCopy.BindConfig(Config);
         Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.
@@ -140,6 +141,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
         }
 
         CopyLibrary.UpdateDeleteInput(player);
+        MultiCopy.UpdateSelectionKeys(player);
 
         if (ZInput.GetButtonDown(ButtonQueryName))
         {
@@ -165,8 +167,9 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822", Justification = "Unity message")]
     private void LateUpdate()
     {
-        PieceMover.UpdateHighlight();
+        // The gold of a piece being moved goes on top of the teal of a selected one.
         MultiCopy.UpdateHighlight();
+        PieceMover.UpdateHighlight();
     }
 
     private static void ToggleGrid(Player player)

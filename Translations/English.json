@@ -36,5 +36,12 @@
   "nhbm_copy_delete_hint": "Press $1 to delete this copy",
   "nhbm_copy_delete_title": "Delete copy",
   "nhbm_copy_delete_text": "Delete $1? This can't be undone.",
-  "nhbm_copy_deleted": "Deleted $1"
+  "nhbm_copy_deleted": "Deleted $1",
+  "nhbm_hint_delete_selection": "Remove selection",
+  "nhbm_hint_clear_selection": "Clear selection",
+  "nhbm_selection_cleared": "Cleared the selection ($1 pieces)",
+  "nhbm_selection_delete_title": "Remove selection",
+  "nhbm_selection_delete_text": "Remove the $1 selected pieces? Their materials will drop where they stand.",
+  "nhbm_selection_removed": "Removed $1 pieces",
+  "nhbm_selection_removed_some": "Removed $1 of $2 pieces. The rest couldn't be removed and are still selected."
 }

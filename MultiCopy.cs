@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
+using BepInEx.Configuration;
+
 using UnityEngine;
 
 using Object = UnityEngine.Object;
@@ -71,6 +73,10 @@ internal static class MultiCopy
     private static List<Piece> _selectionStations = [];
     private static string _selectionDescription = "";
 
+    private static ConfigEntry<KeyCode> _clearKey;
+
+    internal static KeyCode ClearKey => _clearKey != null ? _clearKey.Value : KeyCode.Backspace;
+
     internal static bool Placing => _active != null;
 
     internal static bool HasSelection => Selected.Count > 0;
@@ -138,6 +144,144 @@ internal static class MultiCopy
         }
 
         return block || Placing;
+    }
+
+    public static void BindConfig(ConfigFile config)
+    {
+        _clearKey = config.Bind(
+            "Keybinds",
+            "Clear Selection",
+            KeyCode.Backspace,
+            "Deselects every piece selected for copying, without changing anything else.");
+    }
+
+    /// <summary>
+    /// A selected piece that was moved is a new object (see <see cref="PieceMover"/>); it stays
+    /// selected, so a copy saved afterwards uses where it is now.
+    /// </summary>
+    internal static void ReplaceSelected(Piece original, Piece replacement)
+    {
+        int index = Selected.IndexOf(original);
+        if (index < 0 || replacement == null)
+        {
+            return;
+        }
+
+        ResetHighlight(original);
+        Selected[index] = replacement;
+        _selectionDirty = true;
+    }
+
+    /// <summary>
+    /// With pieces selected and the build menu closed: the clear key deselects them all, and the delete
+    /// key asks, then removes them all.
+    /// </summary>
+    internal static void UpdateSelectionKeys(Player player)
+    {
+        if (Selected.Count == 0
+            || Hud.IsPieceSelectionVisible()
+            || UnifiedPopup.IsVisible()
+            || !player.InPlaceMode()
+            || !NoHammerBuildMenuPlugin.IsHammerEquipped(player)
+            || CopyLibrary.TypingInTextField())
+        {
+            return;
+        }
+
+        if (Input.GetKeyDown(ClearKey))
+        {
+            int count = Selected.Count;
+            ClearHighlights();
+            Selected.Clear();
+            _selectionDirty = true;
+            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_selection_cleared", Count(count)));
+        }
+        else if (Input.GetKeyDown(CopyLibrary.DeleteKey))
+        {
+            Prune();
+            UnifiedPopup.Push(new YesNoPopup(
+                "$nhbm_selection_delete_title",
+                Localization.instance.Localize("$nhbm_selection_delete_text", Count(Selected.Count)),
+                () =>
+                {
+                    UnifiedPopup.Pop();
+                    RemoveSelected(player);
+                },
+                UnifiedPopup.Pop));
+        }
+    }
+
+    /// <summary>
+    /// Removes every selected piece the way the hammer does, materials dropping where it stood. Pieces
+    /// the hammer couldn't remove either (ward, no-build zone, missing workbench, a private chest with
+    /// items in it) are left alone and stay selected.
+    /// </summary>
+    private static void RemoveSelected(Player player)
+    {
+        Prune();
+        int total = Selected.Count;
+        int removed = 0;
+        foreach (Piece piece in Selected.ToList())
+        {
+            if (!CanRemove(player, piece))
+            {
+                continue;
+            }
+
+            ResetHighlight(piece);
+            Remove(player, piece);
+            _ = Selected.Remove(piece);
+            removed++;
+        }
+
+        _selectionDirty = true;
+        player.Message(MessageHud.MessageType.TopLeft, removed == total
+            ? Localization.instance.Localize("$nhbm_selection_removed", Count(removed))
+            : Localization.instance.Localize("$nhbm_selection_removed_some", Count(removed), Count(total)));
+    }
+
+    private static bool CanRemove(Player player, Piece piece)
+    {
+        ZNetView nview = piece.GetComponent<ZNetView>();
+        Vector3 position = piece.transform.position;
+        bool stationInRange = player.m_noPlacementCost
+            || piece.m_craftingStation == null
+            || ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoWorkbench)
+            || CraftingStation.HaveBuildStationInRange(piece.m_craftingStation.m_name, player.transform.position) != null;
+        return nview != null
+            && nview.IsValid()
+            && piece.m_canBeRemoved
+            && stationInRange
+            && !Location.IsInsideNoBuildLocation(position)
+            && PrivateArea.CheckAccess(position, 0f, false)
+            && piece.CanBeRemoved();
+    }
+
+    /// <summary>
+    /// The same as the hammer's remove, without the swing.
+    /// </summary>
+    private static void Remove(Player player, Piece piece)
+    {
+        piece.GetComponent<IRemoved>()?.OnRemoved();
+        WearNTear wearNTear = piece.GetComponent<WearNTear>();
+        if (wearNTear != null)
+        {
+            wearNTear.Remove();
+            return;
+        }
+
+        Character character = piece.GetComponent<Character>();
+        if (character != null)
+        {
+            character.Damage(new HitData(1E+10f));
+            return;
+        }
+
+        piece.GetComponent<ZNetView>().ClaimOwnership();
+        piece.DropResources();
+        _ = piece.m_placeEffect.Create(piece.transform.position, piece.transform.rotation, piece.transform, 1f, -1, player.GetZDOID());
+        _ = player.m_removeEffects.Create(piece.transform.position, Quaternion.identity, null, 1f, -1, player.GetZDOID());
+        ZNetScene.instance.Destroy(piece.gameObject);
     }
 
     internal static void Reset()

@@ -239,6 +239,9 @@ internal static class PieceMover
             return;
         }
 
+        // A piece selected for copying stays selected, at its new spot.
+        MultiCopy.ReplaceSelected(piece, moved.GetComponent<Piece>());
+
         // Removing the original only after the copy exists means a failure can't lose a chest's items.
         ClearHighlight();
         _source.ClaimOwnership();

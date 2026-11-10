@@ -51,8 +51,10 @@ When you're ready, press `Alt+Mouse1` (left-click) to save the selection as a ne
 
 - Hold `Alt` to see the selection in the build panel, with the materials needed to build all of it. When there are more materials than fit, the list pages through them.
 - `Q`/`E` steps through the snap points of each piece in turn, and `Shift+Q`/`Shift+E` jumps from piece to piece.
-- You can keep building as normal while selecting, and putting the hammer away doesn't clear the selection. A selected piece that is removed or destroyed is dropped from the selection.
-- Saved copies are kept in `BepInEx/config/NoHammerBuildMenu/copies.json`, shared by all your characters and worlds. To delete one, hover it in the build menu and press `Delete` (the `Delete Copy` key in the config), then confirm.
+- You can keep building as normal while selecting, and putting the hammer away doesn't clear the selection. A selected piece that is removed or destroyed is dropped from the selection, and one you move stays selected at its new spot.
+- `Backspace` clears the selection. `Delete` removes every selected piece after a confirmation, dropping their materials as the hammer would. Pieces the hammer couldn't remove are left alone and stay selected.
+- Saved copies are kept in `BepInEx/config/NoHammerBuildMenu/copies.json`, shared by all your characters and worlds. To delete one, hover it in the build menu and press `Delete`, then confirm.
+- Both keys can be changed in the config (`Delete` and `Clear Selection`).
 
 ![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-NoHammerBuildMenu/raw/main/images/game_screenshot_3.png)
 

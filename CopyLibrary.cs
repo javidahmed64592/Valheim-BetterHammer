@@ -94,13 +94,16 @@ internal static class CopyLibrary
     private static Piece.PieceCategory _category;
     private static ConfigEntry<KeyCode> _deleteKey;
 
+    internal static KeyCode DeleteKey => _deleteKey != null ? _deleteKey.Value : KeyCode.Delete;
+
     public static void BindConfig(ConfigFile config)
     {
         _deleteKey = config.Bind(
             "Keybinds",
-            "Delete Copy",
+            "Delete",
             KeyCode.Delete,
-            "With the build menu open, hover a saved copy in the Copies tab and press this to delete it.");
+            "With the build menu open, hover a saved copy in the Copies tab and press this to delete it. " +
+            "With the build menu closed, press it to remove every piece selected for copying.");
     }
 
     /// <summary>
@@ -211,10 +214,16 @@ internal static class CopyLibrary
     }
 
     /// <summary>
-    /// Delete also edits the build menu's search box, so it's left alone while typing there.
+    /// Delete and Backspace also edit text, so they're left alone while typing in the build menu's search
+    /// box, the console or a sign.
     /// </summary>
-    private static bool TypingInTextField()
+    internal static bool TypingInTextField()
     {
+        if (Console.IsVisible() || TextInput.IsVisible())
+        {
+            return true;
+        }
+
         GameObject selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
         TMP_InputField field = selected != null ? selected.GetComponent<TMP_InputField>() : null;
         return field != null && field.isFocused;
