@@ -31,7 +31,7 @@ internal static class KeyHintUI
     /// drawn this much bigger than its layout size: the sprite has padding
     /// </summary>
     private const float IconScale = 1.8f;
-    private const float ColumnSpacing = 40f;
+    private const float ColumnSpacing = 12f;
     /// <summary>
     /// room for the scaled-up icons, which are drawn taller than their layout height
     /// </summary>
