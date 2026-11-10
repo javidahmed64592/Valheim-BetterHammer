@@ -9,6 +9,8 @@ using BepInEx.Configuration;
 
 using Jotunn.Managers;
 
+using Newtonsoft.Json;
+
 using TMPro;
 
 using UnityEngine;
@@ -37,14 +39,17 @@ internal static class CopyLibrary
 
     private static string FilePath => Path.Combine(Paths.ConfigPath, "NoHammerBuildMenu", "copies.json");
 
-    [Serializable]
+    /// <summary>
+    /// Written with Newtonsoft.Json (which ships with the game). Unity's JsonUtility silently left the
+    /// list of copies out of the file. Vectors are plain number arrays, since Newtonsoft can't write
+    /// Unity's Vector3 and Quaternion without help.
+    /// </summary>
     private sealed class LibraryFile
     {
         public int NextNumber = 1;
         public List<SavedCopy> Copies = [];
     }
 
-    [Serializable]
     internal sealed class SavedCopy
     {
         public int Number;
@@ -54,12 +59,15 @@ internal static class CopyLibrary
     /// <summary>
     /// A piece of a copy: its prefab, its position relative to the first piece, and its rotation.
     /// </summary>
-    [Serializable]
     internal sealed class SavedPiece
     {
         public string Prefab;
-        public Vector3 Position;
-        public Quaternion Rotation;
+
+        /// <summary>x, y, z</summary>
+        public float[] Position;
+
+        /// <summary>x, y, z, w</summary>
+        public float[] Rotation;
     }
 
     internal sealed class Part
@@ -172,7 +180,13 @@ internal static class CopyLibrary
         SavedCopy saved = new() { Number = _file.NextNumber++ };
         foreach ((Piece prefab, Vector3 position, Quaternion rotation) in pieces)
         {
-            saved.Pieces.Add(new SavedPiece { Prefab = prefab.name, Position = position - origin, Rotation = rotation });
+            Vector3 offset = position - origin;
+            saved.Pieces.Add(new SavedPiece
+            {
+                Prefab = prefab.name,
+                Position = [offset.x, offset.y, offset.z],
+                Rotation = [rotation.x, rotation.y, rotation.z, rotation.w],
+            });
         }
 
         _file.Copies.Add(saved);
@@ -279,8 +293,8 @@ internal static class CopyLibrary
             copy.Parts.Add(new Part
             {
                 Prefab = prefabPiece,
-                Position = piece.Position,
-                Rotation = piece.Rotation,
+                Position = new Vector3(piece.Position[0], piece.Position[1], piece.Position[2]),
+                Rotation = new Quaternion(piece.Rotation[0], piece.Rotation[1], piece.Rotation[2], piece.Rotation[3]).normalized,
                 SnapCount = SnapPoints.Count,
             });
             copy.Prefabs.Add(prefabPiece);
@@ -416,7 +430,7 @@ internal static class CopyLibrary
         {
             try
             {
-                file = JsonUtility.FromJson<LibraryFile>(File.ReadAllText(path));
+                file = JsonConvert.DeserializeObject<LibraryFile>(File.ReadAllText(path));
             }
             catch (Exception e)
             {
@@ -436,6 +450,11 @@ internal static class CopyLibrary
 
         file ??= new LibraryFile();
         file.Copies ??= [];
+        foreach (SavedCopy copy in file.Copies)
+        {
+            _ = copy?.Pieces?.RemoveAll(piece => piece?.Prefab == null || piece.Position is not { Length: 3 } || piece.Rotation is not { Length: 4 });
+        }
+
         _ = file.Copies.RemoveAll(copy => copy?.Pieces == null || copy.Pieces.Count == 0);
         int highest = file.Copies.Count > 0 ? file.Copies.Max(copy => copy.Number) : 0;
         file.NextNumber = Mathf.Max(file.NextNumber, highest + 1);
@@ -448,7 +467,7 @@ internal static class CopyLibrary
         {
             string path = FilePath;
             _ = Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllText(path, JsonUtility.ToJson(_file, true));
+            File.WriteAllText(path, JsonConvert.SerializeObject(_file, Formatting.Indented));
         }
         catch (Exception e)
         {

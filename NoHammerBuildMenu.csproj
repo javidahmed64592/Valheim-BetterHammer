@@ -72,8 +72,8 @@
       <HintPath>$(ManagedDir)/UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>$(ManagedDir)/UnityEngine.JSONSerializeModule.dll</HintPath>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ManagedDir)/Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
