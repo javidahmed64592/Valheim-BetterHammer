@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 
+using BetterHammer.Structures;
+
 using HarmonyLib;
 
 using UnityEngine;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// Whenever the game sets up the placement ghost (a new piece selected, the hammer equipped), a saved
@@ -25,8 +27,8 @@ internal static class Player_SetupPlacementGhost_Patch
 }
 
 /// <summary>
-/// Lets the copy feature have the game set up a ghost for one of a copy's pieces while the copy itself
-/// stays the selected piece.
+/// Lets a ghost group have the game set up a ghost for each of its pieces while the selected piece stays
+/// what it is.
 /// </summary>
 [HarmonyPatch(typeof(PieceTable), nameof(PieceTable.GetSelectedPrefab))]
 internal static class PieceTable_GetSelectedPrefab_Patch
@@ -34,9 +36,9 @@ internal static class PieceTable_GetSelectedPrefab_Patch
     [HarmonyPostfix]
     private static void Postfix(ref GameObject __result)
     {
-        if (MultiCopy.GhostPrefabOverride != null)
+        if (GhostGroup.PrefabOverride != null)
         {
-            __result = MultiCopy.GhostPrefabOverride;
+            __result = GhostGroup.PrefabOverride;
         }
     }
 }

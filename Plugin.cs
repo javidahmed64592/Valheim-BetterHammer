@@ -5,6 +5,11 @@ using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 
+using BetterHammer.Core;
+using BetterHammer.Grid;
+using BetterHammer.Materials;
+using BetterHammer.Structures;
+
 using HarmonyLib;
 
 using Jotunn.Configs;
@@ -13,19 +18,19 @@ using Jotunn.Utils;
 
 using UnityEngine;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer;
 
 [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
 [BepInDependency(Jotunn.Main.ModGuid)]
 [NetworkCompatibility(CompatibilityLevel.NotEnforced, VersionStrictness.None)]
-public class NoHammerBuildMenuPlugin : BaseUnityPlugin
+public class BetterHammerPlugin : BaseUnityPlugin
 {
-    public const string PluginGUID = "javidahmed64592.nohammerbuildmenu";
-    public const string PluginName = "No Hammer Build Menu";
-    public const string PluginVersion = "0.15.0";
+    public const string PluginGUID = "javidahmed64592.betterhammer";
+    public const string PluginName = "Better Hammer";
+    public const string PluginVersion = "1.0.0";
 
     private const string HammerPrefabName = "Hammer";
-    private const string ButtonName = "NoHammerBuildMenu_Toggle";
+    private const string ButtonName = "BetterHammer_Toggle";
     private const string ButtonQueryName = ButtonName + "!" + PluginGUID;
 
     private static readonly float[] GridSizes = [0.25f, 0.5f, 1f, 2f, 4f];
@@ -140,7 +145,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
             return;
         }
 
-        CopyLibrary.UpdateDeleteInput(player);
+        CopyLibrary.UpdateMenuInput(player);
         MultiCopy.UpdateSelectionKeys(player);
 
         if (ZInput.GetButtonDown(ButtonQueryName))
@@ -175,7 +180,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
     private static void ToggleGrid(Player player)
     {
         _gridEnabled.Value = !_gridEnabled.Value;
-        player.Message(MessageHud.MessageType.TopLeft, _gridEnabled.Value ? "$nhbm_grid_on" : "$nhbm_grid_off");
+        player.Message(MessageHud.MessageType.TopLeft, _gridEnabled.Value ? "$betterhammer_grid_on" : "$betterhammer_grid_off");
     }
 
     private static void UpdateGrid(Player player)
@@ -272,7 +277,7 @@ public class NoHammerBuildMenuPlugin : BaseUnityPlugin
 
         _gridSize.Value = size;
         player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_grid_distance", size.ToString("0.###", CultureInfo.InvariantCulture)));
+            Localization.instance.Localize("$betterhammer_grid_distance", size.ToString("0.###", CultureInfo.InvariantCulture)));
     }
 
     private void ToggleRepairMode(Player player)

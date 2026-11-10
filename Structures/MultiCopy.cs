@@ -8,7 +8,7 @@ using UnityEngine;
 
 using Object = UnityEngine.Object;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer.Structures;
 
 /// <summary>
 /// <para>
@@ -40,31 +40,17 @@ internal static class MultiCopy
     private static readonly Color HighlightColor = new(0.25f, 0.9f, 0.75f);
     private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
-    private sealed class GroupPiece
-    {
-        public CopyLibrary.Part Part;
-
-        /// <summary>
-        /// This piece's own ghost, or null for the reference piece, which uses the game's ghost.
-        /// </summary>
-        public GameObject Ghost;
-    }
-
     /// <summary>
     /// Built pieces picked with Alt+middle-click, in the order they were picked.
     /// </summary>
     private static readonly List<Piece> Selected = [];
 
     /// <summary>
-    /// The pieces of the saved copy being placed, with their ghosts.
+    /// The saved copy being placed; its ghosts are a <see cref="GhostGroup"/>.
     /// </summary>
-    private static readonly List<GroupPiece> Group = [];
     private static CopyLibrary.Copy _active;
-    private static int _reference;
-    private static bool _creatingGhosts;
 
     private static int _rightClickFrame = -10;
-    private static int _snapFrame = -10;
     private static bool _lit;
 
     private static Piece _summary;
@@ -77,7 +63,7 @@ internal static class MultiCopy
 
     internal static KeyCode ClearKey => _clearKey != null ? _clearKey.Value : KeyCode.Backspace;
 
-    internal static bool Placing => _active != null;
+    internal static bool Placing => _active != null && GhostGroup.ActiveOwner == GhostGroup.Owner.Copy;
 
     internal static bool HasSelection => Selected.Count > 0;
 
@@ -86,11 +72,6 @@ internal static class MultiCopy
     /// </summary>
     internal static bool RightClickConsumed => _rightClickFrame == Time.frameCount;
 
-    /// <summary>
-    /// While the game sets up a ghost for one of a copy's pieces, the prefab it should use instead of the
-    /// selected piece (see the PieceTable.GetSelectedPrefab patch).
-    /// </summary>
-    internal static GameObject GhostPrefabOverride { get; private set; }
 
     /// <summary>
     /// Runs before Player.UpdatePlacement for the local player. Returns whether vanilla placing must be
@@ -113,12 +94,12 @@ internal static class MultiCopy
             || Hud.IsPieceSelectionVisible()
             || Hud.InRadial()
             || ZInput.IsGamepadActive()
-            || !NoHammerBuildMenuPlugin.IsHammerEquipped(player))
+            || !BetterHammerPlugin.IsHammerEquipped(player))
         {
             return wasPlacing;
         }
 
-        bool alt = NoHammerBuildMenuPlugin.AltHeld();
+        bool alt = BetterHammerPlugin.AltHeld();
         bool placePressed = ZInput.GetButtonDown(PlaceButton);
         bool block = wasPlacing;
         if (alt && ZInput.GetButtonDown(RemoveButton))
@@ -182,7 +163,7 @@ internal static class MultiCopy
             || Hud.IsPieceSelectionVisible()
             || UnifiedPopup.IsVisible()
             || !player.InPlaceMode()
-            || !NoHammerBuildMenuPlugin.IsHammerEquipped(player)
+            || !BetterHammerPlugin.IsHammerEquipped(player)
             || CopyLibrary.TypingInTextField())
         {
             return;
@@ -194,14 +175,14 @@ internal static class MultiCopy
             ClearHighlights();
             Selected.Clear();
             _selectionDirty = true;
-            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_selection_cleared", Count(count)));
+            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_selection_cleared", Count(count)));
         }
         else if (Input.GetKeyDown(CopyLibrary.DeleteKey))
         {
             Prune();
             UnifiedPopup.Push(new YesNoPopup(
-                "$nhbm_selection_delete_title",
-                Localization.instance.Localize("$nhbm_selection_delete_text", Count(Selected.Count)),
+                "$betterhammer_selection_delete_title",
+                Localization.instance.Localize("$betterhammer_selection_delete_text", Count(Selected.Count)),
                 () =>
                 {
                     UnifiedPopup.Pop();
@@ -236,8 +217,8 @@ internal static class MultiCopy
 
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft, removed == total
-            ? Localization.instance.Localize("$nhbm_selection_removed", Count(removed))
-            : Localization.instance.Localize("$nhbm_selection_removed_some", Count(removed), Count(total)));
+            ? Localization.instance.Localize("$betterhammer_selection_removed", Count(removed))
+            : Localization.instance.Localize("$betterhammer_selection_removed_some", Count(removed), Count(total)));
     }
 
     private static bool CanRemove(Player player, Piece piece)
@@ -303,7 +284,7 @@ internal static class MultiCopy
         string name = Localization.instance.Localize(piece.m_name);
         if (Selected.Contains(piece))
         {
-            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_already", name));
+            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_already", name));
             return;
         }
 
@@ -318,7 +299,7 @@ internal static class MultiCopy
         Selected.Add(piece);
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_copy_selected", name, Count(Selected.Count)));
+            Localization.instance.Localize("$betterhammer_copy_selected", name, Count(Selected.Count)));
     }
 
     private static void Deselect(Player player)
@@ -334,18 +315,19 @@ internal static class MultiCopy
         Selected.RemoveAt(index);
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_copy_deselected", Localization.instance.Localize(piece.m_name), Count(Selected.Count)));
+            Localization.instance.Localize("$betterhammer_copy_deselected", Localization.instance.Localize(piece.m_name), Count(Selected.Count)));
     }
 
     /// <summary>
-    /// Alt+left-click: saves the selection as a new copy in the Copies tab and selects it.
+    /// Alt+left-click: asks for a name, then saves the selection as a new copy in the Copies tab and
+    /// selects it.
     /// </summary>
     private static void Confirm(Player player)
     {
         Prune();
         if (Selected.Count == 0)
         {
-            player.Message(MessageHud.MessageType.Center, "$nhbm_copy_nothing");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_copy_nothing");
             return;
         }
 
@@ -358,18 +340,24 @@ internal static class MultiCopy
             {
                 // The hammer was swapped for one with different pieces since this one was selected.
                 player.Message(MessageHud.MessageType.Center,
-                    Localization.instance.Localize("$nhbm_copy_unavailable", Localization.instance.Localize(piece.m_name)));
+                    Localization.instance.Localize("$betterhammer_copy_unavailable", Localization.instance.Localize(piece.m_name)));
                 return;
             }
 
             pieces.Add((prefabPiece, piece.transform.position, piece.transform.rotation));
         }
 
+        // The pieces are noted now; the copy is saved once a name is entered (cancelling saves nothing).
+        CopyLibrary.AskForName("$betterhammer_copy_name_title", CopyLibrary.NextDefaultName(), name => Save(player, pieces, name));
+    }
+
+    private static void Save(Player player, List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces, string name)
+    {
         PieceMover.Abort(player);
-        CopyLibrary.Copy copy = CopyLibrary.Add(player, pieces);
+        CopyLibrary.Copy copy = CopyLibrary.Add(player, pieces, name);
         if (copy == null)
         {
-            player.Message(MessageHud.MessageType.Center, "$nhbm_copy_failed");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_copy_failed");
             return;
         }
 
@@ -380,10 +368,10 @@ internal static class MultiCopy
         // Selecting it sets up its ghosts (see AfterSetupPlacementGhost), facing the way the originals do.
         if (player.SetSelectedPiece(copy.Piece))
         {
-            player.m_placeRotation = RotationSteps(player, copy.Parts[0].Rotation);
+            player.m_placeRotation = GhostGroup.RotationSteps(player, copy.Parts[0].Rotation);
         }
 
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_saved", copy.Name));
+        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_saved", copy.Name));
     }
 
     /// <summary>
@@ -393,286 +381,55 @@ internal static class MultiCopy
     /// </summary>
     internal static void AfterSetupPlacementGhost(Player player)
     {
-        if (_creatingGhosts)
+        if (GhostGroup.CreatingGhosts)
         {
             return;
         }
 
-        Deactivate();
+        // The game just replaced its ghost, so a group's reference ghost is gone. A move notices and ends.
+        GhostGroup.End();
+        _active = null;
         CopyLibrary.Copy copy = CopyLibrary.Find(player.GetSelectedPiece());
         if (copy != null && player.InPlaceMode() && !player.IsDead())
         {
-            Activate(player, copy);
+            GhostGroup.Begin(player, copy.Parts, GhostGroup.Owner.Copy);
+            _active = copy;
         }
-    }
-
-    private static void Activate(Player player, CopyLibrary.Copy copy)
-    {
-        if (player.m_placementGhost != null)
-        {
-            Object.Destroy(player.m_placementGhost);
-            player.m_placementGhost = null;
-        }
-
-        // Setting up a ghost for a piece that starts at a random turn re-rolls the build rotation.
-        int rotation = player.m_placeRotation;
-        _creatingGhosts = true;
-        try
-        {
-            foreach (CopyLibrary.Part part in copy.Parts)
-            {
-                Group.Add(new GroupPiece { Part = part, Ghost = CreateGhost(player, part.Prefab) });
-            }
-        }
-        finally
-        {
-            _creatingGhosts = false;
-            GhostPrefabOverride = null;
-        }
-
-        player.m_placeRotation = rotation;
-        _active = copy;
-        UseAsReference(player, 0);
-        player.m_manualSnapPoint = -1;
     }
 
     /// <summary>
-    /// A ghost for the piece, made by the game's own ghost setup (so it's stripped down the same way)
-    /// and then taken from it. Expects the game to have no ghost of its own at the time.
-    /// </summary>
-    private static GameObject CreateGhost(Player player, Piece prefab)
-    {
-        GhostPrefabOverride = prefab.gameObject;
-        player.SetupPlacementGhost();
-        GhostPrefabOverride = null;
-
-        GameObject ghost = player.m_placementGhost;
-        player.m_placementGhost = null;
-        if (ghost != null)
-        {
-            ghost.SetActive(false);
-        }
-
-        return ghost;
-    }
-
-    /// <summary>
-    /// Hands the piece's ghost to the game. Expects the game to have no ghost of its own at the time.
-    /// </summary>
-    private static void UseAsReference(Player player, int index)
-    {
-        GroupPiece piece = Group[index];
-        player.m_placementGhost = piece.Ghost;
-        if (player.m_placementGhost != null)
-        {
-            player.m_placementGhost.SetActive(true);
-        }
-
-        piece.Ghost = null;
-        _reference = index;
-    }
-
-    /// <summary>
-    /// Moves the game's ghost to another piece of the copy, keeping the copy's current turn.
-    /// </summary>
-    private static void SwitchReference(Player player, int index)
-    {
-        GameObject ghost = player.m_placementGhost;
-        Quaternion turn = ghost != null ? ghost.transform.rotation * Quaternion.Inverse(Group[_reference].Part.Rotation) : Quaternion.identity;
-
-        Group[_reference].Ghost = ghost;
-        if (ghost != null)
-        {
-            ghost.SetActive(false);
-        }
-
-        player.m_placementGhost = null;
-        UseAsReference(player, index);
-        player.m_placeRotation = RotationSteps(player, turn * Group[index].Part.Rotation);
-    }
-
-    private static int RotationSteps(Player player, Quaternion rotation)
-    {
-        return Mathf.RoundToInt(rotation.eulerAngles.y / player.m_placeRotationDegrees);
-    }
-
-    /// <summary>
-    /// Destroys the other pieces' ghosts. The reference ghost is the game's, which it replaces itself.
+    /// Ends placing a saved copy without touching a move's group.
     /// </summary>
     private static void Deactivate()
     {
-        foreach (GroupPiece piece in Group)
+        if (GhostGroup.ActiveOwner == GhostGroup.Owner.Copy)
         {
-            if (piece.Ghost != null)
-            {
-                Object.Destroy(piece.Ghost);
-            }
+            GhostGroup.End();
         }
 
-        Group.Clear();
         _active = null;
     }
 
     /// <summary>
-    /// Runs before Player.UpdatePlacementGhost. Q/E normally steps through the ghost's snap points; while
-    /// placing a copy it steps through every piece's snap points in turn (switching the reference piece
-    /// as needed), and Shift+Q/E steps from piece to piece.
+    /// The selection with the given piece first, if it's selected along with others; used to move them
+    /// all at once.
     /// </summary>
-    internal static void BeforeUpdatePlacementGhost(Player player)
+    internal static List<Piece> SelectionStartingWith(Piece piece)
     {
-        if (!Placing || player.m_placementGhost == null || _snapFrame == Time.frameCount)
+        Prune();
+        if (piece == null || Selected.Count < 2 || !Selected.Contains(piece))
         {
-            return;
+            return null;
         }
 
-        // The same conditions the game reads Q/E under.
-        if (ZInput.GetButton("JoyAltKeys")
-            || Hud.IsPieceSelectionVisible()
-            || (Minimap.instance != null && Minimap.instance.m_mode == Minimap.MapMode.Large)
-            || Console.IsVisible()
-            || (Chat.instance != null && Chat.instance.HasFocus()))
-        {
-            return;
-        }
-
-        int step = 0;
-        if (ZInput.GetButtonDown("TabRight"))
-        {
-            step = 1;
-        }
-        else if (ZInput.GetButtonDown("TabLeft"))
-        {
-            step = -1;
-        }
-
-        if (step == 0)
-        {
-            return;
-        }
-
-        _snapFrame = Time.frameCount;
-        int piece = _reference;
-        int point = player.m_manualSnapPoint;
-        if (NoHammerBuildMenuPlugin.ShiftHeld())
-        {
-            piece = (piece + step + Group.Count) % Group.Count;
-            point = Group[piece].Part.SnapCount > 0 ? 0 : -1;
-        }
-        else
-        {
-            NextSnapPoint(ref piece, ref point, step);
-        }
-
-        if (piece != _reference)
-        {
-            SwitchReference(player, piece);
-        }
-
-        // The game applies the same step to the snap point right after this, so start one step back.
-        player.m_manualSnapPoint = point - step;
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_reference",
-            Localization.instance.Localize(Group[piece].Part.Prefab.m_name),
-            Count(piece + 1),
-            Count(Group.Count)));
+        List<Piece> pieces = [piece];
+        pieces.AddRange(Selected.Where(other => other != piece));
+        return pieces;
     }
 
-    /// <summary>
-    /// One step through the list "automatic, then every snap point of the first piece, then of the
-    /// second, ...", wrapping round at either end. Automatic keeps the current reference piece.
-    /// </summary>
-    private static void NextSnapPoint(ref int piece, ref int point, int step)
+    internal static bool IsSelected(Piece piece)
     {
-        List<(int Piece, int Point)> entries = [(-1, -1)];
-        for (int i = 0; i < Group.Count; i++)
-        {
-            for (int s = 0; s < Group[i].Part.SnapCount; s++)
-            {
-                entries.Add((i, s));
-            }
-        }
-
-        int current = point < 0 ? 0 : entries.IndexOf((piece, point));
-        if (current < 0)
-        {
-            current = 0;
-        }
-
-        (int nextPiece, int nextPoint) = entries[(current + step + entries.Count) % entries.Count];
-        if (nextPiece >= 0)
-        {
-            piece = nextPiece;
-        }
-
-        point = nextPoint;
-    }
-
-    /// <summary>
-    /// Runs after Player.UpdatePlacementGhost: places the other pieces' ghosts around the reference
-    /// ghost, and checks their spots for wards and no-build zones too.
-    /// </summary>
-    internal static void AfterUpdatePlacementGhost(Player player, bool flashGuardStone)
-    {
-        if (!Placing)
-        {
-            return;
-        }
-
-        GameObject reference = player.m_placementGhost;
-        bool active = reference != null && reference.activeSelf;
-        Player.PlacementStatus status = player.m_placementStatus;
-        Quaternion turn = reference != null ? reference.transform.rotation * Quaternion.Inverse(Group[_reference].Part.Rotation) : Quaternion.identity;
-        Vector3 origin = Group[_reference].Part.Position;
-
-        foreach (GroupPiece piece in Group)
-        {
-            if (piece.Ghost == null)
-            {
-                continue;
-            }
-
-            piece.Ghost.SetActive(active);
-            if (!active)
-            {
-                continue;
-            }
-
-            Vector3 position = reference.transform.position + (turn * (piece.Part.Position - origin));
-            piece.Ghost.transform.SetPositionAndRotation(position, turn * piece.Part.Rotation);
-            if (status != Player.PlacementStatus.Valid)
-            {
-                continue;
-            }
-
-            if (Location.IsInsideNoBuildLocation(position))
-            {
-                status = Player.PlacementStatus.NoBuildZone;
-            }
-            else if (!PrivateArea.CheckAccess(position, 0f, flashGuardStone))
-            {
-                status = Player.PlacementStatus.PrivateZone;
-            }
-        }
-
-        if (!active)
-        {
-            return;
-        }
-
-        if (status != player.m_placementStatus)
-        {
-            player.m_placementStatus = status;
-            player.SetPlacementGhostValid(false);
-        }
-
-        bool valid = status == Player.PlacementStatus.Valid;
-        foreach (GroupPiece piece in Group)
-        {
-            Piece ghostPiece = piece.Ghost != null ? piece.Ghost.GetComponent<Piece>() : null;
-            if (ghostPiece != null)
-            {
-                ghostPiece.SetInvalidPlacementHeightlight(!valid);
-            }
-        }
+        return piece != null && Selected.Contains(piece);
     }
 
     /// <summary>
@@ -715,10 +472,10 @@ internal static class MultiCopy
 
         // Placing a piece that starts at a random turn re-rolls the build rotation; keep the copy's.
         int rotation = player.m_placeRotation;
-        foreach (GroupPiece piece in Group)
+        List<(Vector3 Position, Quaternion Rotation)> poses = GhostGroup.Poses(player);
+        for (int i = 0; i < poses.Count; i++)
         {
-            Transform ghost = piece.Ghost != null ? piece.Ghost.transform : reference.transform;
-            player.PlacePiece(piece.Part.Prefab, ghost.position, ghost.rotation, doAttack: piece.Ghost == null);
+            player.PlacePiece(_active.Parts[i].Prefab, poses[i].Position, poses[i].Rotation, doAttack: i == 0);
         }
 
         player.m_placeRotation = rotation;
@@ -740,7 +497,7 @@ internal static class MultiCopy
         }
 
         _ = tool.m_shared.m_buildEffect.Create(player.transform.position, Quaternion.identity, null, 1f, -1, player.GetZDOID());
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_placed", Count(Group.Count)));
+        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_placed", Count(poses.Count)));
     }
 
     private static bool HaveStations(Player player, List<Piece> pieces)
@@ -778,7 +535,7 @@ internal static class MultiCopy
 
         bool menu = Hud.IsPieceSelectionVisible();
         Prune();
-        if (!menu && Selected.Count > 0 && NoHammerBuildMenuPlugin.AltHeld() && NoHammerBuildMenuPlugin.IsHammerEquipped(player))
+        if (!menu && Selected.Count > 0 && BetterHammerPlugin.AltHeld() && BetterHammerPlugin.IsHammerEquipped(player))
         {
             if (_selectionDirty)
             {
@@ -788,7 +545,7 @@ internal static class MultiCopy
             }
 
             summary = Fill(player,
-                Localization.instance.Localize("$nhbm_copy_summary_selected", Count(Selected.Count)),
+                Localization.instance.Localize("$betterhammer_copy_summary_selected", Count(Selected.Count)),
                 _selectionDescription,
                 Selected[0].m_icon,
                 _selectionRequirements,
@@ -802,7 +559,7 @@ internal static class MultiCopy
             return false;
         }
 
-        string description = menu ? copy.Description + "\n" + CopyLibrary.DeleteHint() : copy.Description;
+        string description = menu ? copy.Description + "\n" + CopyLibrary.MenuHint() : copy.Description;
         summary = Fill(player, copy.Name, description, copy.Piece.m_icon, copy.Piece.m_resources, copy.StationPieces);
         return true;
     }
@@ -811,7 +568,7 @@ internal static class MultiCopy
     {
         if (_summary == null)
         {
-            GameObject holder = new("NoHammerBuildMenu_CopySummary");
+            GameObject holder = new("BetterHammer_CopySummary");
             holder.SetActive(false);
             Object.DontDestroyOnLoad(holder);
             _summary = holder.AddComponent<Piece>();
@@ -823,7 +580,7 @@ internal static class MultiCopy
         int page = (int)(Time.time / MaterialPageSeconds) % pages;
         if (pages > 1)
         {
-            description += "\n" + Localization.instance.Localize("$nhbm_copy_materials_page", Count(page + 1), Count(pages));
+            description += "\n" + Localization.instance.Localize("$betterhammer_copy_materials_page", Count(page + 1), Count(pages));
         }
 
         _summary.m_name = name;
@@ -864,7 +621,7 @@ internal static class MultiCopy
             && MaterialMan.instance != null
             && player != null
             && player.InPlaceMode()
-            && NoHammerBuildMenuPlugin.IsHammerEquipped(player);
+            && BetterHammerPlugin.IsHammerEquipped(player);
         if (!show)
         {
             if (_lit)

@@ -1,8 +1,10 @@
+using BetterHammer.Grid;
+
 using HarmonyLib;
 
 using UnityEngine;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// Moves the aimed placement point so one of the ghost's snap points (or its origin, if it
@@ -29,7 +31,7 @@ internal static class Player_PieceRayTest_Patch
         // Only touch `point`: the other out params must keep the values vanilla produced.
         if (!__result
             || __instance != Player.m_localPlayer
-            || !NoHammerBuildMenuPlugin.GridActive(__instance))
+            || !BetterHammerPlugin.GridActive(__instance))
         {
             return;
         }
@@ -43,7 +45,7 @@ internal static class Player_PieceRayTest_Patch
         // along its normal stays where the aim ray hit, so the point never leaves the surface
         // and nothing snaps to empty air. Terrain and other non-piece surfaces keep snapping
         // horizontally only.
-        float size = NoHammerBuildMenuPlugin._gridSize.Value;
+        float size = BetterHammerPlugin._gridSize.Value;
         GridPlane plane = GridPlane.Terrain;
         float sign = 1f;
 
@@ -82,9 +84,9 @@ internal static class Player_PieceRayTest_Patch
             plane = GridPlane.None;
         }
 
-        NoHammerBuildMenuPlugin._aimFrame = Time.frameCount;
-        NoHammerBuildMenuPlugin._aimPoint = point;
-        NoHammerBuildMenuPlugin._aimPlane = plane;
-        NoHammerBuildMenuPlugin._aimSign = sign;
+        BetterHammerPlugin._aimFrame = Time.frameCount;
+        BetterHammerPlugin._aimPoint = point;
+        BetterHammerPlugin._aimPlane = plane;
+        BetterHammerPlugin._aimSign = sign;
     }
 }

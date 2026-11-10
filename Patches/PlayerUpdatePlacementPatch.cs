@@ -2,7 +2,7 @@ using System.Reflection;
 
 using HarmonyLib;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// Stops Alt+scroll from also rotating the piece: UpdatePlacement accumulates scroll into
@@ -18,7 +18,7 @@ internal static class Player_UpdatePlacement_Patch
     private static void Prefix(Player __instance, out (float scroll, int rotation)? __state)
     {
         __state = null;
-        if (ScrollField != null && RotationField != null && NoHammerBuildMenuPlugin.AltZoomActive(__instance))
+        if (ScrollField != null && RotationField != null && BetterHammerPlugin.AltZoomActive(__instance))
         {
             __state = ((float)ScrollField.GetValue(__instance), (int)RotationField.GetValue(__instance));
         }

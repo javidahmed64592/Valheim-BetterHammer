@@ -18,11 +18,11 @@ using UnityEngine.EventSystems;
 
 using Object = UnityEngine.Object;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer.Structures;
 
 /// <summary>
 /// <para>
-/// Saved copies: each confirmed selection is stored in BepInEx/config/NoHammerBuildMenu/copies.json and
+/// Saved copies: each confirmed selection is stored in BepInEx/config/BetterHammer/copies.json and
 /// becomes an entry in the hammer's "Copies" build menu tab, named "Copy 1", "Copy 2" and so on, with a
 /// rendered picture of the whole copy as its icon. The file is shared by every character and world on
 /// this computer.
@@ -37,7 +37,7 @@ internal static class CopyLibrary
 {
     private const string CategoryName = "Copies";
 
-    private static string FilePath => Path.Combine(Paths.ConfigPath, "NoHammerBuildMenu", "copies.json");
+    private static string FilePath => Path.Combine(Paths.ConfigPath, "BetterHammer", "copies.json");
 
     /// <summary>
     /// Written with Newtonsoft.Json (which ships with the game). Unity's JsonUtility silently left the
@@ -53,6 +53,11 @@ internal static class CopyLibrary
     internal sealed class SavedCopy
     {
         public int Number;
+
+        /// <summary>
+        /// The name given when it was saved or renamed, or null for the default "Copy (number)".
+        /// </summary>
+        public string Name;
         public List<SavedPiece> Pieces = [];
     }
 
@@ -100,9 +105,28 @@ internal static class CopyLibrary
     private static PieceTable _table;
     private static GameObject _container;
     private static Piece.PieceCategory _category;
+    private const int NameCharacterLimit = 40;
+
     private static ConfigEntry<KeyCode> _deleteKey;
+    private static ConfigEntry<KeyCode> _renameKey;
 
     internal static KeyCode DeleteKey => _deleteKey != null ? _deleteKey.Value : KeyCode.Delete;
+
+    /// <summary>
+    /// Hands the text the player types into the game's text box (the one signs use) to a callback.
+    /// </summary>
+    private sealed class NameReceiver(string initial, Action<string> onEntered) : TextReceiver
+    {
+        public string GetText()
+        {
+            return initial;
+        }
+
+        public void SetText(string text)
+        {
+            onEntered(text);
+        }
+    }
 
     public static void BindConfig(ConfigFile config)
     {
@@ -112,6 +136,61 @@ internal static class CopyLibrary
             KeyCode.Delete,
             "With the build menu open, hover a saved copy in the Copies tab and press this to delete it. " +
             "With the build menu closed, press it to remove every piece selected for copying.");
+        _renameKey = config.Bind(
+            "Keybinds",
+            "Rename Copy",
+            KeyCode.Insert,
+            "With the build menu open, hover a saved copy in the Copies tab and press this to rename it.");
+    }
+
+    /// <summary>
+    /// Opens the game's text box to name a copy, filled in with the given name. The callback gets the
+    /// name typed (blank meaning the default), and isn't called if the box is cancelled.
+    /// </summary>
+    internal static void AskForName(string topic, string current, Action<string> onEntered)
+    {
+        if (TextInput.instance == null)
+        {
+            onEntered(current);
+            return;
+        }
+
+        TextInput.instance.RequestText(new NameReceiver(current, onEntered), topic, NameCharacterLimit);
+    }
+
+    /// <summary>
+    /// The name the next saved copy gets if it isn't given one.
+    /// </summary>
+    internal static string NextDefaultName()
+    {
+        return DefaultName(_file != null ? _file.NextNumber : 1);
+    }
+
+    private static string DefaultName(int number)
+    {
+        return Localization.instance.Localize("$betterhammer_copy_name", number.ToString(CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>
+    /// The name to store: null for blank or the default, so the copy keeps its default name.
+    /// </summary>
+    private static string CleanName(string name, int number)
+    {
+        name = name?.Trim();
+        return string.IsNullOrEmpty(name) || name == DefaultName(number) ? null : name;
+    }
+
+    /// <summary>
+    /// Names are what the game uses to tell which pieces are known, so the set is rebuilt from every copy
+    /// (two copies may share a name).
+    /// </summary>
+    private static void RefreshNames()
+    {
+        Names.Clear();
+        foreach (Copy copy in Copies)
+        {
+            _ = Names.Add(copy.Name);
+        }
     }
 
     /// <summary>
@@ -127,7 +206,7 @@ internal static class CopyLibrary
 
         _table = table;
         _category = PieceManager.Instance.AddPieceCategory(CategoryName);
-        _container = new GameObject("NoHammerBuildMenu_Copies");
+        _container = new GameObject("BetterHammer_Copies");
         _container.SetActive(false);
         Object.DontDestroyOnLoad(_container);
 
@@ -169,7 +248,7 @@ internal static class CopyLibrary
     /// Saves a new copy of the given pieces (prefab, world position, world rotation) and adds it to the
     /// Copies tab.
     /// </summary>
-    internal static Copy Add(Player player, IList<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces)
+    internal static Copy Add(Player player, IList<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces, string name)
     {
         if (_file == null || pieces.Count == 0)
         {
@@ -178,6 +257,7 @@ internal static class CopyLibrary
 
         Vector3 origin = pieces[0].Position;
         SavedCopy saved = new() { Number = _file.NextNumber++ };
+        saved.Name = CleanName(name, saved.Number);
         foreach ((Piece prefab, Vector3 position, Quaternion rotation) in pieces)
         {
             Vector3 offset = position - origin;
@@ -197,28 +277,36 @@ internal static class CopyLibrary
     }
 
     /// <summary>
-    /// Delete key over a copy in the build menu: asks, then deletes it.
+    /// Over a copy in the build menu: the delete key asks, then deletes it, and the rename key asks for
+    /// a new name.
     /// </summary>
-    internal static void UpdateDeleteInput(Player player)
+    internal static void UpdateMenuInput(Player player)
     {
         if (_deleteKey == null
             || !Hud.IsPieceSelectionVisible()
             || UnifiedPopup.IsVisible()
-            || !Input.GetKeyDown(_deleteKey.Value)
             || TypingInTextField())
         {
             return;
         }
 
-        Copy copy = Find(Hud.instance.m_hoveredPiece);
+        bool delete = Input.GetKeyDown(_deleteKey.Value);
+        bool rename = !delete && Input.GetKeyDown(_renameKey.Value);
+        Copy copy = delete || rename ? Find(Hud.instance.m_hoveredPiece) : null;
         if (copy == null)
         {
             return;
         }
 
+        if (rename)
+        {
+            AskForName("$betterhammer_copy_rename_title", copy.Name, name => Rename(player, copy, name));
+            return;
+        }
+
         UnifiedPopup.Push(new YesNoPopup(
-            "$nhbm_copy_delete_title",
-            Localization.instance.Localize("$nhbm_copy_delete_text", copy.Name),
+            "$betterhammer_copy_delete_title",
+            Localization.instance.Localize("$betterhammer_copy_delete_text", copy.Name),
             () =>
             {
                 UnifiedPopup.Pop();
@@ -243,9 +331,37 @@ internal static class CopyLibrary
         return field != null && field.isFocused;
     }
 
-    internal static string DeleteHint()
+    internal static string MenuHint()
     {
-        return _deleteKey != null ? Localization.instance.Localize("$nhbm_copy_delete_hint", _deleteKey.Value.ToString()) : "";
+        return _deleteKey != null
+            ? Localization.instance.Localize("$betterhammer_copy_menu_hint", _renameKey.Value.ToString(), _deleteKey.Value.ToString())
+            : "";
+    }
+
+    private static void Rename(Player player, Copy copy, string name)
+    {
+        if (!Copies.Contains(copy))
+        {
+            return; // deleted while the text box was open
+        }
+
+        string old = copy.Name;
+        copy.Saved.Name = CleanName(name, copy.Saved.Number);
+        copy.Name = copy.Saved.Name ?? DefaultName(copy.Saved.Number);
+        copy.Piece.m_name = copy.Name;
+        Save();
+        RefreshNames();
+
+        if (player != null)
+        {
+            player.UpdateAvailablePiecesList();
+            if (Hud.IsPieceSelectionVisible())
+            {
+                Hud.instance.m_buildUi.OpenBuildMenu();
+            }
+
+            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_renamed", old, copy.Name));
+        }
     }
 
     private static void Delete(Player player, Copy copy)
@@ -253,7 +369,7 @@ internal static class CopyLibrary
         // The stand-in object is kept (just out of the table), in case the game still refers to it.
         _ = _table.m_pieces.Remove(copy.Piece.gameObject);
         _ = Copies.Remove(copy);
-        _ = Names.Remove(copy.Name);
+        RefreshNames();
         _ = _file.Copies.Remove(copy.Saved);
         Save();
 
@@ -265,15 +381,27 @@ internal static class CopyLibrary
                 Hud.instance.m_buildUi.OpenBuildMenu();
             }
 
-            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$nhbm_copy_deleted", copy.Name));
+            player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_deleted", copy.Name));
         }
+    }
+
+    /// <summary>
+    /// A part for the given prefab at the given place, with its snap points counted.
+    /// </summary>
+    internal static Part MakePart(Piece prefab, Vector3 position, Quaternion rotation)
+    {
+        SnapPoints.Clear();
+        prefab.GetSnapPoints(SnapPoints);
+        int snapCount = SnapPoints.Count;
+        SnapPoints.Clear();
+        return new Part { Prefab = prefab, Position = position, Rotation = rotation, SnapCount = snapCount };
     }
 
     private static Copy Register(SavedCopy saved)
     {
         Copy copy = new()
         {
-            Name = Localization.instance.Localize("$nhbm_copy_name", saved.Number.ToString(CultureInfo.InvariantCulture)),
+            Name = CleanName(saved.Name, saved.Number) ?? DefaultName(saved.Number),
             Saved = saved,
         };
 
@@ -284,7 +412,7 @@ internal static class CopyLibrary
             if (prefabPiece == null)
             {
                 // A piece from a mod that's no longer installed. The copy stays in the file.
-                Debug.LogWarning("NoHammerBuildMenu: copy " + saved.Number + " uses missing piece " + piece.Prefab + ", not adding it.");
+                Debug.LogWarning("BetterHammer: copy " + saved.Number + " uses missing piece " + piece.Prefab + ", not adding it.");
                 return null;
             }
 
@@ -306,7 +434,7 @@ internal static class CopyLibrary
             return null;
         }
 
-        GameObject holder = new("NoHammerBuildMenu_Copy_" + saved.Number.ToString(CultureInfo.InvariantCulture));
+        GameObject holder = new("BetterHammer_Copy_" + saved.Number.ToString(CultureInfo.InvariantCulture));
         holder.transform.SetParent(_container.transform, false);
         Piece entry = holder.AddComponent<Piece>();
         entry.m_name = copy.Name;
@@ -320,7 +448,7 @@ internal static class CopyLibrary
 
         _table.m_pieces.Add(holder);
         Copies.Add(copy);
-        _ = Names.Add(copy.Name);
+        RefreshNames();
         return copy;
     }
 
@@ -385,7 +513,7 @@ internal static class CopyLibrary
     /// </summary>
     private static Sprite RenderIcon(Copy copy)
     {
-        GameObject root = new("NoHammerBuildMenu_CopyPreview");
+        GameObject root = new("BetterHammer_CopyPreview");
         root.transform.position = new Vector3(0f, -5000f, 0f);
         ZNetView.m_forceDisableInit = true;
         TerrainOp.m_forceDisableTerrainOps = true;
@@ -413,7 +541,7 @@ internal static class CopyLibrary
         }
         catch (Exception e)
         {
-            Debug.LogWarning("NoHammerBuildMenu: couldn't render an icon for " + copy.Name + ": " + e.Message);
+            Debug.LogWarning("BetterHammer: couldn't render an icon for " + copy.Name + ": " + e.Message);
             return null;
         }
         finally
@@ -436,14 +564,14 @@ internal static class CopyLibrary
             {
                 // Keep the unreadable file rather than overwriting it with an empty library.
                 string backup = path + ".unreadable-" + DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
-                Debug.LogError("NoHammerBuildMenu: couldn't read " + path + " (" + e.Message + "), moved it to " + backup);
+                Debug.LogError("BetterHammer: couldn't read " + path + " (" + e.Message + "), moved it to " + backup);
                 try
                 {
                     File.Move(path, backup);
                 }
                 catch (Exception moveError)
                 {
-                    Debug.LogError("NoHammerBuildMenu: couldn't move it either: " + moveError.Message);
+                    Debug.LogError("BetterHammer: couldn't move it either: " + moveError.Message);
                 }
             }
         }
@@ -471,7 +599,7 @@ internal static class CopyLibrary
         }
         catch (Exception e)
         {
-            Debug.LogError("NoHammerBuildMenu: couldn't save copies to " + FilePath + ": " + e.Message);
+            Debug.LogError("BetterHammer: couldn't save copies to " + FilePath + ": " + e.Message);
         }
     }
 }

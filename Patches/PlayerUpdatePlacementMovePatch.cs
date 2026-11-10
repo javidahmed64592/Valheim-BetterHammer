@@ -1,6 +1,8 @@
+using BetterHammer.Structures;
+
 using HarmonyLib;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// Handles the move input (Ctrl+middle-click to pick up, left-click to put down, right-click to cancel)

@@ -1,16 +1,19 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 using UnityEngine;
 
 using Object = UnityEngine.Object;
 
-namespace NoHammerBuildMenu;
+namespace BetterHammer.Structures;
 
 /// <summary>
 /// <para>
 /// Ctrl+middle-click picks up a built piece and shows its ghost, the same way Shift+middle-click copies
-/// one. Left-click puts it down where the ghost is and right-click cancels.
+/// one. Left-click puts it down where the ghost is and right-click cancels. Ctrl+middle-click on a piece
+/// selected for copying along with others picks up the whole selection instead, shown as a
+/// <see cref="GhostGroup"/> like a saved copy.
 /// </para>
 /// <para>
 /// Putting a piece down creates a new object at the ghost with a copy of the original's saved data
@@ -25,7 +28,10 @@ internal static class PieceMover
     private const string RemoveButton = "Remove";
     private const string PlaceButton = "Attack";
 
-    private static ZNetView _source;
+    /// <summary>
+    /// The pieces being moved; the first is the one that was clicked, and the reference piece to start with.
+    /// </summary>
+    private static readonly List<ZNetView> Sources = [];
     private static string _prefabName;
     private static Piece _previousPiece;
     private static int _previousRotation;
@@ -40,7 +46,7 @@ internal static class PieceMover
 
     private static readonly List<Collider> SourceColliders = [];
     private static readonly List<Collider> HiddenColliders = [];
-    private static StationExtension _hiddenExtension;
+    private static readonly List<StationExtension> HiddenExtensions = [];
 
     internal static readonly Dictionary<Player.PlacementStatus, string> StatusMessages = new()
     {
@@ -58,7 +64,9 @@ internal static class PieceMover
         [Player.PlacementStatus.NoSnow] = "$msg_nosnow",
     };
 
-    internal static bool Moving => _source != null;
+    internal static bool Moving => Sources.Count > 0;
+
+    private static bool MovingGroup => Sources.Count > 1;
 
     /// <summary>
     /// Right-clicking while moving only cancels the move, so it mustn't also open the build menu or
@@ -100,30 +108,30 @@ internal static class PieceMover
             || Hud.IsPieceSelectionVisible()
             || Hud.InRadial()
             || ZInput.IsGamepadActive()
-            || !NoHammerBuildMenuPlugin.IsHammerEquipped(player))
+            || !BetterHammerPlugin.IsHammerEquipped(player))
         {
             return wasMoving;
         }
 
-        if (NoHammerBuildMenuPlugin.CtrlHeld() && ZInput.GetButtonDown(RemoveButton))
+        if (BetterHammerPlugin.CtrlHeld() && ZInput.GetButtonDown(RemoveButton))
         {
             BlockRemoveUntilReleased(player);
             PickUp(player);
         }
-        else if (Moving && ZInput.GetButtonDown(RemoveButton) && player.GetHoveringPiece() == _source.GetComponent<Piece>())
+        else if (Moving && ZInput.GetButtonDown(RemoveButton) && IsSource(player.GetHoveringPiece()))
         {
-            // Removing the piece being moved would drop its materials and (for a public chest) its
+            // Removing a piece being moved would drop its materials and (for a public chest) its
             // contents, so it's ignored. Other pieces can still be removed while moving.
             BlockRemoveUntilReleased(player);
-            player.Message(MessageHud.MessageType.Center, "$nhbm_move_cant_remove");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_move_cant_remove");
         }
         else if (Moving && Input.GetMouseButtonDown(1))
         {
             _rightClickFrame = Time.frameCount;
             Stop(player);
-            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_move_aborted");
+            player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_aborted");
         }
-        else if (Moving && !NoHammerBuildMenuPlugin.AltHeld() && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
+        else if (Moving && !BetterHammerPlugin.AltHeld() && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
         {
             PutDown(player);
         }
@@ -159,14 +167,14 @@ internal static class PieceMover
         if (Moving)
         {
             Stop(player);
-            player.Message(MessageHud.MessageType.TopLeft, "$nhbm_move_aborted");
+            player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_aborted");
         }
     }
 
     internal static void Reset()
     {
         ClearHighlight();
-        _source = null;
+        Sources.Clear();
         _prefabName = null;
         _previousPiece = null;
         _blockRemoveUntilReleased = false;
@@ -176,15 +184,36 @@ internal static class PieceMover
     {
         // The piece vanilla highlights: the same ray and reach as copying and removing.
         Piece piece = player.GetHoveringPiece();
-        if (piece == null || !CanMove(player, piece, out ZNetView nview))
+        if (piece == null)
         {
             return;
+        }
+
+        // A piece selected along with others brings the whole selection.
+        List<Piece> pieces = MultiCopy.SelectionStartingWith(piece) ?? [piece];
+        List<ZNetView> nviews = [];
+        foreach (Piece moving in pieces)
+        {
+            if (!CanMove(player, moving, out ZNetView nview))
+            {
+                return;
+            }
+
+            nviews.Add(nview);
         }
 
         if (!Moving)
         {
             _previousPiece = player.GetSelectedPiece();
             _previousRotation = player.m_placeRotation;
+        }
+
+        // A group's reference ghost may be another of its pieces than the selected one (after Shift+Q/E),
+        // so the game's ghost is set up again rather than kept.
+        bool hadGroup = GhostGroup.ActiveOwner == GhostGroup.Owner.Move;
+        if (hadGroup)
+        {
+            GhostGroup.End();
         }
 
         if (!player.SetSelectedPiece(piece))
@@ -196,10 +225,55 @@ internal static class PieceMover
 
         player.m_placeRotation = (int)Math.Round(piece.transform.rotation.eulerAngles.y / player.m_placeRotationDegrees);
         ClearHighlight();
-        _source = nview;
+        Sources.Clear();
+        Sources.AddRange(nviews);
         _prefabName = Utils.GetPrefabName(piece.gameObject);
+
+        if (!MovingGroup)
+        {
+            if (hadGroup)
+            {
+                player.SetupPlacementGhost();
+            }
+
+            player.Message(MessageHud.MessageType.TopLeft,
+                Localization.instance.Localize("$betterhammer_move_started", Localization.instance.Localize(piece.m_name)));
+            return;
+        }
+
+        List<CopyLibrary.Part> parts = [];
+        foreach (Piece moving in pieces)
+        {
+            parts.Add(CopyLibrary.MakePart(PrefabOf(moving), moving.transform.position, moving.transform.rotation));
+        }
+
+        GhostGroup.Begin(player, parts, GhostGroup.Owner.Move);
         player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_move_started", Localization.instance.Localize(piece.m_name)));
+            Localization.instance.Localize("$betterhammer_move_started_group", Sources.Count.ToString(CultureInfo.InvariantCulture)));
+    }
+
+    private static Piece PrefabOf(Piece piece)
+    {
+        GameObject prefab = ZNetScene.instance.GetPrefab(Utils.GetPrefabName(piece.gameObject));
+        return prefab != null ? prefab.GetComponent<Piece>() : piece;
+    }
+
+    private static bool IsSource(Piece piece)
+    {
+        if (piece == null)
+        {
+            return false;
+        }
+
+        foreach (ZNetView source in Sources)
+        {
+            if (source != null && source.GetComponent<Piece>() == piece)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void PutDown(Player player)
@@ -207,10 +281,16 @@ internal static class PieceMover
         // Whatever happens, this click is used up; the delay also stops vanilla placing this frame.
         player.m_lastToolUseTime = Time.time;
 
-        Piece piece = _source.GetComponent<Piece>();
-        if (piece == null || !CanMove(player, piece, out _))
+        List<Piece> pieces = [];
+        foreach (ZNetView source in Sources)
         {
-            return;
+            Piece piece = source.GetComponent<Piece>();
+            if (piece == null || !CanMove(player, piece, out _))
+            {
+                return;
+            }
+
+            pieces.Add(piece);
         }
 
         ItemDrop.ItemData tool = player.GetRightItem();
@@ -229,25 +309,41 @@ internal static class PieceMover
             return;
         }
 
-        Vector3 oldPosition = piece.transform.position;
-        Vector3 position = ghost.transform.position;
-        Quaternion rotation = ghost.transform.rotation;
-        GameObject moved = Recreate(_source, position, rotation);
-        if (moved == null)
+        List<(Vector3 Position, Quaternion Rotation)> poses = MovingGroup
+            ? GhostGroup.Poses(player)
+            : [(ghost.transform.position, ghost.transform.rotation)];
+
+        // Every new object is made before any original is removed, so a failure can't lose a chest's
+        // items: if one can't be made, the ones made so far are removed again and nothing moves.
+        List<GameObject> moved = [];
+        for (int i = 0; i < Sources.Count; i++)
         {
-            player.Message(MessageHud.MessageType.Center, "$nhbm_move_failed");
-            return;
+            GameObject created = Recreate(Sources[i], poses[i].Position, poses[i].Rotation);
+            if (created == null)
+            {
+                foreach (GameObject undo in moved)
+                {
+                    ZNetScene.instance.Destroy(undo);
+                }
+
+                player.Message(MessageHud.MessageType.Center, "$betterhammer_move_failed");
+                return;
+            }
+
+            moved.Add(created);
         }
 
-        // A piece selected for copying stays selected, at its new spot.
-        MultiCopy.ReplaceSelected(piece, moved.GetComponent<Piece>());
-
-        // Removing the original only after the copy exists means a failure can't lose a chest's items.
+        Vector3 oldPosition = pieces[0].transform.position;
         ClearHighlight();
-        _source.ClaimOwnership();
-        ZNetScene.instance.Destroy(_source.gameObject);
+        for (int i = 0; i < Sources.Count; i++)
+        {
+            // A piece selected for copying stays selected, at its new spot.
+            MultiCopy.ReplaceSelected(pieces[i], moved[i].GetComponent<Piece>());
+            Sources[i].ClaimOwnership();
+            ZNetScene.instance.Destroy(Sources[i].gameObject);
+            _ = pieces[i].m_placeEffect.Create(poses[i].Position, poses[i].Rotation, moved[i].transform, 1f, -1, player.GetZDOID());
+        }
 
-        _ = piece.m_placeEffect.Create(position, rotation, moved.transform, 1f, -1, player.GetZDOID());
         _ = player.m_removeEffects.Create(oldPosition, Quaternion.identity, null, 1f, -1, player.GetZDOID());
         player.FaceLookDirection();
         player.m_zanim.SetTrigger(tool.m_shared.m_attack.m_attackAnimation);
@@ -257,10 +353,12 @@ internal static class PieceMover
             tool.m_durability -= player.GetPlaceDurability(tool) * Game.m_durabilityRate;
         }
 
-        _source = null;
+        int count = Sources.Count;
+        Sources.Clear();
         Stop(player);
-        player.Message(MessageHud.MessageType.TopLeft,
-            Localization.instance.Localize("$nhbm_moved", Localization.instance.Localize(piece.m_name)));
+        player.Message(MessageHud.MessageType.TopLeft, count > 1
+            ? Localization.instance.Localize("$betterhammer_moved_group", count.ToString(CultureInfo.InvariantCulture))
+            : Localization.instance.Localize("$betterhammer_moved", Localization.instance.Localize(pieces[0].m_name)));
     }
 
     /// <summary>
@@ -275,20 +373,34 @@ internal static class PieceMover
         }
 
         float pulse = Mathf.Lerp(0.3f, 0.7f, (Mathf.Sin(Time.time * 5f) + 1f) * 0.5f);
-        MaterialMan.instance.SetValue(_source.gameObject, EmissionColor, HighlightColor * pulse);
+        foreach (ZNetView source in Sources)
+        {
+            if (source != null)
+            {
+                MaterialMan.instance.SetValue(source.gameObject, EmissionColor, HighlightColor * pulse);
+            }
+        }
     }
 
     private static void ClearHighlight()
     {
-        if (_source != null && MaterialMan.instance != null)
+        if (MaterialMan.instance == null)
         {
-            MaterialMan.instance.ResetValue(_source.gameObject, EmissionColor);
+            return;
+        }
+
+        foreach (ZNetView source in Sources)
+        {
+            if (source != null)
+            {
+                MaterialMan.instance.ResetValue(source.gameObject, EmissionColor);
+            }
         }
     }
 
     /// <summary>
-    /// Lets the piece be put down overlapping where it is now, so it can be nudged a little. While the
-    /// game checks the ghost's spot, the original's colliders are switched off (so the aim ray, snapping,
+    /// Lets the pieces be put down overlapping where they are now, so they can be nudged a little. While
+    /// the game checks the ghosts' spots, the originals' colliders are switched off (so the aim ray, snapping,
     /// clipping and blocking checks don't see it) and, for a workbench extension, it's taken out of the
     /// list used for the "too close to another extension" check. Both are put back straight afterwards,
     /// within the same frame, before physics runs.
@@ -300,22 +412,30 @@ internal static class PieceMover
             return;
         }
 
-        _source.GetComponentsInChildren(SourceColliders);
-        foreach (Collider collider in SourceColliders)
+        foreach (ZNetView source in Sources)
         {
-            if (collider.enabled)
+            if (source == null)
             {
-                collider.enabled = false;
-                HiddenColliders.Add(collider);
+                continue;
             }
-        }
 
-        SourceColliders.Clear();
+            source.GetComponentsInChildren(SourceColliders);
+            foreach (Collider collider in SourceColliders)
+            {
+                if (collider.enabled)
+                {
+                    collider.enabled = false;
+                    HiddenColliders.Add(collider);
+                }
+            }
 
-        StationExtension extension = _source.GetComponentInChildren<StationExtension>();
-        if (extension != null && StationExtension.m_allExtensions.Remove(extension))
-        {
-            _hiddenExtension = extension;
+            SourceColliders.Clear();
+
+            StationExtension extension = source.GetComponentInChildren<StationExtension>();
+            if (extension != null && StationExtension.m_allExtensions.Remove(extension))
+            {
+                HiddenExtensions.Add(extension);
+            }
         }
     }
 
@@ -331,11 +451,8 @@ internal static class PieceMover
 
         HiddenColliders.Clear();
 
-        if (_hiddenExtension != null)
-        {
-            StationExtension.m_allExtensions.Add(_hiddenExtension);
-            _hiddenExtension = null;
-        }
+        StationExtension.m_allExtensions.AddRange(HiddenExtensions);
+        HiddenExtensions.Clear();
     }
 
     /// <summary>
@@ -369,7 +486,7 @@ internal static class PieceMover
         }
         catch (Exception e)
         {
-            Debug.LogError("NoHammerBuildMenu: failed to move " + prefab.name + ": " + e);
+            Debug.LogError("BetterHammer: failed to move " + prefab.name + ": " + e);
         }
         finally
         {
@@ -453,7 +570,7 @@ internal static class PieceMover
         nview = piece.GetComponent<ZNetView>();
         if (nview == null || !nview.IsValid() || !piece.m_canBeRemoved || !IsMovableKind(piece))
         {
-            player.Message(MessageHud.MessageType.Center, "$nhbm_move_cant");
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_move_cant");
             return false;
         }
 
@@ -511,18 +628,21 @@ internal static class PieceMover
     }
 
     /// <summary>
-    /// Why the move has to end, or null while it can carry on: the original is gone (removed by
-    /// someone else or destroyed), the hammer was put away, or a different piece got selected.
+    /// Why the move has to end, or null while it can carry on: an original is gone (removed by someone
+    /// else or destroyed), the hammer was put away, or a different piece got selected.
     /// </summary>
     private static string AbortReason(Player player)
     {
-        bool gone = _source == null || !_source.IsValid();
-        bool unequipped = !player.InPlaceMode() || !NoHammerBuildMenuPlugin.IsHammerEquipped(player);
+        bool gone = Sources.Exists(source => source == null || !source.IsValid());
+        bool unequipped = !player.InPlaceMode() || !BetterHammerPlugin.IsHammerEquipped(player);
         return (gone, unequipped) switch
         {
-            (true, _) => "$nhbm_move_aborted_gone",
-            (_, true) => "$nhbm_move_aborted_unequipped",
-            _ when !SelectedIsMovedPiece(player) => "$nhbm_move_aborted_selection",
+            (true, _) => "$betterhammer_move_aborted_gone",
+            (_, true) => "$betterhammer_move_aborted_unequipped",
+            _ when !SelectedIsMovedPiece(player) => "$betterhammer_move_aborted_selection",
+
+            // The game set up its ghost again, taking the group's reference ghost with it.
+            _ when MovingGroup && GhostGroup.ActiveOwner != GhostGroup.Owner.Move => "$betterhammer_move_aborted",
             _ => null,
         };
     }
@@ -539,6 +659,12 @@ internal static class PieceMover
     /// </summary>
     private static void Stop(Player player)
     {
+        bool hadGroup = GhostGroup.ActiveOwner == GhostGroup.Owner.Move;
+        if (hadGroup)
+        {
+            GhostGroup.End();
+        }
+
         if (player.InPlaceMode() && SelectedIsMovedPiece(player))
         {
             if (_previousPiece != null)
@@ -547,10 +673,17 @@ internal static class PieceMover
             }
 
             player.m_placeRotation = _previousRotation;
+
+            // The game's ghost may still be the group's reference ghost, possibly of another piece than
+            // the selected one, so set it up again (this also brings back a saved copy's ghosts).
+            if (hadGroup)
+            {
+                player.SetupPlacementGhost();
+            }
         }
 
         ClearHighlight();
-        _source = null;
+        Sources.Clear();
         _prefabName = null;
         _previousPiece = null;
     }

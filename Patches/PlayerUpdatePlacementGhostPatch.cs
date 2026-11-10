@@ -1,13 +1,16 @@
 using System;
 
+using BetterHammer.Structures;
+
 using HarmonyLib;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// While moving a piece, hides the original from the ghost's placement checks so it can be put down
 /// overlapping its old spot. The finalizer always puts it back, even if the method throws. While placing
-/// a copy of several pieces, handles snap point cycling and places the other pieces' ghosts.
+/// several pieces at once (a saved copy, or moving a selection), handles snap point cycling and places
+/// the other pieces' ghosts.
 /// </summary>
 [HarmonyPatch(typeof(Player), "UpdatePlacementGhost")]
 internal static class Player_UpdatePlacementGhost_Patch
@@ -17,7 +20,7 @@ internal static class Player_UpdatePlacementGhost_Patch
     {
         if (__instance == Player.m_localPlayer)
         {
-            MultiCopy.BeforeUpdatePlacementGhost(__instance);
+            GhostGroup.BeforeUpdatePlacementGhost(__instance);
             PieceMover.HideFromPlacementChecks();
         }
     }
@@ -27,7 +30,7 @@ internal static class Player_UpdatePlacementGhost_Patch
     {
         if (__instance == Player.m_localPlayer)
         {
-            MultiCopy.AfterUpdatePlacementGhost(__instance, flashGuardStone);
+            GhostGroup.AfterUpdatePlacementGhost(__instance, flashGuardStone);
         }
     }
 

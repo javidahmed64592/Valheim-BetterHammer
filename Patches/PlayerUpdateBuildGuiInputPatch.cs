@@ -1,6 +1,8 @@
+using BetterHammer.Structures;
+
 using HarmonyLib;
 
-namespace NoHammerBuildMenu.Patches;
+namespace BetterHammer.Patches;
 
 /// <summary>
 /// Prevents Shift+RMB / Ctrl+RMB / Alt+RMB from also opening the build menu while we use them
@@ -19,9 +21,9 @@ internal static class Player_UpdateBuildGuiInput_Patch
             return true;
         }
 
-        bool modifierHeld = NoHammerBuildMenuPlugin.ShiftHeld() || NoHammerBuildMenuPlugin.CtrlHeld() || NoHammerBuildMenuPlugin.AltHeld();
+        bool modifierHeld = BetterHammerPlugin.ShiftHeld() || BetterHammerPlugin.CtrlHeld() || BetterHammerPlugin.AltHeld();
         return !PieceMover.RightClickConsumed
             && !MultiCopy.RightClickConsumed
-            && (!modifierHeld || !NoHammerBuildMenuPlugin.IsHammerEquipped(__instance));
+            && (!modifierHeld || !BetterHammerPlugin.IsHammerEquipped(__instance));
     }
 }
