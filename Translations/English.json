@@ -43,5 +43,7 @@
   "betterhammer_selection_delete_title": "Remove selection",
   "betterhammer_selection_delete_text": "Remove the $1 selected pieces? Their materials will drop where they stand.",
   "betterhammer_selection_removed": "Removed $1 pieces",
-  "betterhammer_selection_removed_some": "Removed $1 of $2 pieces. The rest couldn't be removed and are still selected."
+  "betterhammer_selection_removed_some": "Removed $1 of $2 pieces. The rest couldn't be removed and are still selected.",
+  "betterhammer_move_started_group": "Moving $1 pieces",
+  "betterhammer_moved_group": "Moved $1 pieces"
 }

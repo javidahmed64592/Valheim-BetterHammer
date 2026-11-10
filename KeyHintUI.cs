@@ -139,7 +139,7 @@ internal static class KeyHintUI
                     blank = !MultiCopy.HasSelection;
                     break;
                 case HintVisibility.CopyOnly:
-                    visible = MultiCopy.Placing;
+                    visible = GhostGroup.Active;
                     break;
             }
 

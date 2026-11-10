@@ -269,6 +269,18 @@ internal static class CopyLibrary
         }
     }
 
+    /// <summary>
+    /// A part for the given prefab at the given place, with its snap points counted.
+    /// </summary>
+    internal static Part MakePart(Piece prefab, Vector3 position, Quaternion rotation)
+    {
+        SnapPoints.Clear();
+        prefab.GetSnapPoints(SnapPoints);
+        int snapCount = SnapPoints.Count;
+        SnapPoints.Clear();
+        return new Part { Prefab = prefab, Position = position, Rotation = rotation, SnapCount = snapCount };
+    }
+
     private static Copy Register(SavedCopy saved)
     {
         Copy copy = new()
