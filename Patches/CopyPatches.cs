@@ -16,6 +16,15 @@ namespace BetterHammer.Patches;
 [HarmonyPatch(typeof(Player), "SetupPlacementGhost")]
 internal static class Player_SetupPlacementGhost_Patch
 {
+    [HarmonyPrefix]
+    private static void Prefix(Player __instance)
+    {
+        if (__instance == Player.m_localPlayer)
+        {
+            MultiCopy.BeforeSetupPlacementGhost(__instance);
+        }
+    }
+
     [HarmonyPostfix]
     private static void Postfix(Player __instance)
     {

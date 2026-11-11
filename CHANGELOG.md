@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Building a saved copy now keeps the reference piece and snap point you cycled to with `Q`/`E`, instead of going back to automatic snapping after every placement, so several copies can be placed in a row from the same snap point. Like a single piece, the copy also keeps them when the hammer is put away and taken out again.
+
 ## 1.0.0
 
 - Renamed the mod from NoHammerBuildMenu to BetterHammer, to reflect everything it does now.

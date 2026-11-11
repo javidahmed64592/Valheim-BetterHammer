@@ -27,7 +27,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "javidahmed64592.betterhammer";
     public const string PluginName = "Better Hammer";
-    public const string PluginVersion = "1.0.0";
+    public const string PluginVersion = "1.0.1";
 
     private const string HammerPrefabName = "Hammer";
     private const string ButtonName = "BetterHammer_Toggle";

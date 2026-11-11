@@ -35,7 +35,6 @@ internal static class GhostGroup
     }
 
     private static readonly List<Member> Members = [];
-    private static int _reference;
     private static int _snapFrame = -10;
 
     internal static Owner ActiveOwner { get; private set; }
@@ -56,10 +55,16 @@ internal static class GhostGroup
     internal static GameObject PrefabOverride { get; private set; }
 
     /// <summary>
-    /// Replaces the game's ghost with ghosts of the given pieces, the first being the reference. The
-    /// parts' positions only matter relative to each other.
+    /// The index of the piece that currently uses the game's ghost.
     /// </summary>
-    internal static void Begin(Player player, IList<CopyLibrary.Part> parts, Owner owner)
+    internal static int Reference { get; private set; }
+
+    /// <summary>
+    /// Replaces the game's ghost with ghosts of the given pieces. The parts' positions only matter
+    /// relative to each other. The reference piece and manual snap point start as given (by default the
+    /// first piece, snapping automatically); the build rotation is kept as it is.
+    /// </summary>
+    internal static void Begin(Player player, IList<CopyLibrary.Part> parts, Owner owner, int reference = 0, int snapPoint = -1)
     {
         End();
         if (player.m_placementGhost != null)
@@ -86,8 +91,14 @@ internal static class GhostGroup
 
         player.m_placeRotation = rotation;
         ActiveOwner = owner;
-        UseAsReference(player, 0);
-        player.m_manualSnapPoint = -1;
+        if (reference < 0 || reference >= Members.Count)
+        {
+            reference = 0;
+            snapPoint = -1;
+        }
+
+        UseAsReference(player, reference);
+        player.m_manualSnapPoint = snapPoint;
     }
 
     /// <summary>
@@ -163,7 +174,7 @@ internal static class GhostGroup
         }
 
         member.Ghost = null;
-        _reference = index;
+        Reference = index;
     }
 
     /// <summary>
@@ -172,9 +183,9 @@ internal static class GhostGroup
     private static void SwitchReference(Player player, int index)
     {
         GameObject ghost = player.m_placementGhost;
-        Quaternion turn = ghost != null ? ghost.transform.rotation * Quaternion.Inverse(Members[_reference].Part.Rotation) : Quaternion.identity;
+        Quaternion turn = ghost != null ? ghost.transform.rotation * Quaternion.Inverse(Members[Reference].Part.Rotation) : Quaternion.identity;
 
-        Members[_reference].Ghost = ghost;
+        Members[Reference].Ghost = ghost;
         if (ghost != null)
         {
             ghost.SetActive(false);
@@ -223,7 +234,7 @@ internal static class GhostGroup
         }
 
         _snapFrame = Time.frameCount;
-        int piece = _reference;
+        int piece = Reference;
         int point = player.m_manualSnapPoint;
         if (BetterHammerPlugin.ShiftHeld())
         {
@@ -235,14 +246,14 @@ internal static class GhostGroup
             NextSnapPoint(ref piece, ref point, step);
         }
 
-        if (piece != _reference)
+        if (piece != Reference)
         {
             SwitchReference(player, piece);
         }
 
         // The game applies the same step to the snap point right after this, so start one step back.
         player.m_manualSnapPoint = point - step;
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_reference",
+        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copyReference",
             Localization.instance.Localize(Members[piece].Part.Prefab.m_name),
             (piece + 1).ToString(CultureInfo.InvariantCulture),
             Members.Count.ToString(CultureInfo.InvariantCulture)));
@@ -292,8 +303,8 @@ internal static class GhostGroup
         GameObject reference = player.m_placementGhost;
         bool active = reference != null && reference.activeSelf;
         Player.PlacementStatus status = player.m_placementStatus;
-        Quaternion turn = reference != null ? reference.transform.rotation * Quaternion.Inverse(Members[_reference].Part.Rotation) : Quaternion.identity;
-        Vector3 origin = Members[_reference].Part.Position;
+        Quaternion turn = reference != null ? reference.transform.rotation * Quaternion.Inverse(Members[Reference].Part.Rotation) : Quaternion.identity;
+        Vector3 origin = Members[Reference].Part.Position;
 
         foreach (Member member in Members)
         {
