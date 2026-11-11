@@ -52,7 +52,8 @@ internal static class MultiCopy
 
     /// <summary>
     /// The copy being placed, its reference piece and its manual snap point just before the game set up
-    /// its ghost again, so a rebuild of the same copy (after placing it uses up materials, say) keeps them.
+    /// its ghost again, so a rebuild of the same copy (after placing it uses up materials, or taking the
+    /// hammer out again) keeps them.
     /// </summary>
     private static (CopyLibrary.Copy Copy, int Reference, int SnapPoint) _kept;
 
@@ -90,6 +91,7 @@ internal static class MultiCopy
         // The hammer was put away, or another piece selected without the ghost being set up again.
         if (Placing && (!player.InPlaceMode() || player.m_placementGhost == null || CopyLibrary.Find(player.GetSelectedPiece()) != _active))
         {
+            Keep(player);
             Deactivate();
         }
 
@@ -276,6 +278,7 @@ internal static class MultiCopy
         ClearHighlights();
         Selected.Clear();
         Deactivate();
+        _kept = default;
         _selectionDirty = true;
     }
 
@@ -388,7 +391,19 @@ internal static class MultiCopy
     {
         if (!GhostGroup.CreatingGhosts)
         {
-            _kept = Placing ? (_active, GhostGroup.Reference, player.m_manualSnapPoint) : default;
+            Keep(player);
+        }
+    }
+
+    /// <summary>
+    /// Remembers the copy being placed, its reference piece and its snap point, if one is being placed.
+    /// What's remembered stays while the hammer is away, as the game keeps a single piece's snap point.
+    /// </summary>
+    private static void Keep(Player player)
+    {
+        if (Placing)
+        {
+            _kept = (_active, GhostGroup.Reference, player.m_manualSnapPoint);
         }
     }
 
@@ -405,14 +420,19 @@ internal static class MultiCopy
             return;
         }
 
-        (CopyLibrary.Copy keptCopy, int reference, int snapPoint) = _kept;
-        _kept = default;
-
         // The game just replaced its ghost, so a group's reference ghost is gone. A move notices and ends.
         GhostGroup.End();
         _active = null;
+        if (!player.InPlaceMode() || player.IsDead())
+        {
+            // The hammer was put away: keep what was remembered for when it's taken out again.
+            return;
+        }
+
+        (CopyLibrary.Copy keptCopy, int reference, int snapPoint) = _kept;
+        _kept = default;
         CopyLibrary.Copy copy = CopyLibrary.Find(player.GetSelectedPiece());
-        if (copy != null && player.InPlaceMode() && !player.IsDead())
+        if (copy != null)
         {
             if (copy == keptCopy)
             {
