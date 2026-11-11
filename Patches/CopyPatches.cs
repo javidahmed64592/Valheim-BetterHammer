@@ -10,8 +10,9 @@ using UnityEngine;
 namespace BetterHammer.Patches;
 
 /// <summary>
-/// Whenever the game sets up the placement ghost (a new piece selected, the hammer equipped), a saved
-/// copy that's selected gets its own ghosts.
+/// Whenever the game sets up the placement ghost (a new piece selected, the hammer equipped, the
+/// inventory changed), a saved copy that's selected gets its own ghosts, and a move in progress gets its
+/// ghost back as it was.
 /// </summary>
 [HarmonyPatch(typeof(Player), "SetupPlacementGhost")]
 internal static class Player_SetupPlacementGhost_Patch
@@ -22,7 +23,7 @@ internal static class Player_SetupPlacementGhost_Patch
         if (__instance == Player.m_localPlayer)
         {
             MultiCopy.BeforeSetupPlacementGhost(__instance);
-            PieceMover.BeforeSetupPlacementGhost();
+            PieceMover.BeforeSetupPlacementGhost(__instance);
         }
     }
 
@@ -32,6 +33,7 @@ internal static class Player_SetupPlacementGhost_Patch
         if (__instance == Player.m_localPlayer)
         {
             MultiCopy.AfterSetupPlacementGhost(__instance);
+            PieceMover.AfterSetupPlacementGhost(__instance);
         }
     }
 }

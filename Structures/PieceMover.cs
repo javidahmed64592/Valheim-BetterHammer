@@ -48,8 +48,13 @@ internal static class PieceMover
     private static int _pausedReference;
 
     /// <summary>
-    /// The group's reference piece just before the game last set up its ghost, which ends the group.
+    /// The move's turn, snap point and (for a group) reference piece just before the game set up its
+    /// ghost again (after an inventory change, say), which ends a group and may re-roll the turn. The
+    /// move's ghost is set up again with them straight after.
     /// </summary>
+    private static bool _rebuild;
+    private static int _keptRotation;
+    private static int _keptSnapPoint;
     private static int _groupReference;
 
     /// <summary>
@@ -656,15 +661,46 @@ internal static class PieceMover
     /// else or destroyed), the hammer was put away, or a different piece got selected.
     /// </summary>
     /// <summary>
-    /// Runs before Player.SetupPlacementGhost: notes a moved group's reference piece, since setting up
-    /// the ghost ends the group.
+    /// Runs before Player.SetupPlacementGhost: notes how the move's ghost is turned and snapping. Not
+    /// while this class ends a group itself (picking up again, stopping, carrying on after a pause), as
+    /// the group is already gone then.
     /// </summary>
-    internal static void BeforeSetupPlacementGhost()
+    internal static void BeforeSetupPlacementGhost(Player player)
     {
-        if (Moving && !GhostGroup.CreatingGhosts && GhostGroup.ActiveOwner == GhostGroup.Owner.Move)
+        _rebuild = false;
+        if (!Moving || _paused || GhostGroup.CreatingGhosts || (MovingGroup && GhostGroup.ActiveOwner != GhostGroup.Owner.Move))
         {
-            _groupReference = GhostGroup.Reference;
+            return;
         }
+
+        _keptRotation = player.m_placeRotation;
+        _keptSnapPoint = player.m_manualSnapPoint;
+        _groupReference = MovingGroup ? GhostGroup.Reference : 0;
+        _rebuild = true;
+    }
+
+    /// <summary>
+    /// Runs after Player.SetupPlacementGhost (after a saved copy's handling, which ends any group): if
+    /// the moved piece is still the selected one, sets the move's ghost up again as it was.
+    /// </summary>
+    internal static void AfterSetupPlacementGhost(Player player)
+    {
+        if (GhostGroup.CreatingGhosts || !_rebuild)
+        {
+            return;
+        }
+
+        _rebuild = false;
+        if (!Moving
+            || !player.InPlaceMode()
+            || player.InRepairMode()
+            || !SelectedIsMovedPiece(player)
+            || Sources.Exists(source => source == null || !source.IsValid()))
+        {
+            return;
+        }
+
+        SetUpGhost(player, _keptRotation, _keptSnapPoint, _groupReference);
     }
 
     /// <summary>
@@ -703,25 +739,32 @@ internal static class PieceMover
     /// </summary>
     private static void Resume(Player player)
     {
-        // Selecting a piece that starts at a random turn re-rolls the build rotation.
-        player.m_placeRotation = _pausedRotation;
-        if (MovingGroup)
-        {
-            List<CopyLibrary.Part> parts = [];
-            foreach (ZNetView source in Sources)
-            {
-                Piece piece = source.GetComponent<Piece>();
-                parts.Add(CopyLibrary.MakePart(PrefabOf(piece), piece.transform.position, piece.transform.rotation));
-            }
-
-            GhostGroup.Begin(player, parts, GhostGroup.Owner.Move, _pausedReference, _pausedSnapPoint);
-        }
-        else
-        {
-            player.m_manualSnapPoint = _pausedSnapPoint;
-        }
-
+        SetUpGhost(player, _pausedRotation, _pausedSnapPoint, _pausedReference);
         player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_resumed");
+    }
+
+    /// <summary>
+    /// With the game's ghost just set up for the moved piece: gives it the given turn and snap point,
+    /// and for a group replaces it with the group's ghosts, snapping by the given piece.
+    /// </summary>
+    private static void SetUpGhost(Player player, int rotation, int snapPoint, int reference)
+    {
+        // Setting up a ghost for a piece that starts at a random turn re-rolls the build rotation.
+        player.m_placeRotation = rotation;
+        if (!MovingGroup)
+        {
+            player.m_manualSnapPoint = snapPoint;
+            return;
+        }
+
+        List<CopyLibrary.Part> parts = [];
+        foreach (ZNetView source in Sources)
+        {
+            Piece piece = source.GetComponent<Piece>();
+            parts.Add(CopyLibrary.MakePart(PrefabOf(piece), piece.transform.position, piece.transform.rotation));
+        }
+
+        GhostGroup.Begin(player, parts, GhostGroup.Owner.Move, reference, snapPoint);
     }
 
     private static string AbortReason(Player player)
