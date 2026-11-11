@@ -110,15 +110,30 @@ internal static class MultiCopy
         bool alt = BetterHammerPlugin.AltHeld();
         bool placePressed = ZInput.GetButtonDown(PlaceButton);
         bool block = wasPlacing;
+        bool shift = BetterHammerPlugin.ShiftHeld();
         if (alt && ZInput.GetButtonDown(RemoveButton))
         {
             PieceMover.BlockRemoveUntilReleased(player);
-            Select(player);
+            if (shift)
+            {
+                SelectConnected(player);
+            }
+            else
+            {
+                Select(player);
+            }
         }
         else if (alt && Input.GetMouseButtonDown(1))
         {
             _rightClickFrame = Time.frameCount;
-            Deselect(player);
+            if (shift)
+            {
+                DeselectConnected(player);
+            }
+            else
+            {
+                Deselect(player);
+            }
         }
         else if (alt && placePressed)
         {
@@ -297,8 +312,7 @@ internal static class MultiCopy
             return;
         }
 
-        ZNetView nview = piece.GetComponent<ZNetView>();
-        if (nview == null || !nview.IsValid() || !player.m_buildPieces.GetPieceIndex(piece, out _, out _))
+        if (!CanSelect(player, piece))
         {
             // Same as copying a single piece: this hammer can't build it, or you don't know it yet.
             player.Message(MessageHud.MessageType.Center, "$msg_missingrequirement");
@@ -309,6 +323,99 @@ internal static class MultiCopy
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft,
             Localization.instance.Localize("$betterhammer_copy_selected", name, Count(Selected.Count)));
+    }
+
+    /// <summary>
+    /// Whether the piece can be selected: it exists, and this hammer can build it.
+    /// </summary>
+    private static bool CanSelect(Player player, Piece piece)
+    {
+        ZNetView nview = piece.GetComponent<ZNetView>();
+        return nview != null && nview.IsValid() && player.m_buildPieces.GetPieceIndex(piece, out _, out _);
+    }
+
+    /// <summary>
+    /// Alt+Shift+middle-click: selects the piece looked at and every piece connected to it. Pieces this
+    /// hammer can't build are left out, but still connect the pieces either side of them.
+    /// </summary>
+    private static void SelectConnected(Player player)
+    {
+        Piece start = player.GetHoveringPiece();
+        if (start == null)
+        {
+            return;
+        }
+
+        Prune();
+        int added = 0;
+        int skipped = 0;
+        bool limited;
+        foreach (Piece piece in ConnectedPieces.Find(start, out limited))
+        {
+            if (Selected.Contains(piece))
+            {
+                continue;
+            }
+
+            if (!CanSelect(player, piece))
+            {
+                skipped++;
+                continue;
+            }
+
+            Selected.Add(piece);
+            added++;
+        }
+
+        _selectionDirty = true;
+        player.Message(MessageHud.MessageType.TopLeft,
+            Localization.instance.Localize("$betterhammer_copy_selected_connected", Count(added), Count(Selected.Count)));
+        ReportConnected(player, skipped, limited);
+    }
+
+    /// <summary>
+    /// Alt+Shift+right-click: deselects the piece looked at and every selected piece connected to it,
+    /// whether or not the pieces in between are selected.
+    /// </summary>
+    private static void DeselectConnected(Player player)
+    {
+        Piece start = player.GetHoveringPiece();
+        if (start == null)
+        {
+            return;
+        }
+
+        Prune();
+        int removed = 0;
+        bool limited;
+        foreach (Piece piece in ConnectedPieces.Find(start, out limited))
+        {
+            if (Selected.Remove(piece))
+            {
+                ResetHighlight(piece);
+                removed++;
+            }
+        }
+
+        _selectionDirty = true;
+        player.Message(MessageHud.MessageType.TopLeft,
+            Localization.instance.Localize("$betterhammer_copy_deselected_connected", Count(removed), Count(Selected.Count)));
+        ReportConnected(player, 0, limited);
+    }
+
+    private static void ReportConnected(Player player, int skipped, bool limited)
+    {
+        if (skipped > 0)
+        {
+            player.Message(MessageHud.MessageType.TopLeft,
+                Localization.instance.Localize("$betterhammer_copy_connected_skipped", Count(skipped)));
+        }
+
+        if (limited)
+        {
+            player.Message(MessageHud.MessageType.Center,
+                Localization.instance.Localize("$betterhammer_copy_connected_limit", Count(ConnectedPieces.MaxPieces)));
+        }
     }
 
     private static void Deselect(Player player)

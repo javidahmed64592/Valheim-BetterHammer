@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added selecting connected pieces: `Alt+Shift+Middle-Click` on a piece selects it and every piece connected to it, directly or through other pieces, and `Alt+Shift+Right-Click` deselects them. Pieces count as connected when they touch, as the game sees it for support. The ground doesn't connect them. Pieces this hammer can't build are left out but still link the pieces around them. A search stops at 1000 pieces, set by the new `Max Connected Pieces` setting.
+- `Shift+Right-Click` and `Ctrl+Right-Click` no longer toggle repair mode or the grid while `Alt` is held.
+
 ## 1.0.1
 
 - Building a saved copy now keeps the reference piece and snap point you cycled to with `Q`/`E`, instead of going back to automatic snapping after every placement, so several copies can be placed in a row from the same snap point. Like a single piece, the copy also keeps them when the hammer is put away and taken out again.

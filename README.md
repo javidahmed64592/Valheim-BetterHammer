@@ -9,7 +9,7 @@ This mod adds several improvements to the vanilla base hammer:
 - **No hammer required**: Open the build menu without a hammer in your inventory by pressing `B`.
 - **Use nearby materials**: Use materials from the ground and nearby chests when your inventory runs short.
 - **Build grid**: Toggle the build grid by pressing `Ctrl+Right-Click`. Adjust the grid distance by scrolling while holding `Ctrl`.
-- **Copying structures**: Select built pieces to copy by looking at them and pressing `Alt+Middle-Click`, and deselect them with `Alt+Right-Click`. Once you have selected the pieces you want to copy, save them as a copy in the Copies tab with `Alt+Left-Click`.
+- **Copying structures**: Select built pieces to copy by looking at them and pressing `Alt+Middle-Click`, and deselect them with `Alt+Right-Click`. Add `Shift` to select or deselect a whole build at once. Once you have selected the pieces you want to copy, save them as a copy in the Copies tab with `Alt+Left-Click`.
 - **Move pieces**: Move individual built pieces or entire selections with `Ctrl+Middle-Click`. Then left-click to put them down at a new location, or right-click to abort.
 - **Repair mode**: Toggle repair mode by pressing `Shift+Right-Click`.
 - **Zoom camera**: Zoom the camera in and out without needing to unequip the hammer by scrolling while holding `Alt`.
@@ -32,10 +32,13 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 | --------------------------------------- | -------------------------------------------------------------- |
 | `Alt+Left-Click`                        | Name the selection and save it in the hammer's **Copies** tab. |
 | `Ctrl+Middle-Click` on a selected piece | Move the whole selection.                                      |
+| `Alt+Shift+Middle-Click`                | Select the piece and every piece connected to it.              |
 | `Alt+Right-Click`                       | Deselect the piece you are looking at.                         |
+| `Alt+Shift+Right-Click`                 | Deselect the piece and every piece connected to it.            |
 | `Backspace`                             | Clear the selection.                                           |
 | `Delete`                                | Destroy every selected piece, dropping their materials.        |
 
+- Pieces are connected when they touch, directly or through other pieces. The ground doesn't connect them. Pieces this hammer can't build are left out, and one search stops at 1000 pieces (`Max Connected Pieces` in the config).
 - Build a saved copy like any other piece. Hold `Alt` to see the selection's total materials.
 - `Ctrl+Middle-Click` on a piece that isn't selected moves just that piece. Left-click to put it down, right-click to cancel.
 - Moving is free and keeps everything inside, so chests don't need emptying. Ward and workbench rules apply, and ships and carts can't be moved.

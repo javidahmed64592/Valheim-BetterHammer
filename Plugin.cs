@@ -89,6 +89,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
         ChestMaterials.BindConfig(Config);
         CopyLibrary.BindConfig(Config);
         MultiCopy.BindConfig(Config);
+        ConnectedPieces.BindConfig(Config);
         Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.
@@ -153,8 +154,8 @@ public class BetterHammerPlugin : BaseUnityPlugin
             ToggleBuildMenu(player);
         }
 
-        // While moving a piece, right-click only cancels the move.
-        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !PieceMover.RightClickConsumed && !MultiCopy.RightClickConsumed)
+        // While moving a piece, right-click only cancels the move. Alt+right-click is for the selection.
+        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !AltHeld() && !PieceMover.RightClickConsumed && !MultiCopy.RightClickConsumed)
         {
             if (ShiftHeld())
             {

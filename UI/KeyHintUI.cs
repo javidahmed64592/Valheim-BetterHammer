@@ -71,7 +71,9 @@ internal static class KeyHintUI
     [
         new Hint { Label = "$betterhammer_hint_copy_selection", Column = 0, Keys = ["Left Alt", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$betterhammer_hint_deselect", Column = 0, Keys = ["Left Alt", "$button_mouse1"], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_deselect_connected", Column = 0, Keys = ["Left Alt", "Left Shift", "$button_mouse1"], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$betterhammer_hint_select", Column = 0, Keys = ["Left Alt", "$button_mouse2"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_select_connected", Column = 0, Keys = ["Left Alt", "Left Shift", "$button_mouse2"], Visibility = HintVisibility.Always },
         new Hint { Label = "$betterhammer_hint_move", Column = 0, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.Always },
         new Hint { Label = "$betterhammer_hint_grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
         new Hint { Label = "$betterhammer_hint_repair", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
