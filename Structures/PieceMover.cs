@@ -125,8 +125,9 @@ internal static class PieceMover
             BlockRemoveUntilReleased(player);
             player.Message(MessageHud.MessageType.Center, "$betterhammer_move_cant_remove");
         }
-        else if (Moving && Input.GetMouseButtonDown(1))
+        else if (Moving && Input.GetMouseButtonDown(1) && !BetterHammerPlugin.CtrlHeld())
         {
+            // Ctrl+right-click toggles the build grid instead, which is handy while moving.
             _rightClickFrame = Time.frameCount;
             Stop(player);
             player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_aborted");

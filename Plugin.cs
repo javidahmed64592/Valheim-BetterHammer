@@ -154,12 +154,16 @@ public class BetterHammerPlugin : BaseUnityPlugin
             ToggleBuildMenu(player);
         }
 
-        // While moving a piece, right-click only cancels the move. Alt+right-click is for the selection.
-        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !AltHeld() && !PieceMover.RightClickConsumed && !MultiCopy.RightClickConsumed)
+        // Alt+right-click is for the selection. While moving a piece, right-click cancels the move, except
+        // Ctrl+right-click, which still toggles the grid.
+        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !AltHeld() && !MultiCopy.RightClickConsumed)
         {
             if (ShiftHeld())
             {
-                ToggleRepairMode(player);
+                if (!PieceMover.RightClickConsumed)
+                {
+                    ToggleRepairMode(player);
+                }
             }
             else if (CtrlHeld())
             {
