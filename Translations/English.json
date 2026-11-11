@@ -11,6 +11,8 @@
   "betterhammer_move_started": "Moving $1",
   "betterhammer_moved": "Moved $1",
   "betterhammer_move_aborted": "Move aborted",
+  "betterhammer_move_paused": "Move paused while repairing",
+  "betterhammer_move_resumed": "Carrying on with the move",
   "betterhammer_move_aborted_gone": "Move aborted: the piece no longer exists",
   "betterhammer_move_aborted_unequipped": "Move aborted: the hammer was put away",
   "betterhammer_move_aborted_selection": "Move aborted: a different piece was selected",

@@ -40,7 +40,7 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 
 - Pieces are connected when they touch, directly or through other pieces. The ground doesn't connect them. Pieces this hammer can't build are left out, and one search stops at 1000 pieces (`Max Connected Pieces` in the config).
 - Build a saved copy like any other piece. Hold `Alt` to see the selection's total materials.
-- `Ctrl+Middle-Click` on a piece that isn't selected moves just that piece. Left-click to put it down, right-click to cancel. `Ctrl+Right-Click` still toggles the build grid while moving.
+- `Ctrl+Middle-Click` on a piece that isn't selected moves just that piece. Left-click to put it down, right-click to cancel. `Ctrl+Right-Click` still toggles the build grid while moving, and `Shift+Right-Click` pauses the move so you can repair the pieces first. Toggle repair mode off again to carry on moving.
 - Moving is free and keeps everything inside, so chests don't need emptying. Ward and workbench rules apply, and ships and carts can't be moved.
 - While placing a copy or a moved selection, `Q`/`E` cycles snap points and `Shift+Q`/`Shift+E` switches which piece you snap by.
 - Copies are saved in `BepInEx/config/BetterHammer/copies.json` for all your characters and worlds. To rename or delete one, hover it in the build menu and press `Insert` or `Delete`.

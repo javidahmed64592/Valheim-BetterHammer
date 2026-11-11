@@ -39,6 +39,20 @@ internal static class PieceMover
     private static int _rightClickFrame = -10;
 
     /// <summary>
+    /// A move is paused while the hammer is in repair mode, so the pieces can be repaired first, and
+    /// carries on when the moved piece is selected again. These are what it carries on with.
+    /// </summary>
+    private static bool _paused;
+    private static int _pausedRotation;
+    private static int _pausedSnapPoint;
+    private static int _pausedReference;
+
+    /// <summary>
+    /// The group's reference piece just before the game last set up its ghost, which ends the group.
+    /// </summary>
+    private static int _groupReference;
+
+    /// <summary>
     /// The same Ember Gold BenchLink uses to highlight linked stations.
     /// </summary>
     private static readonly Color HighlightColor = new(0.941f, 0.690f, 0.290f);
@@ -69,8 +83,8 @@ internal static class PieceMover
     private static bool MovingGroup => Sources.Count > 1;
 
     /// <summary>
-    /// Right-clicking while moving only cancels the move, so it mustn't also open the build menu or
-    /// toggle repair mode or the grid.
+    /// Right-clicking while moving cancels the move (or, with Shift or Ctrl, toggles repair mode or the
+    /// grid), so it mustn't also open the build menu.
     /// </summary>
     internal static bool RightClickConsumed => Moving || _rightClickFrame == Time.frameCount;
 
@@ -92,6 +106,11 @@ internal static class PieceMover
             {
                 _blockRemoveUntilReleased = false;
             }
+        }
+
+        if (Moving)
+        {
+            UpdatePause(player);
         }
 
         string abortReason = Moving ? AbortReason(player) : null;
@@ -125,19 +144,20 @@ internal static class PieceMover
             BlockRemoveUntilReleased(player);
             player.Message(MessageHud.MessageType.Center, "$betterhammer_move_cant_remove");
         }
-        else if (Moving && Input.GetMouseButtonDown(1) && !BetterHammerPlugin.CtrlHeld())
+        else if (Moving && Input.GetMouseButtonDown(1) && !BetterHammerPlugin.CtrlHeld() && !BetterHammerPlugin.ShiftHeld())
         {
-            // Ctrl+right-click toggles the build grid instead, which is handy while moving.
+            // Ctrl+ and Shift+right-click toggle the grid and repair mode instead.
             _rightClickFrame = Time.frameCount;
             Stop(player);
             player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_aborted");
         }
-        else if (Moving && !BetterHammerPlugin.AltHeld() && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
+        else if (Moving && !_paused && !BetterHammerPlugin.AltHeld() && ZInput.GetButtonDown(PlaceButton) && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
         {
             PutDown(player);
         }
 
-        return wasMoving || Moving;
+        // While paused, left-click repairs as normal.
+        return (wasMoving || Moving) && !_paused;
     }
 
     /// <summary>
@@ -176,6 +196,7 @@ internal static class PieceMover
     {
         ClearHighlight();
         Sources.Clear();
+        _paused = false;
         _prefabName = null;
         _previousPiece = null;
         _blockRemoveUntilReleased = false;
@@ -225,6 +246,7 @@ internal static class PieceMover
         }
 
         player.m_placeRotation = (int)Math.Round(piece.transform.rotation.eulerAngles.y / player.m_placeRotationDegrees);
+        _paused = false;
         ClearHighlight();
         Sources.Clear();
         Sources.AddRange(nviews);
@@ -408,7 +430,8 @@ internal static class PieceMover
     /// </summary>
     internal static void HideFromPlacementChecks()
     {
-        if (!Moving)
+        // While paused, the repair hammer must be able to aim at the pieces.
+        if (!Moving || _paused)
         {
             return;
         }
@@ -632,6 +655,75 @@ internal static class PieceMover
     /// Why the move has to end, or null while it can carry on: an original is gone (removed by someone
     /// else or destroyed), the hammer was put away, or a different piece got selected.
     /// </summary>
+    /// <summary>
+    /// Runs before Player.SetupPlacementGhost: notes a moved group's reference piece, since setting up
+    /// the ghost ends the group.
+    /// </summary>
+    internal static void BeforeSetupPlacementGhost()
+    {
+        if (Moving && !GhostGroup.CreatingGhosts && GhostGroup.ActiveOwner == GhostGroup.Owner.Move)
+        {
+            _groupReference = GhostGroup.Reference;
+        }
+    }
+
+    /// <summary>
+    /// Pauses the move when repair mode is turned on, and carries on with it when repair mode is turned
+    /// off again with the moved piece selected. Leaving repair mode for any other piece ends the move
+    /// (see <see cref="AbortReason"/>).
+    /// </summary>
+    private static void UpdatePause(Player player)
+    {
+        bool repairing = player.InPlaceMode() && player.InRepairMode();
+        if (!_paused && repairing)
+        {
+            _paused = true;
+            _pausedRotation = player.m_placeRotation;
+            _pausedSnapPoint = player.m_manualSnapPoint;
+            _pausedReference = MovingGroup ? _groupReference : 0;
+            if (GhostGroup.ActiveOwner == GhostGroup.Owner.Move)
+            {
+                GhostGroup.End();
+            }
+
+            player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_paused");
+        }
+        else if (_paused && !repairing && player.InPlaceMode())
+        {
+            _paused = false;
+            if (SelectedIsMovedPiece(player))
+            {
+                Resume(player);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sets the move's ghost up again after a pause, turned and snapping as it was.
+    /// </summary>
+    private static void Resume(Player player)
+    {
+        // Selecting a piece that starts at a random turn re-rolls the build rotation.
+        player.m_placeRotation = _pausedRotation;
+        if (MovingGroup)
+        {
+            List<CopyLibrary.Part> parts = [];
+            foreach (ZNetView source in Sources)
+            {
+                Piece piece = source.GetComponent<Piece>();
+                parts.Add(CopyLibrary.MakePart(PrefabOf(piece), piece.transform.position, piece.transform.rotation));
+            }
+
+            GhostGroup.Begin(player, parts, GhostGroup.Owner.Move, _pausedReference, _pausedSnapPoint);
+        }
+        else
+        {
+            player.m_manualSnapPoint = _pausedSnapPoint;
+        }
+
+        player.Message(MessageHud.MessageType.TopLeft, "$betterhammer_move_resumed");
+    }
+
     private static string AbortReason(Player player)
     {
         bool gone = Sources.Exists(source => source == null || !source.IsValid());
@@ -640,6 +732,7 @@ internal static class PieceMover
         {
             (true, _) => "$betterhammer_move_aborted_gone",
             (_, true) => "$betterhammer_move_aborted_unequipped",
+            _ when _paused => null,
             _ when !SelectedIsMovedPiece(player) => "$betterhammer_move_aborted_selection",
 
             // The game set up its ghost again, taking the group's reference ghost with it.
@@ -682,7 +775,18 @@ internal static class PieceMover
                 player.SetupPlacementGhost();
             }
         }
+        else if (_paused)
+        {
+            // Still in repair mode: leaving it goes back to the piece selected before the move.
+            if (_previousPiece != null)
+            {
+                BetterHammerPlugin.SetRepairReturnPiece(_previousPiece);
+            }
 
+            player.m_placeRotation = _previousRotation;
+        }
+
+        _paused = false;
         ClearHighlight();
         Sources.Clear();
         _prefabName = null;

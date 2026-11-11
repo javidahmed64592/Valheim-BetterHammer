@@ -22,6 +22,7 @@ internal static class Player_SetupPlacementGhost_Patch
         if (__instance == Player.m_localPlayer)
         {
             MultiCopy.BeforeSetupPlacementGhost(__instance);
+            PieceMover.BeforeSetupPlacementGhost();
         }
     }
 

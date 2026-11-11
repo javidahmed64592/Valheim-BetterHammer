@@ -5,6 +5,7 @@
 - Added selecting connected pieces: `Alt+Shift+Middle-Click` on a piece selects it and every piece connected to it, directly or through other pieces, and `Alt+Shift+Right-Click` deselects them. Pieces count as connected when they touch, as the game sees it for support. The ground doesn't connect them. Pieces this hammer can't build are left out but still link the pieces around them. A search stops at 1000 pieces, set by the new `Max Connected Pieces` setting.
 - `Shift+Right-Click` and `Ctrl+Right-Click` no longer toggle repair mode or the grid while `Alt` is held.
 - `Ctrl+Right-Click` toggles the build grid while moving pieces, instead of aborting the move.
+- `Shift+Right-Click` while moving pieces switches to repair mode and pauses the move, so the pieces can be repaired before they're put down. Switching back carries on with the move, keeping its rotation, snap point and reference piece. A plain right-click still aborts, and leaving repair mode for another piece ends the move.
 
 ## 1.0.1
 

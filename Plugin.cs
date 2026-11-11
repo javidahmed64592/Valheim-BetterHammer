@@ -53,7 +53,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
     private ConfigEntry<KeyCode> _keybind;
     private Harmony _harmony;
     private bool _knownRecipesRefreshed;
-    private Piece _lastBuildPiece;
+    private static Piece _lastBuildPiece;
 
     private void Awake()
     {
@@ -154,16 +154,13 @@ public class BetterHammerPlugin : BaseUnityPlugin
             ToggleBuildMenu(player);
         }
 
-        // Alt+right-click is for the selection. While moving a piece, right-click cancels the move, except
-        // Ctrl+right-click, which still toggles the grid.
+        // Alt+right-click is for the selection. While moving a piece, a plain right-click cancels the move,
+        // but Shift+ and Ctrl+right-click still toggle repair mode (pausing the move) and the grid.
         if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !AltHeld() && !MultiCopy.RightClickConsumed)
         {
             if (ShiftHeld())
             {
-                if (!PieceMover.RightClickConsumed)
-                {
-                    ToggleRepairMode(player);
-                }
+                ToggleRepairMode(player);
             }
             else if (CtrlHeld())
             {
@@ -285,7 +282,15 @@ public class BetterHammerPlugin : BaseUnityPlugin
             Localization.instance.Localize("$betterhammer_grid_distance", size.ToString("0.###", CultureInfo.InvariantCulture)));
     }
 
-    private void ToggleRepairMode(Player player)
+    /// <summary>
+    /// The piece Shift+right-click goes back to when leaving repair mode.
+    /// </summary>
+    internal static void SetRepairReturnPiece(Piece piece)
+    {
+        _lastBuildPiece = piece;
+    }
+
+    private static void ToggleRepairMode(Player player)
     {
         if (player.InRepairMode())
         {
