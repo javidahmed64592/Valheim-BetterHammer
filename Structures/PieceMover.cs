@@ -11,9 +11,9 @@ namespace BetterHammer.Structures;
 /// <summary>
 /// <para>
 /// Ctrl+middle-click picks up a built piece and shows its ghost, the same way Shift+middle-click copies
-/// one. Left-click puts it down where the ghost is and right-click cancels. Ctrl+middle-click on a piece
-/// selected for copying along with others picks up the whole selection instead, shown as a
-/// <see cref="GhostGroup"/> like a saved copy.
+/// one. Left-click puts it down where the ghost is and right-click cancels. With pieces selected for
+/// copying, Ctrl+middle-click on one of them, or on nothing, picks up the whole selection instead, shown
+/// as a <see cref="GhostGroup"/> like a saved copy (see <see cref="MultiCopy.PiecesToMove"/>).
 /// </para>
 /// <para>
 /// Putting a piece down creates a new object at the ghost with a copy of the original's saved data
@@ -29,7 +29,8 @@ internal static class PieceMover
     private const string PlaceButton = "Attack";
 
     /// <summary>
-    /// The pieces being moved; the first is the one that was clicked, and the reference piece to start with.
+    /// The pieces being moved, in the order they were selected. The group's reference piece starts as the
+    /// one looked at when the move began.
     /// </summary>
     private static readonly List<ZNetView> Sources = [];
     private static string _prefabName;
@@ -209,15 +210,15 @@ internal static class PieceMover
 
     private static void PickUp(Player player)
     {
-        // The piece vanilla highlights: the same ray and reach as copying and removing.
-        Piece piece = player.GetHoveringPiece();
-        if (piece == null)
+        // The piece vanilla highlights (the same ray and reach as copying and removing) on its own, or the
+        // whole selection snapping by the piece looked at, or by its first piece when looking at nothing.
+        List<Piece> pieces = MultiCopy.PiecesToMove(player.GetHoveringPiece(), out int reference);
+        if (pieces == null)
         {
             return;
         }
 
-        // A piece selected along with others brings the whole selection.
-        List<Piece> pieces = MultiCopy.SelectionStartingWith(piece) ?? [piece];
+        Piece piece = pieces[reference];
         List<ZNetView> nviews = [];
         foreach (Piece moving in pieces)
         {
@@ -275,7 +276,7 @@ internal static class PieceMover
             parts.Add(CopyLibrary.MakePart(PrefabOf(moving), moving.transform.position, moving.transform.rotation));
         }
 
-        GhostGroup.Begin(player, parts, GhostGroup.Owner.Move);
+        GhostGroup.Begin(player, parts, GhostGroup.Owner.Move, reference);
         player.Message(MessageHud.MessageType.TopLeft,
             Localization.instance.Localize("$betterhammer_move_started_group", Sources.Count.ToString(CultureInfo.InvariantCulture)));
     }

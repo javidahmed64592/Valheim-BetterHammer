@@ -74,8 +74,6 @@ internal static class MultiCopy
 
     internal static bool HasSelection => Selected.Count > 0;
 
-    internal static int SelectionCount => Selected.Count;
-
     /// <summary>
     /// Alt+right-click deselects, so it mustn't also open the build menu or toggle repair mode or the grid.
     /// </summary>
@@ -570,20 +568,38 @@ internal static class MultiCopy
     }
 
     /// <summary>
-    /// The selection with the given piece first, if it's selected along with others; used to move them
-    /// all at once.
+    /// What Ctrl+middle-click moves. Looking at a piece that isn't selected: just that piece. Otherwise
+    /// the whole selection, in the order it was picked, snapping by the piece looked at, or by the first
+    /// one picked when looking at nothing. Null if there's nothing to move.
     /// </summary>
-    internal static List<Piece> SelectionStartingWith(Piece piece)
+    internal static List<Piece> PiecesToMove(Piece hovered, out int reference)
     {
         Prune();
-        if (piece == null || Selected.Count < 2 || !Selected.Contains(piece))
+        reference = 0;
+        if (hovered != null && !Selected.Contains(hovered))
+        {
+            return [hovered];
+        }
+
+        if (Selected.Count == 0)
         {
             return null;
         }
 
-        List<Piece> pieces = [piece];
-        pieces.AddRange(Selected.Where(other => other != piece));
-        return pieces;
+        if (hovered != null)
+        {
+            reference = Selected.IndexOf(hovered);
+        }
+
+        return [.. Selected];
+    }
+
+    /// <summary>
+    /// Whether Ctrl+middle-click would move several pieces (see <see cref="PiecesToMove"/>).
+    /// </summary>
+    internal static bool MovesSelection(Piece hovered)
+    {
+        return Selected.Count >= 2 && (hovered == null || Selected.Contains(hovered));
     }
 
     internal static bool IsSelected(Piece piece)

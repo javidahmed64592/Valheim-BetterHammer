@@ -59,6 +59,12 @@ internal static class KeyHintUI
     /// </summary>
     private const float LeftRowSpacing = 10f;
 
+    /// <summary>
+    /// How far the right stack sits above the vanilla hints, in HUD units, so its scroll icons (drawn
+    /// bigger than their rows) don't touch the vanilla "Rotate" icon.
+    /// </summary>
+    private const float RightStackLift = 12f;
+
     private enum HintVisibility { Always = 0, GridOnly = 1, BuildOnly = 2, SelectionOnly = 3, CopyOnly = 4 }
 
     /// <summary>
@@ -78,7 +84,7 @@ internal static class KeyHintUI
         public string Label;
 
         /// <summary>
-        /// If set, the label used while two or more pieces are selected.
+        /// If set, the label used while Ctrl+middle-click would move the whole selection.
         /// </summary>
         public string SelectionLabel;
         public Side Side;
@@ -120,6 +126,11 @@ internal static class KeyHintUI
     private static GameObject _container;
     private static RectTransform[] _stacks;
     private static RectTransform _snapAnchor;
+
+    /// <summary>
+    /// One of the right stack's scroll icons, to line them up with the vanilla "Rotate" icon.
+    /// </summary>
+    private static RectTransform _rightScrollIcon;
     private static RectTransform _screen;
     private static RectTransform _rotateAnchor;
     private static RectTransform _rotateIcon;
@@ -161,6 +172,7 @@ internal static class KeyHintUI
         }
 
         bool repairing = player.InRepairMode();
+        bool movesSelection = MultiCopy.MovesSelection(player.GetHoveringPiece());
         bool gridOn = BetterHammerPlugin.GridEnabled;
 
         foreach (Hint hint in Hints)
@@ -176,7 +188,7 @@ internal static class KeyHintUI
             };
             hint.Group.alpha = shown ? 1f : 0f;
 
-            bool selectionLabel = hint.SelectionLabel != null && MultiCopy.SelectionCount >= 2;
+            bool selectionLabel = hint.SelectionLabel != null && movesSelection;
             if (selectionLabel != hint.ShowingSelectionLabel)
             {
                 hint.ShowingSelectionLabel = selectionLabel;
@@ -251,7 +263,15 @@ internal static class KeyHintUI
         Vector3 iconCentre = _rotateIcon.TransformPoint(iconRect.center);
         float right = iconCentre.x + (drawnWidth / 2f * _rotateIcon.lossyScale.x);
         RectTransform rightStack = _stacks[(int)Side.Right];
-        rightStack.position = new Vector3(right, top, z);
+        rightStack.position = new Vector3(right, top + (RightStackLift * rightStack.lossyScale.y), z);
+
+        // Then line the stack's scroll icons up with the vanilla one.
+        if (_rightScrollIcon != null)
+        {
+            float offset = iconCentre.x - _rightScrollIcon.TransformPoint(_rightScrollIcon.rect.center).x;
+            rightStack.position += new Vector3(offset, 0f, 0f);
+            right += offset;
+        }
 
         RectTransform snapStack = _stacks[(int)Side.Snap];
         if (_snapAnchor != null)
@@ -324,6 +344,11 @@ internal static class KeyHintUI
                 {
                     GameObject icon = Object.Instantiate(iconTemplate.gameObject, item.transform, false);
                     icon.SetActive(true);
+                    if (hint.Side == Side.Right)
+                    {
+                        _rightScrollIcon = (RectTransform)icon.transform;
+                    }
+
 
                     // Without this the layout sizes the icon from its sprite's native size. Its layout
                     // size is that of a key box, with a width that keeps the sprite's aspect ratio. The
@@ -471,6 +496,7 @@ internal static class KeyHintUI
         _container = null;
         _stacks = null;
         _snapAnchor = null;
+        _rightScrollIcon = null;
         _screen = null;
         _rotateAnchor = null;
         _rotateIcon = null;
