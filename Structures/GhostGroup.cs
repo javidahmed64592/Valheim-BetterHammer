@@ -253,7 +253,7 @@ internal static class GhostGroup
 
         // The game applies the same step to the snap point right after this, so start one step back.
         player.m_manualSnapPoint = point - step;
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copyReference",
+        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_reference",
             Localization.instance.Localize(Members[piece].Part.Prefab.m_name),
             (piece + 1).ToString(CultureInfo.InvariantCulture),
             Members.Count.ToString(CultureInfo.InvariantCulture)));
