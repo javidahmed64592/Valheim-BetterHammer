@@ -74,6 +74,8 @@ internal static class MultiCopy
 
     internal static bool HasSelection => Selected.Count > 0;
 
+    internal static int SelectionCount => Selected.Count;
+
     /// <summary>
     /// Alt+right-click deselects, so it mustn't also open the build menu or toggle repair mode or the grid.
     /// </summary>
