@@ -6,6 +6,7 @@
 - `Shift+Right-Click` and `Ctrl+Right-Click` no longer toggle repair mode or the grid while `Alt` is held.
 - `Ctrl+Right-Click` toggles the build grid while moving pieces, instead of aborting the move.
 - `Shift+Right-Click` while moving pieces switches to repair mode and pauses the move, so the pieces can be repaired before they're put down. Switching back carries on with the move, keeping its rotation, snap point and reference piece. A plain right-click still aborts, and leaving repair mode for another piece ends the move.
+- Rearranged the key hints. Selecting, copying and moving are now together on the left, above the vanilla "Place" hint. Building aids (repair mode, zoom, build grid, grid distance and snapping by piece) are on the right, above "Rotate". Hints that don't apply at the moment are hidden but keep their space, so the others don't move when you select pieces, toggle the grid or repair mode, or start placing a copy.
 - Moving several pieces no longer aborts when your inventory changes (picking something up, an item breaking, and so on). The move carries on with the same rotation, snap point and reference piece. A single piece that starts at a random turn also keeps its turn.
 
 ## 1.0.1
