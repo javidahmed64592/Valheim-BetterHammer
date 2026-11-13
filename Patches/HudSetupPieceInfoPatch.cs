@@ -30,8 +30,7 @@ internal static class Hud_SetupPieceInfo_Patch
     }
 
     /// <summary>
-    /// The game shows one crafting station after the materials; a copy's stations are shown at the
-    /// panel's right end instead, as many as it needs.
+    /// The game shows one crafting station after the materials; a copy can need several.
     /// </summary>
     [HarmonyPostfix]
     private static void Postfix(Hud __instance, Piece __state)

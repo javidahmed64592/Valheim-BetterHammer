@@ -76,6 +76,12 @@ internal static class MultiCopy
     /// How many slots wide the build panel is for the last summary.
     /// </summary>
     internal static int PanelWidth { get; private set; }
+
+    /// <summary>
+    /// Where the last summary's stations start: after a full page of materials, so they stay put while
+    /// the pages turn.
+    /// </summary>
+    private static int _firstStationSlot;
     private static bool _selectionDirty = true;
     private static List<Piece.Requirement> _selectionRequirements = [];
     private static List<Piece> _selectionStations = [];
@@ -766,8 +772,9 @@ internal static class MultiCopy
 
         // The panel is made wide enough for every material and station if it can be, else as wide as it
         // goes with a slot for each station (at least one material slot is left) and the materials a page
-        // at a time. The stations stay at the right end so they don't move from page to page; if they
-        // don't all fit, the out-of-range ones are shown.
+        // at a time. The stations come after the materials, after a full page of them, so every page shows
+        // the same number of slots and the stations don't move; if they don't all fit, the out-of-range
+        // ones are shown.
         List<CraftingStation> stations = [.. stationPieces.Select(piece => piece.m_craftingStation).Where(station => station != null)];
         PanelWidth = BuildPanel.WidthFor(requirements.Count + stations.Count);
         int stationSlots = Mathf.Min(stations.Count, PanelWidth - 1);
@@ -789,6 +796,7 @@ internal static class MultiCopy
         _summary.m_icon = icon;
         _summary.m_resources = [.. requirements.Skip(page * slots).Take(slots)];
         _summary.m_craftingStation = null;
+        _firstStationSlot = Mathf.Min(slots, requirements.Count);
         Stations.Clear();
         Stations.AddRange(stations.Take(stationSlots));
         return _summary;
@@ -796,11 +804,11 @@ internal static class MultiCopy
 
     /// <summary>
     /// Runs after Hud.SetupPieceInfo when it showed a summary: the game filled in the materials, so fill
-    /// in the stations at the panel's right end, the way the game shows its one station.
+    /// in the stations after them, the way the game shows its one station.
     /// </summary>
     internal static void AfterSetupPieceInfo(Hud hud)
     {
-        int slot = Mathf.Max(0, Mathf.Min(PanelWidth, hud.m_requirementItems.Length) - Stations.Count);
+        int slot = _firstStationSlot;
         foreach (CraftingStation station in Stations)
         {
             if (slot >= hud.m_requirementItems.Length)
