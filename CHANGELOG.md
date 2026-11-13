@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
 
 - Added `Alt+Shift+Middle-Click` to select a piece and every piece connected to it, and `Alt+Shift+Right-Click` to deselect them. The ground doesn't connect pieces. A search stops at `Max Connected Pieces` (1000 by default).
 - Added `Alt+Shift+Left-Click` to cut the selection: it's saved as a copy, then the originals are removed like `Delete` does, dropping their materials and spilling chests. Nothing is cut unless every selected piece can be removed.
