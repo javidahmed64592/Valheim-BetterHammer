@@ -61,9 +61,24 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 | `Ctrl+Y` | Redo the last action you undid.       |
 
 - This covers building pieces and copies, moving pieces and selections, and removing pieces with the hammer, `Delete` or Cut.
-- Undo and redo follow the normal building rules. Undoing a build removes the pieces and drops their materials. Undoing a removal builds the pieces again for the usual materials, and the dropped ones count while they're nearby. Moving is free.
 - If any of the pieces can't be handled, for example because they're too far away or behind someone else's ward, nothing happens.
-- A rebuilt chest or sign starts empty. The history lasts until you log out and holds 50 actions by default.
+- The history lasts until you log out and holds 50 actions by default.
+
+## Keyhints
+
+The mod adds on-screen keyhints with all the listed keybinds.
+
+### Left Panel
+
+The left panel focuses on the Copy, Move, Cut and Delete functionality:
+
+![Keyhints Left](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/keyhints_left.png)
+
+### Right Panel
+
+The right panel focuses on the build grid and utility functions:
+
+![Keyhints Right](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/keyhints_right.png)
 
 ## Configuration
 
