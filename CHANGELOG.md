@@ -8,7 +8,7 @@
 - Moving a selection no longer aborts when your inventory changes.
 - Rearranged the key hints: selection and moving on the left below the hotbar, building aids on the right, and "Snap to piece" above the vanilla "Cycle snapping". They no longer move around and are hidden while the build menu is open.
 - The build panel for a copy or selection shows every crafting station it needs, not just one.
-- Widened the build panel to 10 material and station slots, and raised it clear of the key hints. A copy's description lists its most common pieces first and stays readable instead of shrinking to fit.
+- The build panel widens two slots at a time, up to 10, when a copy or selection needs more than the usual 6 slots. Stations stay at the right end while materials page through. The panel is raised clear of the key hints. A copy's description lists its most common pieces first and stays readable instead of shrinking to fit.
 - Fixed the snap point message for saved copies showing `[betterhammer_copyReference]` (broken in 1.0.1).
 
 ## 1.0.1
