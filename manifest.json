@@ -1,7 +1,7 @@
 {
   "name": "BetterHammer",
   "description": "Open the build menu without a hammer, build with nearby materials, snap to a build grid, and copy and move structures.",
-  "version_number": "1.0.1",
+  "version_number": "1.1.0",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2360",
     "ValheimModding-Jotunn-2.30.2"
