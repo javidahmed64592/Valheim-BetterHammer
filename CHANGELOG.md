@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Added `Alt+Shift+Middle-Click` to select a piece and every piece connected to it, and `Alt+Shift+Right-Click` to deselect them. The ground doesn't connect pieces. A search stops at `Max Connected Pieces` (1000 by default).
+- `Ctrl+Middle-Click` moves the whole selection wherever you look, snapping by the selected piece you look at, or by the first one selected. Looking at an unselected piece still moves just that piece.
+- While moving, `Ctrl+Right-Click` toggles the build grid and `Shift+Right-Click` pauses the move in repair mode, instead of aborting.
+- Moving a selection no longer aborts when your inventory changes.
+- Rearranged the key hints: selection and moving on the left below the hotbar, building aids on the right, and "Snap to piece" above the vanilla "Cycle snapping". They no longer move around and are hidden while the build menu is open.
+- The build panel for a copy or selection shows every crafting station it needs, not just one.
+- Fixed the snap point message for saved copies showing `[betterhammer_copyReference]` (broken in 1.0.1).
+
 ## 1.0.1
 
 - Building a saved copy now keeps the reference piece and snap point you cycled to with `Q`/`E`, instead of going back to automatic snapping after every placement, so several copies can be placed in a row from the same snap point. Like a single piece, the copy also keeps them when the hammer is put away and taken out again.

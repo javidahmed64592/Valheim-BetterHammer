@@ -4,7 +4,10 @@ using System.Linq;
 
 using BepInEx.Configuration;
 
+using TMPro;
+
 using UnityEngine;
+using UnityEngine.UI;
 
 using Object = UnityEngine.Object;
 
@@ -61,6 +64,11 @@ internal static class MultiCopy
     private static bool _lit;
 
     private static Piece _summary;
+
+    /// <summary>
+    /// The stations the last summary needs beyond the one the game shows itself.
+    /// </summary>
+    private static readonly List<CraftingStation> ExtraStations = [];
     private static bool _selectionDirty = true;
     private static List<Piece.Requirement> _selectionRequirements = [];
     private static List<Piece> _selectionStations = [];
@@ -110,15 +118,30 @@ internal static class MultiCopy
         bool alt = BetterHammerPlugin.AltHeld();
         bool placePressed = ZInput.GetButtonDown(PlaceButton);
         bool block = wasPlacing;
+        bool shift = BetterHammerPlugin.ShiftHeld();
         if (alt && ZInput.GetButtonDown(RemoveButton))
         {
             PieceMover.BlockRemoveUntilReleased(player);
-            Select(player);
+            if (shift)
+            {
+                SelectConnected(player);
+            }
+            else
+            {
+                Select(player);
+            }
         }
         else if (alt && Input.GetMouseButtonDown(1))
         {
             _rightClickFrame = Time.frameCount;
-            Deselect(player);
+            if (shift)
+            {
+                DeselectConnected(player);
+            }
+            else
+            {
+                Deselect(player);
+            }
         }
         else if (alt && placePressed)
         {
@@ -297,8 +320,7 @@ internal static class MultiCopy
             return;
         }
 
-        ZNetView nview = piece.GetComponent<ZNetView>();
-        if (nview == null || !nview.IsValid() || !player.m_buildPieces.GetPieceIndex(piece, out _, out _))
+        if (!CanSelect(player, piece))
         {
             // Same as copying a single piece: this hammer can't build it, or you don't know it yet.
             player.Message(MessageHud.MessageType.Center, "$msg_missingrequirement");
@@ -309,6 +331,99 @@ internal static class MultiCopy
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft,
             Localization.instance.Localize("$betterhammer_copy_selected", name, Count(Selected.Count)));
+    }
+
+    /// <summary>
+    /// Whether the piece can be selected: it exists, and this hammer can build it.
+    /// </summary>
+    private static bool CanSelect(Player player, Piece piece)
+    {
+        ZNetView nview = piece.GetComponent<ZNetView>();
+        return nview != null && nview.IsValid() && player.m_buildPieces.GetPieceIndex(piece, out _, out _);
+    }
+
+    /// <summary>
+    /// Alt+Shift+middle-click: selects the piece looked at and every piece connected to it. Pieces this
+    /// hammer can't build are left out, but still connect the pieces either side of them.
+    /// </summary>
+    private static void SelectConnected(Player player)
+    {
+        Piece start = player.GetHoveringPiece();
+        if (start == null)
+        {
+            return;
+        }
+
+        Prune();
+        int added = 0;
+        int skipped = 0;
+        bool limited;
+        foreach (Piece piece in ConnectedPieces.Find(start, out limited))
+        {
+            if (Selected.Contains(piece))
+            {
+                continue;
+            }
+
+            if (!CanSelect(player, piece))
+            {
+                skipped++;
+                continue;
+            }
+
+            Selected.Add(piece);
+            added++;
+        }
+
+        _selectionDirty = true;
+        player.Message(MessageHud.MessageType.TopLeft,
+            Localization.instance.Localize("$betterhammer_copy_selected_connected", Count(added), Count(Selected.Count)));
+        ReportConnected(player, skipped, limited);
+    }
+
+    /// <summary>
+    /// Alt+Shift+right-click: deselects the piece looked at and every selected piece connected to it,
+    /// whether or not the pieces in between are selected.
+    /// </summary>
+    private static void DeselectConnected(Player player)
+    {
+        Piece start = player.GetHoveringPiece();
+        if (start == null)
+        {
+            return;
+        }
+
+        Prune();
+        int removed = 0;
+        bool limited;
+        foreach (Piece piece in ConnectedPieces.Find(start, out limited))
+        {
+            if (Selected.Remove(piece))
+            {
+                ResetHighlight(piece);
+                removed++;
+            }
+        }
+
+        _selectionDirty = true;
+        player.Message(MessageHud.MessageType.TopLeft,
+            Localization.instance.Localize("$betterhammer_copy_deselected_connected", Count(removed), Count(Selected.Count)));
+        ReportConnected(player, 0, limited);
+    }
+
+    private static void ReportConnected(Player player, int skipped, bool limited)
+    {
+        if (skipped > 0)
+        {
+            player.Message(MessageHud.MessageType.TopLeft,
+                Localization.instance.Localize("$betterhammer_copy_connected_skipped", Count(skipped)));
+        }
+
+        if (limited)
+        {
+            player.Message(MessageHud.MessageType.Center,
+                Localization.instance.Localize("$betterhammer_copy_connected_limit", Count(ConnectedPieces.MaxPieces)));
+        }
     }
 
     private static void Deselect(Player player)
@@ -461,20 +576,38 @@ internal static class MultiCopy
     }
 
     /// <summary>
-    /// The selection with the given piece first, if it's selected along with others; used to move them
-    /// all at once.
+    /// What Ctrl+middle-click moves. Looking at a piece that isn't selected: just that piece. Otherwise
+    /// the whole selection, in the order it was picked, snapping by the piece looked at, or by the first
+    /// one picked when looking at nothing. Null if there's nothing to move.
     /// </summary>
-    internal static List<Piece> SelectionStartingWith(Piece piece)
+    internal static List<Piece> PiecesToMove(Piece hovered, out int reference)
     {
         Prune();
-        if (piece == null || Selected.Count < 2 || !Selected.Contains(piece))
+        reference = 0;
+        if (hovered != null && !Selected.Contains(hovered))
+        {
+            return [hovered];
+        }
+
+        if (Selected.Count == 0)
         {
             return null;
         }
 
-        List<Piece> pieces = [piece];
-        pieces.AddRange(Selected.Where(other => other != piece));
-        return pieces;
+        if (hovered != null)
+        {
+            reference = Selected.IndexOf(hovered);
+        }
+
+        return [.. Selected];
+    }
+
+    /// <summary>
+    /// Whether Ctrl+middle-click would move several pieces (see <see cref="PiecesToMove"/>).
+    /// </summary>
+    internal static bool MovesSelection(Piece hovered)
+    {
+        return Selected.Count >= 2 && (hovered == null || Selected.Contains(hovered));
     }
 
     internal static bool IsSelected(Piece piece)
@@ -624,8 +757,12 @@ internal static class MultiCopy
             _summary = holder.AddComponent<Piece>();
         }
 
-        // One requirement slot is kept for the station.
-        int slots = Hud.instance != null ? Mathf.Max(1, Hud.instance.m_requirementItems.Length - 1) : Mathf.Max(1, requirements.Count);
+        // A requirement slot is kept for each station (at least one material slot is left), out-of-range
+        // stations first so they're the ones shown if they don't all fit.
+        List<CraftingStation> stations = StationsToShow(player, stationPieces);
+        int totalSlots = Hud.instance != null ? Hud.instance.m_requirementItems.Length : requirements.Count + stations.Count;
+        int stationSlots = Mathf.Min(stations.Count, Mathf.Max(0, totalSlots - 1));
+        int slots = Mathf.Max(1, totalSlots - Mathf.Max(1, stationSlots));
         int pages = Mathf.Max(1, Mathf.CeilToInt(requirements.Count / (float)slots));
         int page = (int)(Time.time / MaterialPageSeconds) % pages;
         if (pages > 1)
@@ -637,27 +774,61 @@ internal static class MultiCopy
         _summary.m_description = description;
         _summary.m_icon = icon;
         _summary.m_resources = [.. requirements.Skip(page * slots).Take(slots)];
-        _summary.m_craftingStation = StationToShow(player, stationPieces);
+        _summary.m_craftingStation = stationSlots > 0 ? stations[0] : null;
+        ExtraStations.Clear();
+        ExtraStations.AddRange(stations.Skip(1).Take(stationSlots - 1));
         return _summary;
     }
 
     /// <summary>
-    /// The build panel has room for one station: show one that's out of range if there is one.
+    /// The stations the pieces need, those out of range first.
     /// </summary>
-    private static CraftingStation StationToShow(Player player, List<Piece> stationPieces)
+    private static List<CraftingStation> StationsToShow(Player player, List<Piece> stationPieces)
     {
-        CraftingStation first = null;
-        foreach (Piece piece in stationPieces)
+        List<CraftingStation> stations = [.. stationPieces.Select(piece => piece.m_craftingStation).Where(station => station != null)];
+        return [.. stations.OrderBy(station => CraftingStation.HaveBuildStationInRange(station.m_name, player.transform.position) != null)];
+    }
+
+    /// <summary>
+    /// Runs after Hud.SetupPieceInfo when it showed a summary: the game filled in the first station's
+    /// slot after the materials, so fill in the other stations' slots after it the same way.
+    /// </summary>
+    internal static void AfterSetupPieceInfo(Hud hud, Piece shown)
+    {
+        int slot = shown.m_resources.Length + 1;
+        foreach (CraftingStation station in ExtraStations)
         {
-            CraftingStation station = piece.m_craftingStation;
-            first ??= station;
-            if (CraftingStation.HaveBuildStationInRange(station.m_name, player.transform.position) == null)
+            if (slot >= hud.m_requirementItems.Length)
             {
-                return station;
+                break;
+            }
+
+            GameObject item = hud.m_requirementItems[slot++];
+            item.SetActive(true);
+            Image icon = item.transform.Find("res_icon").GetComponent<Image>();
+            TMP_Text name = item.transform.Find("res_name").GetComponent<TMP_Text>();
+            TMP_Text amount = item.transform.Find("res_amount").GetComponent<TMP_Text>();
+            icon.sprite = station.m_icon;
+            name.text = Localization.instance.Localize(station.m_name);
+            item.GetComponent<UITooltip>().m_text = station.m_name;
+
+            // As the game shows its one station: lit and marked when in range, grey with a flashing "None"
+            // when not.
+            CraftingStation inRange = CraftingStation.HaveBuildStationInRange(station.m_name, Player.m_localPlayer.transform.position);
+            if (inRange != null)
+            {
+                inRange.ShowAreaMarker();
+                icon.color = Color.white;
+                amount.text = "";
+                amount.color = Color.white;
+            }
+            else
+            {
+                icon.color = Color.gray;
+                amount.text = Localization.instance.Localize("$menu_none");
+                amount.color = Mathf.Sin(Time.time * 10f) > 0f && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost) ? Color.red : Color.white;
             }
         }
-
-        return first;
     }
 
     /// <summary>

@@ -14,12 +14,22 @@ namespace BetterHammer.UI;
 /// <summary>
 /// Adds this mod's controls to the vanilla build key hints (bottom of the screen while placing
 /// pieces). Each hint is built from clones of the vanilla hint pieces (label, boxed key, "+" and
-/// the scroll icon), stacked in two columns right-aligned just above the vanilla hints, and is only
-/// shown while a hammer the mod patches is equipped.
+/// the scroll icon), and is only shown while a hammer the mod patches is equipped and the build menu is
+/// closed. They stand in two stacks: selecting, copying and moving at the left edge of the screen, just
+/// below the hotbar, and building aids on the right just above the vanilla "Rotate" hint. Snapping by
+/// piece sits just above the vanilla "Cycle snapping" hint. The vanilla row is right-aligned, so those
+/// two vanilla hints stay put. A hint that doesn't apply at the moment is hidden but keeps its space, so
+/// the others never move.
 /// </summary>
 internal static class KeyHintUI
 {
     private const string ContainerName = "BetterHammer_KeyHints";
+
+    /// <summary>
+    /// Where a hint goes: the left stack, the right stack, or just above the vanilla "Cycle snapping"
+    /// hint, which its keys go with.
+    /// </summary>
+    private enum Side { Left = 0, Right = 1, Snap = 2 }
     private const string ScrollIcon = "@scroll";
 
     private const float LabelFontSize = 16f;
@@ -31,18 +41,37 @@ internal static class KeyHintUI
     /// drawn this much bigger than its layout size: the sprite has padding
     /// </summary>
     private const float IconScale = 1.8f;
-    private const float ColumnSpacing = 12f;
     /// <summary>
     /// room for the scaled-up icons, which are drawn taller than their layout height
     /// </summary>
     private const float RowSpacing = 16f;
 
+    /// <summary>
+    /// The left stack's top left corner, in HUD units from the screen's top left corner: lined up with the
+    /// hotbar's left edge, with room for the top-left messages under the hotbar. Fixed rather than
+    /// following the health bar, which grows as the player eats.
+    /// </summary>
+    private static readonly Vector2 LeftStackOffset = new(16f, 190f);
+
+    /// <summary>
+    /// The left stack has no scroll icons, so its rows can be closer, leaving more room for the health
+    /// bar below it.
+    /// </summary>
+    private const float LeftRowSpacing = 10f;
+
+    /// <summary>
+    /// How far the right stack sits above the vanilla hints, in HUD units, so its scroll icons (drawn
+    /// bigger than their rows) don't touch the vanilla "Rotate" icon.
+    /// </summary>
+    private const float RightStackLift = 12f;
+
     private enum HintVisibility { Always = 0, GridOnly = 1, BuildOnly = 2, SelectionOnly = 3, CopyOnly = 4 }
 
     /// <summary>
-    /// In a hint's keys, shown as "/" between two alternatives instead of the usual "+".
+    /// In a hint's keys, puts the keys either side of it next to each other without the usual "+", as
+    /// the vanilla hints show alternatives (Q E).
     /// </summary>
-    private const string Or = "/";
+    private const string NoPlus = "@noplus";
 
     /// <summary>
     /// In a hint's keys, the configured delete and clear selection keys.
@@ -53,36 +82,56 @@ internal static class KeyHintUI
     private sealed class Hint
     {
         public string Label;
-        public int Column;
+
         /// <summary>
-        /// localisation tokens or literal key names; ScrollIcon draws the scroll wheel icon and Or puts a
-        /// "/" between the keys either side of it
+        /// If set, the label used while Ctrl+middle-click would move the whole selection.
+        /// </summary>
+        public string SelectionLabel;
+        public Side Side;
+        /// <summary>
+        /// localisation tokens or literal key names; ScrollIcon draws the scroll wheel icon and NoPlus
+        /// leaves out the "+" between the keys either side of it
         /// </summary>
         public string[] Keys;
         public HintVisibility Visibility;
         public GameObject Item;
         public CanvasGroup Group;
+        public TextMeshProUGUI LabelText;
+        public bool ShowingSelectionLabel;
     }
 
     /// <summary>
-    /// Two columns, each stacked top to bottom; the right column sits above the vanilla "Rotate" hint.
+    /// Each side is stacked top to bottom.
     /// </summary>
     private static readonly List<Hint> Hints =
     [
-        new Hint { Label = "$betterhammer_hint_copy_selection", Column = 0, Keys = ["Left Alt", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$betterhammer_hint_deselect", Column = 0, Keys = ["Left Alt", "$button_mouse1"], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$betterhammer_hint_select", Column = 0, Keys = ["Left Alt", "$button_mouse2"], Visibility = HintVisibility.Always },
-        new Hint { Label = "$betterhammer_hint_move", Column = 0, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.Always },
-        new Hint { Label = "$betterhammer_hint_grid", Column = 0, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
-        new Hint { Label = "$betterhammer_hint_repair", Column = 0, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
-        new Hint { Label = "$betterhammer_hint_copy_piece", Column = 1, Keys = ["Left Shift", "$KEY_TabLeft", Or, "$KEY_TabRight"], Visibility = HintVisibility.CopyOnly },
-        new Hint { Label = "$betterhammer_hint_delete_selection", Column = 1, Keys = [DeleteKey], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$betterhammer_hint_clear_selection", Column = 1, Keys = [ClearKey], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$betterhammer_hint_grid_distance", Column = 1, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
-        new Hint { Label = "$betterhammer_hint_zoom", Column = 1, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_move", SelectionLabel = "$betterhammer_hint_move_selection", Side = Side.Left, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_select", Side = Side.Left, Keys = ["Left Alt", "$button_mouse2"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_select_connected", Side = Side.Left, Keys = ["Left Alt", "Left Shift", "$button_mouse2"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_deselect", Side = Side.Left, Keys = ["Left Alt", "$button_mouse1"], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_deselect_connected", Side = Side.Left, Keys = ["Left Alt", "Left Shift", "$button_mouse1"], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_copy_selection", Side = Side.Left, Keys = ["Left Alt", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_delete_selection", Side = Side.Left, Keys = [DeleteKey], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_clear_selection", Side = Side.Left, Keys = [ClearKey], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_repair", Side = Side.Right, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_grid", Side = Side.Right, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
+        new Hint { Label = "$betterhammer_hint_grid_distance", Side = Side.Right, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
+        new Hint { Label = "$betterhammer_hint_zoom", Side = Side.Right, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_copy_piece", Side = Side.Snap, Keys = ["Left Shift", "$KEY_TabLeft", NoPlus, "$KEY_TabRight"], Visibility = HintVisibility.CopyOnly },
     ];
 
+    /// <summary>
+    /// Holds the stacks, so they're shown and hidden together.
+    /// </summary>
     private static GameObject _container;
+    private static RectTransform[] _stacks;
+    private static RectTransform _snapAnchor;
+
+    /// <summary>
+    /// One of the right stack's scroll icons, to line them up with the vanilla "Rotate" icon.
+    /// </summary>
+    private static RectTransform _rightScrollIcon;
+    private static RectTransform _screen;
     private static RectTransform _rotateAnchor;
     private static RectTransform _rotateIcon;
     private static Image _rotateIconImage;
@@ -104,6 +153,7 @@ internal static class KeyHintUI
             && player != null
             && player.InPlaceMode()
             && !ZInput.IsGamepadActive()
+            && !Hud.IsPieceSelectionVisible()
             && BetterHammerPlugin.IsHammerEquipped(player);
 
         if (!show)
@@ -122,35 +172,28 @@ internal static class KeyHintUI
         }
 
         bool repairing = player.InRepairMode();
+        bool movesSelection = MultiCopy.MovesSelection(player.GetHoveringPiece());
         bool gridOn = BetterHammerPlugin.GridEnabled;
 
         foreach (Hint hint in Hints)
         {
-            bool visible = true;
-            bool blank = false; // keeps its space so the other column's rows stay level
-            switch (hint.Visibility)
+            // A hidden hint keeps its space, so the hints around it stay where they are.
+            bool shown = hint.Visibility switch
             {
-                case HintVisibility.BuildOnly:
-                    visible = !repairing;
-                    break;
-                case HintVisibility.GridOnly:
-                    visible = !repairing;
-                    blank = !gridOn;
-                    break;
-                case HintVisibility.SelectionOnly:
-                    blank = !MultiCopy.HasSelection;
-                    break;
-                case HintVisibility.CopyOnly:
-                    visible = GhostGroup.Active;
-                    break;
-            }
+                HintVisibility.BuildOnly => !repairing,
+                HintVisibility.GridOnly => !repairing && gridOn,
+                HintVisibility.SelectionOnly => MultiCopy.HasSelection,
+                HintVisibility.CopyOnly => GhostGroup.Active,
+                _ => true,
+            };
+            hint.Group.alpha = shown ? 1f : 0f;
 
-            if (hint.Item.activeSelf != visible)
+            bool selectionLabel = hint.SelectionLabel != null && movesSelection;
+            if (selectionLabel != hint.ShowingSelectionLabel)
             {
-                hint.Item.SetActive(visible);
-                _layoutDirty = true;
+                hint.ShowingSelectionLabel = selectionLabel;
+                hint.LabelText.text = Localization.instance.Localize(selectionLabel ? hint.SelectionLabel : hint.Label);
             }
-            hint.Group.alpha = blank ? 0f : 1f;
         }
 
         if (!_container.activeSelf)
@@ -161,11 +204,15 @@ internal static class KeyHintUI
 
         if (_layoutDirty)
         {
-            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)_container.transform);
+            foreach (RectTransform stack in _stacks)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(stack);
+            }
+
             _layoutDirty = false;
         }
 
-        AlignToRotateHint();
+        AlignStacks();
     }
 
     /// <summary>
@@ -199,20 +246,49 @@ internal static class KeyHintUI
     }
 
     /// <summary>
-    /// The container's top right lines up with the vanilla "Rotate" hint: its top, and the right edge of
-    /// its icon as drawn (the icon's rect is wider than the sprite inside it).
+    /// The right stack sits on top of the vanilla hints, its right edge lined up with the right edge of
+    /// the vanilla "Rotate" icon as drawn (the icon's rect is wider than the sprite inside it). The snap
+    /// hint sits on top of the vanilla "Cycle snapping" hint, right edges lined up. The left stack is at a
+    /// fixed place near the screen's top left corner.
     /// </summary>
-    private static void AlignToRotateHint()
+    private static void AlignStacks()
     {
         Vector3[] corners = new Vector3[4];
         _rotateAnchor.GetWorldCorners(corners); // 0 = bottom left, 1 = top left, 2 = top right, 3 = bottom right
+        float top = corners[2].y;
+        float z = corners[2].z;
 
         Rect iconRect = _rotateIcon.rect;
         float drawnWidth = Mathf.Min(iconRect.width, iconRect.height * SpriteAspect(_rotateIconImage));
         Vector3 iconCentre = _rotateIcon.TransformPoint(iconRect.center);
         float right = iconCentre.x + (drawnWidth / 2f * _rotateIcon.lossyScale.x);
+        RectTransform rightStack = _stacks[(int)Side.Right];
+        rightStack.position = new Vector3(right, top + (RightStackLift * rightStack.lossyScale.y), z);
 
-        _container.transform.position = new Vector3(right, corners[2].y, corners[2].z);
+        // Then line the stack's scroll icons up with the vanilla one.
+        if (_rightScrollIcon != null)
+        {
+            float offset = iconCentre.x - _rightScrollIcon.TransformPoint(_rightScrollIcon.rect.center).x;
+            rightStack.position += new Vector3(offset, 0f, 0f);
+            right += offset;
+        }
+
+        RectTransform snapStack = _stacks[(int)Side.Snap];
+        if (_snapAnchor != null)
+        {
+            _snapAnchor.GetWorldCorners(corners);
+            snapStack.position = new Vector3(corners[2].x, top, z);
+        }
+        else
+        {
+            // No vanilla snapping hint to go with: on top of the right stack instead.
+            float above = (rightStack.rect.height + RowSpacing) * rightStack.lossyScale.y;
+            snapStack.position = new Vector3(right, top + above, z);
+        }
+
+        _screen.GetWorldCorners(corners);
+        Vector3 scale = _screen.lossyScale;
+        _stacks[(int)Side.Left].position = new Vector3(corners[1].x + (LeftStackOffset.x * scale.x), corners[1].y - (LeftStackOffset.y * scale.y), z);
     }
 
     private static bool Create(KeyHints keyHints)
@@ -235,46 +311,13 @@ internal static class KeyHintUI
 
         RectTransform rect = new GameObject(ContainerName, typeof(RectTransform)).GetComponent<RectTransform>();
         rect.SetParent(keyHints.m_buildHints.transform, false);
-        rect.pivot = new Vector2(1f, 0f);
 
-        HorizontalLayoutGroup rowLayout = rect.gameObject.AddComponent<HorizontalLayoutGroup>();
-        rowLayout.spacing = ColumnSpacing;
-        rowLayout.childAlignment = TextAnchor.LowerRight;
-        rowLayout.childControlWidth = true;
-        rowLayout.childControlHeight = true;
-        rowLayout.childForceExpandWidth = false;
-        rowLayout.childForceExpandHeight = false;
-
-        ContentSizeFitter fitter = rect.gameObject.AddComponent<ContentSizeFitter>();
-        fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-        int columnCount = 0;
-        foreach (Hint hint in Hints)
-        {
-            columnCount = Mathf.Max(columnCount, hint.Column + 1);
-        }
-
-        Transform[] columns = new Transform[columnCount];
-        for (int c = 0; c < columnCount; c++)
-        {
-            GameObject column = new(ContainerName + "_Column" + c, typeof(RectTransform));
-            column.transform.SetParent(rect, false);
-            VerticalLayoutGroup columnLayout = column.AddComponent<VerticalLayoutGroup>();
-            columnLayout.spacing = RowSpacing;
-            // The right column is right-aligned so its icons stack above the vanilla Rotate icon.
-            columnLayout.childAlignment = c == columnCount - 1 ? TextAnchor.LowerRight : TextAnchor.LowerLeft;
-            columnLayout.childControlWidth = true;
-            columnLayout.childControlHeight = true;
-            columnLayout.childForceExpandWidth = false;
-            columnLayout.childForceExpandHeight = false;
-            columns[c] = column.transform;
-        }
+        RectTransform[] stacks = [CreateStack(rect, Side.Left), CreateStack(rect, Side.Right), CreateStack(rect, Side.Snap)];
 
         foreach (Hint hint in Hints)
         {
             // Start from a vanilla multi-key hint (for its row settings), then rebuild its contents.
-            GameObject item = Object.Instantiate(copy.gameObject, columns[hint.Column], false);
+            GameObject item = Object.Instantiate(copy.gameObject, stacks[(int)hint.Side], false);
             item.name = "BetterHammer_Hint_" + hint.Label.TrimStart('$');
             item.SetActive(true);
             for (int i = item.transform.childCount - 1; i >= 0; i--)
@@ -282,25 +325,30 @@ internal static class KeyHintUI
                 Object.DestroyImmediate(item.transform.GetChild(i).gameObject);
             }
 
-            AddText(labelTemplate, item.transform, Localization.instance.Localize(hint.Label));
+            hint.LabelText = AddText(labelTemplate, item.transform, Localization.instance.Localize(hint.Label));
+            hint.ShowingSelectionLabel = false;
 
             for (int i = 0; i < hint.Keys.Length; i++)
             {
-                if (hint.Keys[i] == Or)
+                if (hint.Keys[i] == NoPlus)
                 {
-                    AddText(plusTemplate, item.transform, Or);
                     continue;
                 }
 
-                if (i > 0 && hint.Keys[i - 1] != Or)
+                if (i > 0 && hint.Keys[i - 1] != NoPlus)
                 {
-                    AddText(plusTemplate, item.transform, "+");
+                    _ = AddText(plusTemplate, item.transform, "+");
                 }
 
                 if (hint.Keys[i] == ScrollIcon)
                 {
                     GameObject icon = Object.Instantiate(iconTemplate.gameObject, item.transform, false);
                     icon.SetActive(true);
+                    if (hint.Side == Side.Right)
+                    {
+                        _rightScrollIcon = (RectTransform)icon.transform;
+                    }
+
 
                     // Without this the layout sizes the icon from its sprite's native size. Its layout
                     // size is that of a key box, with a width that keeps the sprite's aspect ratio. The
@@ -326,14 +374,19 @@ internal static class KeyHintUI
             hint.Group = item.GetComponent<CanvasGroup>() ?? item.AddComponent<CanvasGroup>();
         }
 
-        // Give matching parts (label, key, "+", key or icon) of a column's hints the same width, so the
+        // Give matching parts (label, key, "+", key or icon) of a stack's hints the same width, so the
         // keys line up between its rows. All items are active here, so they have a layout to measure.
-        LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
-        for (int c = 0; c < columnCount; c++)
+        foreach (RectTransform stack in stacks)
         {
-            EqualiseColumnWidths(c);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(stack);
         }
 
+        EqualiseWidths(Side.Left);
+        EqualiseWidths(Side.Right);
+
+        _stacks = stacks;
+        _snapAnchor = keyboard.Find("Snap") as RectTransform;
+        _screen = (RectTransform)keyHints.GetComponentInParent<Canvas>().rootCanvas.transform;
         _rotateAnchor = (RectTransform)rotate;
         _rotateIcon = (RectTransform)iconTemplate;
         _rotateIconImage = iconTemplate.GetComponent<Image>();
@@ -342,12 +395,36 @@ internal static class KeyHintUI
         return true;
     }
 
-    private static void EqualiseColumnWidths(int column)
+    /// <summary>
+    /// One stack of hints: the left stack hangs down from its top left corner, and the others grow
+    /// upwards from their bottom right corner.
+    /// </summary>
+    private static RectTransform CreateStack(RectTransform parent, Side side)
+    {
+        RectTransform stack = new GameObject(ContainerName + "_" + side, typeof(RectTransform)).GetComponent<RectTransform>();
+        stack.SetParent(parent, false);
+        stack.pivot = side == Side.Left ? new Vector2(0f, 1f) : new Vector2(1f, 0f);
+
+        VerticalLayoutGroup layout = stack.gameObject.AddComponent<VerticalLayoutGroup>();
+        layout.spacing = side == Side.Left ? LeftRowSpacing : RowSpacing;
+        layout.childAlignment = side == Side.Left ? TextAnchor.UpperLeft : TextAnchor.LowerRight;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+
+        ContentSizeFitter fitter = stack.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        return stack;
+    }
+
+    private static void EqualiseWidths(Side side)
     {
         List<Transform> items = [];
         foreach (Hint hint in Hints)
         {
-            if (hint.Column == column)
+            if (hint.Side == side)
             {
                 items.Add(hint.Item.transform);
             }
@@ -391,7 +468,7 @@ internal static class KeyHintUI
         return image.sprite != null ? image.sprite.rect.width / image.sprite.rect.height : 0.6f;
     }
 
-    private static void AddText(Transform template, Transform parent, string text)
+    private static TextMeshProUGUI AddText(Transform template, Transform parent, string text)
     {
         GameObject clone = Object.Instantiate(template.gameObject, parent, false);
         clone.SetActive(true);
@@ -408,6 +485,7 @@ internal static class KeyHintUI
         label.fontSize = LabelFontSize;
         label.textWrappingMode = TextWrappingModes.NoWrap;
         label.text = text;
+        return label;
     }
 
     /// <summary>
@@ -416,6 +494,10 @@ internal static class KeyHintUI
     public static void Reset()
     {
         _container = null;
+        _stacks = null;
+        _snapAnchor = null;
+        _rightScrollIcon = null;
+        _screen = null;
         _rotateAnchor = null;
         _rotateIcon = null;
         _rotateIconImage = null;
