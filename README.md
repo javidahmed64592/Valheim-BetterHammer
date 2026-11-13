@@ -21,6 +21,11 @@ While placing a piece, a grid is drawn on the surface you are aiming at and piec
 - The grid aligns with the terrain and surfaces except for diagonal surfaces.
 - The chunk borders are drawn as red lines, and the centrelines of the chunk are green.
 
+| Key                | Action                    |
+| ------------------ | ------------------------- |
+| `Ctrl+Right-Click` | Toggle the build grid.    |
+| `Ctrl+Scroll`      | Adjust the grid distance. |
+
 ![Chunk Lines](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_1.png)
 ![Chunk Edges](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_2.png)
 
@@ -28,21 +33,20 @@ While placing a piece, a grid is drawn on the surface you are aiming at and piec
 
 Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 
-| Key                                     | Action                                                         |
-| --------------------------------------- | -------------------------------------------------------------- |
-| `Alt+Left-Click`                        | Name the selection and save it in the hammer's **Copies** tab. |
-| `Ctrl+Middle-Click` on a selected piece | Move the whole selection.                                      |
-| `Alt+Shift+Middle-Click`                | Select the piece and every piece connected to it.              |
-| `Alt+Right-Click`                       | Deselect the piece you are looking at.                         |
-| `Alt+Shift+Right-Click`                 | Deselect the piece and every piece connected to it.            |
-| `Backspace`                             | Clear the selection.                                           |
-| `Delete`                                | Destroy every selected piece, dropping their materials.        |
+| Key                      | Action                                                         |
+| ------------------------ | -------------------------------------------------------------- |
+| `Alt+Left-Click`         | Name the selection and save it in the hammer's **Copies** tab. |
+| `Ctrl+Middle-Click`      | Move the whole selection, or the piece you are looking at.     |
+| `Alt+Shift+Middle-Click` | Select the piece and every piece connected to it.              |
+| `Alt+Right-Click`        | Deselect the piece you are looking at.                         |
+| `Alt+Shift+Right-Click`  | Deselect the piece and every piece connected to it.            |
+| `Backspace`              | Clear the selection.                                           |
+| `Delete`                 | Destroy every selected piece, dropping their materials.        |
+| `Q`/`E`                  | Cycle snap points while placing a copy or moved selection.     |
+| `Shift+Q`/`Shift+E`      | Cycle through pieces while placing a copy or moved selection.  |
 
-- Pieces are connected when they touch, directly or through other pieces. The ground doesn't connect them. Pieces this hammer can't build are left out, and one search stops at 1000 pieces (`Max Connected Pieces` in the config).
 - Build a saved copy like any other piece. Hold `Alt` to see the selection's total materials.
-- `Ctrl+Middle-Click` on a piece that isn't selected moves just that piece. Left-click to put it down, right-click to cancel. `Ctrl+Right-Click` still toggles the build grid while moving, and `Shift+Right-Click` pauses the move so you can repair the pieces first. Toggle repair mode off again to carry on moving.
 - Moving is free and keeps everything inside, so chests don't need emptying. Ward and workbench rules apply, and ships and carts can't be moved.
-- While placing a copy or a moved selection, `Q`/`E` cycles snap points and `Shift+Q`/`Shift+E` switches which piece you snap by.
 - Copies are saved in `BepInEx/config/BetterHammer/copies.json` for all your characters and worlds. To rename or delete one, hover it in the build menu and press `Insert` or `Delete`.
 
 ![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_3.png)
