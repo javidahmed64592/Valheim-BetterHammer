@@ -11,6 +11,7 @@ This mod adds several improvements to the vanilla base hammer:
 - **Build grid**: Toggle the build grid by pressing `Ctrl+Right-Click`. Adjust the grid distance by scrolling while holding `Ctrl`.
 - **Copying structures**: Select built pieces to copy by looking at them and pressing `Alt+Middle-Click`, and deselect them with `Alt+Right-Click`. Add `Shift` to select or deselect a whole build at once. Once you have selected the pieces you want to copy, save them as a copy in the Copies tab with `Alt+Left-Click`, or cut them with `Alt+Shift+Left-Click` to save the copy and remove the originals.
 - **Move pieces**: Move individual built pieces or entire selections with `Ctrl+Middle-Click`. Then left-click to put them down at a new location, or right-click to abort.
+- **Undo and redo**: Undo your last build, move or removal with `Ctrl+Z`, and redo it with `Ctrl+Y`.
 - **Repair mode**: Toggle repair mode by pressing `Shift+Right-Click`.
 - **Zoom camera**: Zoom the camera in and out without needing to unequip the hammer by scrolling while holding `Alt`.
 
@@ -51,6 +52,18 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 - Copies are saved in `BepInEx/config/BetterHammer/copies.json` for all your characters and worlds. To rename or delete one, hover it in the build menu and press `Insert` or `Delete`.
 
 ![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_3.png)
+
+## Undo and Redo
+
+| Key      | Action                                |
+| -------- | ------------------------------------- |
+| `Ctrl+Z` | Undo the last build, move or removal. |
+| `Ctrl+Y` | Redo the last action you undid.       |
+
+- This covers building pieces and copies, moving pieces and selections, and removing pieces with the hammer, `Delete` or Cut.
+- Undo and redo follow the normal building rules. Undoing a build removes the pieces and drops their materials. Undoing a removal builds the pieces again for the usual materials, and the dropped ones count while they're nearby. Moving is free.
+- If any of the pieces can't be handled, for example because they're too far away or behind someone else's ward, nothing happens.
+- A rebuilt chest or sign starts empty. The history lasts until you log out and holds 50 actions by default.
 
 ## Configuration
 
