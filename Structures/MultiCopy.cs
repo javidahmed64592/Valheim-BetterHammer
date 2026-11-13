@@ -161,7 +161,14 @@ internal static class MultiCopy
             // Stops vanilla placing the selected piece this frame.
             player.m_lastToolUseTime = Time.time;
             block = true;
-            Confirm(player);
+            if (shift)
+            {
+                Cut(player);
+            }
+            else
+            {
+                Confirm(player);
+            }
         }
         else if (Placing && placePressed && Time.time - player.m_lastToolUseTime > player.m_placeDelay)
         {
@@ -461,14 +468,84 @@ internal static class MultiCopy
     /// </summary>
     private static void Confirm(Player player)
     {
-        Prune();
-        if (Selected.Count == 0)
+        if (!TryNoteSelection(player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces))
         {
-            player.Message(MessageHud.MessageType.Center, "$betterhammer_copy_nothing");
             return;
         }
 
-        List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces = [];
+        // The pieces are noted now; the copy is saved once a name is entered (cancelling saves nothing).
+        CopyLibrary.AskForName("$betterhammer_copy_name_title", CopyLibrary.NextDefaultName(), name =>
+        {
+            CopyLibrary.Copy copy = Save(player, pieces, name);
+            if (copy != null)
+            {
+                player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_saved", copy.Name));
+            }
+        });
+    }
+
+    /// <summary>
+    /// Alt+Shift+left-click: like <see cref="Confirm"/>, then removes the selected pieces the way the
+    /// hammer does, their materials dropping where they stood and chests spilling what's in them. Only
+    /// goes ahead if every piece can be removed, so a cut never leaves half a build behind.
+    /// </summary>
+    private static void Cut(Player player)
+    {
+        Prune();
+        int blocked = Selected.Count(piece => !CanRemove(player, piece));
+        if (blocked > 0)
+        {
+            player.Message(MessageHud.MessageType.Center,
+                Localization.instance.Localize("$betterhammer_cut_blocked", Count(blocked), Count(Selected.Count)));
+            return;
+        }
+
+        if (!TryNoteSelection(player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces))
+        {
+            return;
+        }
+
+        List<Piece> originals = [.. Selected];
+        CopyLibrary.AskForName("$betterhammer_cut_name_title", CopyLibrary.NextDefaultName(), name =>
+        {
+            // Something may have changed while the name was being typed (a piece destroyed, or a ward
+            // put down), so check again.
+            if (originals.Any(piece => piece == null || !CanRemove(player, piece)))
+            {
+                player.Message(MessageHud.MessageType.Center, "$betterhammer_cut_changed");
+                return;
+            }
+
+            CopyLibrary.Copy copy = Save(player, pieces, name);
+            if (copy == null)
+            {
+                return;
+            }
+
+            foreach (Piece piece in originals)
+            {
+                Remove(player, piece);
+            }
+
+            player.Message(MessageHud.MessageType.TopLeft,
+                Localization.instance.Localize("$betterhammer_cut_done", Count(originals.Count), copy.Name));
+        });
+    }
+
+    /// <summary>
+    /// Where each selected piece is and which hammer piece builds it, for saving as a copy. Fails (with a
+    /// message) if nothing is selected or the hammer can't build one of them.
+    /// </summary>
+    private static bool TryNoteSelection(Player player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces)
+    {
+        Prune();
+        pieces = [];
+        if (Selected.Count == 0)
+        {
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_copy_nothing");
+            return false;
+        }
+
         foreach (Piece piece in Selected)
         {
             GameObject prefab = ZNetScene.instance.GetPrefab(Utils.GetPrefabName(piece.gameObject));
@@ -478,24 +555,27 @@ internal static class MultiCopy
                 // The hammer was swapped for one with different pieces since this one was selected.
                 player.Message(MessageHud.MessageType.Center,
                     Localization.instance.Localize("$betterhammer_copy_unavailable", Localization.instance.Localize(piece.m_name)));
-                return;
+                return false;
             }
 
             pieces.Add((prefabPiece, piece.transform.position, piece.transform.rotation));
         }
 
-        // The pieces are noted now; the copy is saved once a name is entered (cancelling saves nothing).
-        CopyLibrary.AskForName("$betterhammer_copy_name_title", CopyLibrary.NextDefaultName(), name => Save(player, pieces, name));
+        return true;
     }
 
-    private static void Save(Player player, List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces, string name)
+    /// <summary>
+    /// Saves the pieces as a new copy, clears the selection and selects the copy. Returns the copy, or
+    /// null (with a message) if it couldn't be saved.
+    /// </summary>
+    private static CopyLibrary.Copy Save(Player player, List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces, string name)
     {
         PieceMover.Abort(player);
         CopyLibrary.Copy copy = CopyLibrary.Add(player, pieces, name);
         if (copy == null)
         {
             player.Message(MessageHud.MessageType.Center, "$betterhammer_copy_failed");
-            return;
+            return null;
         }
 
         ClearHighlights();
@@ -508,7 +588,7 @@ internal static class MultiCopy
             player.m_placeRotation = GhostGroup.RotationSteps(player, copy.Parts[0].Rotation);
         }
 
-        player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_saved", copy.Name));
+        return copy;
     }
 
     /// <summary>

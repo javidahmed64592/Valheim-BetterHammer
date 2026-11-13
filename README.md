@@ -9,7 +9,7 @@ This mod adds several improvements to the vanilla base hammer:
 - **No hammer required**: Open the build menu without a hammer in your inventory by pressing `B`.
 - **Use nearby materials**: Use materials from the ground and nearby chests when your inventory runs short.
 - **Build grid**: Toggle the build grid by pressing `Ctrl+Right-Click`. Adjust the grid distance by scrolling while holding `Ctrl`.
-- **Copying structures**: Select built pieces to copy by looking at them and pressing `Alt+Middle-Click`, and deselect them with `Alt+Right-Click`. Add `Shift` to select or deselect a whole build at once. Once you have selected the pieces you want to copy, save them as a copy in the Copies tab with `Alt+Left-Click`.
+- **Copying structures**: Select built pieces to copy by looking at them and pressing `Alt+Middle-Click`, and deselect them with `Alt+Right-Click`. Add `Shift` to select or deselect a whole build at once. Once you have selected the pieces you want to copy, save them as a copy in the Copies tab with `Alt+Left-Click`, or cut them with `Alt+Shift+Left-Click` to save the copy and remove the originals.
 - **Move pieces**: Move individual built pieces or entire selections with `Ctrl+Middle-Click`. Then left-click to put them down at a new location, or right-click to abort.
 - **Repair mode**: Toggle repair mode by pressing `Shift+Right-Click`.
 - **Zoom camera**: Zoom the camera in and out without needing to unequip the hammer by scrolling while holding `Alt`.
@@ -36,6 +36,7 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 | Key                      | Action                                                         |
 | ------------------------ | -------------------------------------------------------------- |
 | `Alt+Left-Click`         | Name the selection and save it in the hammer's **Copies** tab. |
+| `Alt+Shift+Left-Click`   | Cut: save the selection as a copy, then remove the originals.  |
 | `Ctrl+Middle-Click`      | Move the whole selection, or the piece you are looking at.     |
 | `Alt+Shift+Middle-Click` | Select the piece and every piece connected to it.              |
 | `Alt+Right-Click`        | Deselect the piece you are looking at.                         |
