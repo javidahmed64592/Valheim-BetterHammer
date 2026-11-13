@@ -4,7 +4,10 @@ using System.Linq;
 
 using BepInEx.Configuration;
 
+using TMPro;
+
 using UnityEngine;
+using UnityEngine.UI;
 
 using Object = UnityEngine.Object;
 
@@ -61,6 +64,11 @@ internal static class MultiCopy
     private static bool _lit;
 
     private static Piece _summary;
+
+    /// <summary>
+    /// The stations the last summary needs beyond the one the game shows itself.
+    /// </summary>
+    private static readonly List<CraftingStation> ExtraStations = [];
     private static bool _selectionDirty = true;
     private static List<Piece.Requirement> _selectionRequirements = [];
     private static List<Piece> _selectionStations = [];
@@ -749,8 +757,12 @@ internal static class MultiCopy
             _summary = holder.AddComponent<Piece>();
         }
 
-        // One requirement slot is kept for the station.
-        int slots = Hud.instance != null ? Mathf.Max(1, Hud.instance.m_requirementItems.Length - 1) : Mathf.Max(1, requirements.Count);
+        // A requirement slot is kept for each station (at least one material slot is left), out-of-range
+        // stations first so they're the ones shown if they don't all fit.
+        List<CraftingStation> stations = StationsToShow(player, stationPieces);
+        int totalSlots = Hud.instance != null ? Hud.instance.m_requirementItems.Length : requirements.Count + stations.Count;
+        int stationSlots = Mathf.Min(stations.Count, Mathf.Max(0, totalSlots - 1));
+        int slots = Mathf.Max(1, totalSlots - Mathf.Max(1, stationSlots));
         int pages = Mathf.Max(1, Mathf.CeilToInt(requirements.Count / (float)slots));
         int page = (int)(Time.time / MaterialPageSeconds) % pages;
         if (pages > 1)
@@ -762,27 +774,61 @@ internal static class MultiCopy
         _summary.m_description = description;
         _summary.m_icon = icon;
         _summary.m_resources = [.. requirements.Skip(page * slots).Take(slots)];
-        _summary.m_craftingStation = StationToShow(player, stationPieces);
+        _summary.m_craftingStation = stationSlots > 0 ? stations[0] : null;
+        ExtraStations.Clear();
+        ExtraStations.AddRange(stations.Skip(1).Take(stationSlots - 1));
         return _summary;
     }
 
     /// <summary>
-    /// The build panel has room for one station: show one that's out of range if there is one.
+    /// The stations the pieces need, those out of range first.
     /// </summary>
-    private static CraftingStation StationToShow(Player player, List<Piece> stationPieces)
+    private static List<CraftingStation> StationsToShow(Player player, List<Piece> stationPieces)
     {
-        CraftingStation first = null;
-        foreach (Piece piece in stationPieces)
+        List<CraftingStation> stations = [.. stationPieces.Select(piece => piece.m_craftingStation).Where(station => station != null)];
+        return [.. stations.OrderBy(station => CraftingStation.HaveBuildStationInRange(station.m_name, player.transform.position) != null)];
+    }
+
+    /// <summary>
+    /// Runs after Hud.SetupPieceInfo when it showed a summary: the game filled in the first station's
+    /// slot after the materials, so fill in the other stations' slots after it the same way.
+    /// </summary>
+    internal static void AfterSetupPieceInfo(Hud hud, Piece shown)
+    {
+        int slot = shown.m_resources.Length + 1;
+        foreach (CraftingStation station in ExtraStations)
         {
-            CraftingStation station = piece.m_craftingStation;
-            first ??= station;
-            if (CraftingStation.HaveBuildStationInRange(station.m_name, player.transform.position) == null)
+            if (slot >= hud.m_requirementItems.Length)
             {
-                return station;
+                break;
+            }
+
+            GameObject item = hud.m_requirementItems[slot++];
+            item.SetActive(true);
+            Image icon = item.transform.Find("res_icon").GetComponent<Image>();
+            TMP_Text name = item.transform.Find("res_name").GetComponent<TMP_Text>();
+            TMP_Text amount = item.transform.Find("res_amount").GetComponent<TMP_Text>();
+            icon.sprite = station.m_icon;
+            name.text = Localization.instance.Localize(station.m_name);
+            item.GetComponent<UITooltip>().m_text = station.m_name;
+
+            // As the game shows its one station: lit and marked when in range, grey with a flashing "None"
+            // when not.
+            CraftingStation inRange = CraftingStation.HaveBuildStationInRange(station.m_name, Player.m_localPlayer.transform.position);
+            if (inRange != null)
+            {
+                inRange.ShowAreaMarker();
+                icon.color = Color.white;
+                amount.text = "";
+                amount.color = Color.white;
+            }
+            else
+            {
+                icon.color = Color.gray;
+                amount.text = Localization.instance.Localize("$menu_none");
+                amount.color = Mathf.Sin(Time.time * 10f) > 0f && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost) ? Color.red : Color.white;
             }
         }
-
-        return first;
     }
 
     /// <summary>

@@ -7,6 +7,7 @@
 - While moving, `Ctrl+Right-Click` toggles the build grid and `Shift+Right-Click` pauses the move in repair mode, instead of aborting.
 - Moving a selection no longer aborts when your inventory changes.
 - Rearranged the key hints: selection and moving on the left below the hotbar, building aids on the right, and "Snap to piece" above the vanilla "Cycle snapping". They no longer move around and are hidden while the build menu is open.
+- The build panel for a copy or selection shows every crafting station it needs, not just one.
 - Fixed the snap point message for saved copies showing `[betterhammer_copyReference]` (broken in 1.0.1).
 
 ## 1.0.1
