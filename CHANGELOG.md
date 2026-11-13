@@ -10,6 +10,7 @@
 - Rearranged the key hints: selection and moving on the left below the hotbar, building aids on the right, and "Snap to piece" above the vanilla "Cycle snapping". They no longer move around and are hidden while the build menu is open.
 - The build panel for a copy or selection shows every crafting station it needs, not just one.
 - The build panel widens two slots at a time, up to 10, when a copy or selection needs more than the usual 6 slots. Every page of materials shows the same slots, so the stations don't move. The panel is raised clear of the key hints. A copy's description lists its most common pieces first and stays readable instead of shrinking to fit.
+- Typing `Q` or `E` in a name prompt, sign or the build menu's search box no longer cycles snap points.
 - Fixed the snap point message for saved copies showing `[betterhammer_copyReference]` (broken in 1.0.1).
 
 ## 1.0.1
