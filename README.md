@@ -27,8 +27,8 @@ While placing a piece, a grid is drawn on the surface you are aiming at and piec
 | `Ctrl+Right-Click` | Toggle the build grid.    |
 | `Ctrl+Scroll`      | Adjust the grid distance. |
 
-![Chunk Lines](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_1.png)
-![Chunk Edges](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_2.png)
+![Build Grid](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/build_grid.png)
+![Chunk Edges](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/chunk_edges.png)
 
 ## Copying and Moving
 
@@ -51,7 +51,7 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 - Moving is free and keeps everything inside, so chests don't need emptying. Ward and workbench rules apply, and ships and carts can't be moved.
 - Copies are saved in `BepInEx/config/BetterHammer/copies.json` for all your characters and worlds. To rename or delete one, hover it in the build menu and press `Insert` or `Delete`.
 
-![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/game_screenshot_3.png)
+![Multi Piece Copy](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/multi_piece_copy.png)
 
 ## Undo and Redo
 
