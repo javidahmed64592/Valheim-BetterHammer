@@ -7,6 +7,7 @@ using BepInEx.Configuration;
 
 using BetterHammer.Core;
 using BetterHammer.Grid;
+using BetterHammer.History;
 using BetterHammer.Materials;
 using BetterHammer.Structures;
 
@@ -90,6 +91,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
         CopyLibrary.BindConfig(Config);
         MultiCopy.BindConfig(Config);
         ConnectedPieces.BindConfig(Config);
+        UndoHistory.BindConfig(Config);
         Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.
@@ -124,6 +126,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
             _lastBuildPiece = null;
             PieceMover.Reset();
             MultiCopy.Reset();
+            UndoHistory.Reset();
             Overlay.Hide();
             return;
         }
@@ -148,6 +151,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
 
         CopyLibrary.UpdateMenuInput(player);
         MultiCopy.UpdateSelectionKeys(player);
+        UndoHistory.UpdateKeys(player);
 
         if (ZInput.GetButtonDown(ButtonQueryName))
         {

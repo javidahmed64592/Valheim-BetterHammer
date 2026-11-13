@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+
+using BetterHammer.History;
 
 using UnityEngine;
 
@@ -342,37 +345,17 @@ internal static class PieceMover
             ? GhostGroup.Poses(player)
             : [(ghost.transform.position, ghost.transform.rotation)];
 
-        // Every new object is made before any original is removed, so a failure can't lose a chest's
-        // items: if one can't be made, the ones made so far are removed again and nothing moves.
-        List<GameObject> moved = [];
-        for (int i = 0; i < Sources.Count; i++)
-        {
-            GameObject created = Recreate(Sources[i], poses[i].Position, poses[i].Rotation);
-            if (created == null)
-            {
-                foreach (GameObject undo in moved)
-                {
-                    ZNetScene.instance.Destroy(undo);
-                }
-
-                player.Message(MessageHud.MessageType.Center, "$betterhammer_move_failed");
-                return;
-            }
-
-            moved.Add(created);
-        }
-
         Vector3 oldPosition = pieces[0].transform.position;
+        List<(Vector3, Quaternion)> from = [.. pieces.Select(piece => (piece.transform.position, piece.transform.rotation))];
         ClearHighlight();
-        for (int i = 0; i < Sources.Count; i++)
+        List<GameObject> moved = Relocate(player, Sources, poses);
+        if (moved == null)
         {
-            // A piece selected for copying stays selected, at its new spot.
-            MultiCopy.ReplaceSelected(pieces[i], moved[i].GetComponent<Piece>());
-            Sources[i].ClaimOwnership();
-            ZNetScene.instance.Destroy(Sources[i].gameObject);
-            _ = pieces[i].m_placeEffect.Create(poses[i].Position, poses[i].Rotation, moved[i].transform, 1f, -1, player.GetZDOID());
+            player.Message(MessageHud.MessageType.Center, "$betterhammer_move_failed");
+            return;
         }
 
+        UndoHistory.RecordMoved(moved, from);
         _ = player.m_removeEffects.Create(oldPosition, Quaternion.identity, null, 1f, -1, player.GetZDOID());
         player.FaceLookDirection();
         player.m_zanim.SetTrigger(tool.m_shared.m_attack.m_attackAnimation);
@@ -486,6 +469,49 @@ internal static class PieceMover
     }
 
     /// <summary>
+    /// Moves the pieces to the given spots: makes a new object for each, with a copy of its data, then
+    /// removes the originals without dropping anything. Every new object is made before any original is
+    /// removed, so a failure can't lose a chest's items: if one can't be made, the ones made so far are
+    /// removed again, nothing moves, and this returns null. Otherwise returns the new objects.
+    /// </summary>
+    internal static List<GameObject> Relocate(Player player, List<ZNetView> sources, List<(Vector3 Position, Quaternion Rotation)> poses)
+    {
+        List<GameObject> moved = [];
+        for (int i = 0; i < sources.Count; i++)
+        {
+            GameObject created = Recreate(sources[i], poses[i].Position, poses[i].Rotation);
+            if (created == null)
+            {
+                foreach (GameObject undo in moved)
+                {
+                    ZNetScene.instance.Destroy(undo);
+                }
+
+                return null;
+            }
+
+            moved.Add(created);
+        }
+
+        for (int i = 0; i < sources.Count; i++)
+        {
+            // A piece selected for copying stays selected, at its new spot, and the undo history follows
+            // it there.
+            Piece piece = sources[i].GetComponent<Piece>();
+            MultiCopy.ReplaceSelected(piece, moved[i].GetComponent<Piece>());
+            UndoHistory.Replaced(sources[i].GetZDO().m_uid, moved[i].GetComponent<ZNetView>().GetZDO().m_uid);
+            sources[i].ClaimOwnership();
+            ZNetScene.instance.Destroy(sources[i].gameObject);
+            if (piece != null)
+            {
+                _ = piece.m_placeEffect.Create(poses[i].Position, poses[i].Rotation, moved[i].transform, 1f, -1, player.GetZDOID());
+            }
+        }
+
+        return moved;
+    }
+
+    /// <summary>
     /// Creates a new object for the source's prefab at the given spot, with a copy of the source's data.
     /// Mirrors how ZNetScene creates objects that load from the network.
     /// </summary>
@@ -595,7 +621,7 @@ internal static class PieceMover
     /// The same rules as removing the piece with the hammer, plus the chest rules for opening it.
     /// Shows the reason when the piece can't be moved.
     /// </summary>
-    private static bool CanMove(Player player, Piece piece, out ZNetView nview)
+    internal static bool CanMove(Player player, Piece piece, out ZNetView nview)
     {
         nview = piece.GetComponent<ZNetView>();
         if (nview == null || !nview.IsValid() || !piece.m_canBeRemoved || !IsMovableKind(piece))

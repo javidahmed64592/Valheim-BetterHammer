@@ -4,6 +4,7 @@
 
 - Added `Alt+Shift+Middle-Click` to select a piece and every piece connected to it, and `Alt+Shift+Right-Click` to deselect them. The ground doesn't connect pieces. A search stops at `Max Connected Pieces` (1000 by default).
 - Added `Alt+Shift+Left-Click` to cut the selection: it's saved as a copy, then the originals are removed like `Delete` does, dropping their materials and spilling chests. Nothing is cut unless every selected piece can be removed.
+- Added undo (`Ctrl+Z`) and redo (`Ctrl+Y`) for building pieces and copies, moving pieces and selections, and removing pieces (with the hammer, `Delete` or Cut). They follow the normal rules: undoing a build drops its materials, and undoing a removal rebuilds at the usual cost.
 - `Ctrl+Middle-Click` moves the whole selection wherever you look, snapping by the selected piece you look at, or by the first one selected. Looking at an unselected piece still moves just that piece.
 - While moving, `Ctrl+Right-Click` toggles the build grid and `Shift+Right-Click` pauses the move in repair mode, instead of aborting.
 - Moving a selection no longer aborts when your inventory changes.

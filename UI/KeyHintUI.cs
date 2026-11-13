@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using BetterHammer.History;
 using BetterHammer.Structures;
 
 using HarmonyLib;
@@ -65,7 +66,7 @@ internal static class KeyHintUI
     /// </summary>
     private const float RightStackLift = 12f;
 
-    private enum HintVisibility { Always = 0, GridOnly = 1, BuildOnly = 2, SelectionOnly = 3, CopyOnly = 4 }
+    private enum HintVisibility { Always = 0, GridOnly = 1, BuildOnly = 2, SelectionOnly = 3, CopyOnly = 4, UndoOnly = 5, RedoOnly = 6 }
 
     /// <summary>
     /// In a hint's keys, puts the keys either side of it next to each other without the usual "+", as
@@ -78,6 +79,12 @@ internal static class KeyHintUI
     /// </summary>
     private const string DeleteKey = "@delete";
     private const string ClearKey = "@clear";
+
+    /// <summary>
+    /// In a hint's keys, the configured undo and redo shortcuts, shown as their keys.
+    /// </summary>
+    private const string UndoKey = "@undo";
+    private const string RedoKey = "@redo";
 
     private sealed class Hint
     {
@@ -114,6 +121,8 @@ internal static class KeyHintUI
         new Hint { Label = "$betterhammer_hint_cut_selection", Side = Side.Left, Keys = ["Left Alt", "Left Shift", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$betterhammer_hint_delete_selection", Side = Side.Left, Keys = [DeleteKey], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$betterhammer_hint_clear_selection", Side = Side.Left, Keys = [ClearKey], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_undo", Side = Side.Right, Keys = [UndoKey], Visibility = HintVisibility.UndoOnly },
+        new Hint { Label = "$betterhammer_hint_redo", Side = Side.Right, Keys = [RedoKey], Visibility = HintVisibility.RedoOnly },
         new Hint { Label = "$betterhammer_hint_repair", Side = Side.Right, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
         new Hint { Label = "$betterhammer_hint_grid", Side = Side.Right, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
         new Hint { Label = "$betterhammer_hint_grid_distance", Side = Side.Right, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
@@ -185,6 +194,8 @@ internal static class KeyHintUI
                 HintVisibility.GridOnly => !repairing && gridOn,
                 HintVisibility.SelectionOnly => MultiCopy.HasSelection,
                 HintVisibility.CopyOnly => GhostGroup.Active,
+                HintVisibility.UndoOnly => UndoHistory.CanUndo,
+                HintVisibility.RedoOnly => UndoHistory.CanRedo,
                 _ => true,
             };
             hint.Group.alpha = shown ? 1f : 0f;
@@ -329,6 +340,7 @@ internal static class KeyHintUI
             hint.LabelText = AddText(labelTemplate, item.transform, Localization.instance.Localize(hint.Label));
             hint.ShowingSelectionLabel = false;
 
+            hint.Keys = ExpandShortcuts(hint.Keys);
             for (int i = 0; i < hint.Keys.Length; i++)
             {
                 if (hint.Keys[i] == NoPlus)
@@ -452,6 +464,47 @@ internal static class KeyHintUI
                 layout.minWidth = width;
             }
         }
+    }
+
+    /// <summary>
+    /// The undo and redo shortcuts as their modifier keys and main key, named as the vanilla hints name
+    /// them.
+    /// </summary>
+    private static string[] ExpandShortcuts(string[] keys)
+    {
+        List<string> expanded = [];
+        foreach (string key in keys)
+        {
+            if (key is not (UndoKey or RedoKey))
+            {
+                expanded.Add(key);
+                continue;
+            }
+
+            BepInEx.Configuration.KeyboardShortcut shortcut = key == UndoKey ? UndoHistory.UndoKey : UndoHistory.RedoKey;
+            foreach (KeyCode modifier in shortcut.Modifiers)
+            {
+                expanded.Add(KeyName(modifier));
+            }
+
+            expanded.Add(KeyName(shortcut.MainKey));
+        }
+
+        return [.. expanded];
+    }
+
+    private static string KeyName(KeyCode key)
+    {
+        return key switch
+        {
+            KeyCode.LeftControl => "Left Ctrl",
+            KeyCode.RightControl => "Right Ctrl",
+            KeyCode.LeftShift => "Left Shift",
+            KeyCode.RightShift => "Right Shift",
+            KeyCode.LeftAlt => "Left Alt",
+            KeyCode.RightAlt => "Right Alt",
+            _ => key.ToString(),
+        };
     }
 
     private static string KeyText(string key)

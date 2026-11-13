@@ -4,6 +4,7 @@ using System.Linq;
 
 using BepInEx.Configuration;
 
+using BetterHammer.History;
 using BetterHammer.UI;
 
 using TMPro;
@@ -252,19 +253,16 @@ internal static class MultiCopy
     {
         Prune();
         int total = Selected.Count;
-        int removed = 0;
-        foreach (Piece piece in Selected.ToList())
+        List<Piece> removable = [.. Selected.Where(piece => CanRemove(player, piece))];
+        UndoHistory.RecordRemoving(removable);
+        foreach (Piece piece in removable)
         {
-            if (!CanRemove(player, piece))
-            {
-                continue;
-            }
-
             ResetHighlight(piece);
             Remove(player, piece);
             _ = Selected.Remove(piece);
-            removed++;
         }
+
+        int removed = removable.Count;
 
         _selectionDirty = true;
         player.Message(MessageHud.MessageType.TopLeft, removed == total
@@ -272,7 +270,7 @@ internal static class MultiCopy
             : Localization.instance.Localize("$betterhammer_selection_removed_some", Count(removed), Count(total)));
     }
 
-    private static bool CanRemove(Player player, Piece piece)
+    internal static bool CanRemove(Player player, Piece piece)
     {
         ZNetView nview = piece.GetComponent<ZNetView>();
         Vector3 position = piece.transform.position;
@@ -292,7 +290,7 @@ internal static class MultiCopy
     /// <summary>
     /// The same as the hammer's remove, without the swing.
     /// </summary>
-    private static void Remove(Player player, Piece piece)
+    internal static void Remove(Player player, Piece piece)
     {
         piece.GetComponent<IRemoved>()?.OnRemoved();
         WearNTear wearNTear = piece.GetComponent<WearNTear>();
@@ -522,6 +520,7 @@ internal static class MultiCopy
                 return;
             }
 
+            UndoHistory.RecordRemoving(originals);
             foreach (Piece piece in originals)
             {
                 Remove(player, piece);
@@ -749,9 +748,17 @@ internal static class MultiCopy
         // Placing a piece that starts at a random turn re-rolls the build rotation; keep the copy's.
         int rotation = player.m_placeRotation;
         List<(Vector3 Position, Quaternion Rotation)> poses = GhostGroup.Poses(player);
-        for (int i = 0; i < poses.Count; i++)
+        UndoHistory.BeginBuild();
+        try
         {
-            player.PlacePiece(_active.Parts[i].Prefab, poses[i].Position, poses[i].Rotation, doAttack: i == 0);
+            for (int i = 0; i < poses.Count; i++)
+            {
+                player.PlacePiece(_active.Parts[i].Prefab, poses[i].Position, poses[i].Rotation, doAttack: i == 0);
+            }
+        }
+        finally
+        {
+            UndoHistory.EndBuild();
         }
 
         player.m_placeRotation = rotation;
@@ -776,7 +783,7 @@ internal static class MultiCopy
         player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_copy_placed", Count(poses.Count)));
     }
 
-    private static bool HaveStations(Player player, List<Piece> pieces)
+    internal static bool HaveStations(Player player, List<Piece> pieces)
     {
         if (player.m_noPlacementCost || ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoWorkbench))
         {
