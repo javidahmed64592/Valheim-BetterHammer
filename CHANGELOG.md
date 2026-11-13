@@ -2,15 +2,12 @@
 
 ## Unreleased
 
-- Fixed the top-left message when cycling a saved copy's snap points showing `[betterhammer_copyReference]` instead of which piece it snaps to (broken in 1.0.1).
-- Added selecting connected pieces: `Alt+Shift+Middle-Click` on a piece selects it and every piece connected to it, directly or through other pieces, and `Alt+Shift+Right-Click` deselects them. Pieces count as connected when they touch, as the game sees it for support. The ground doesn't connect them. Pieces this hammer can't build are left out but still link the pieces around them. A search stops at 1000 pieces, set by the new `Max Connected Pieces` setting.
-- `Shift+Right-Click` and `Ctrl+Right-Click` no longer toggle repair mode or the grid while `Alt` is held.
-- `Ctrl+Right-Click` toggles the build grid while moving pieces, instead of aborting the move.
-- `Shift+Right-Click` while moving pieces switches to repair mode and pauses the move, so the pieces can be repaired before they're put down. Switching back carries on with the move, keeping its rotation, snap point and reference piece. A plain right-click still aborts, and leaving repair mode for another piece ends the move.
-- Rearranged the key hints. Moving, selecting, saving and destroying a selection are now together at the left edge of the screen, below the hotbar. Building aids (repair mode, build grid, grid distance and zoom) are on the right, above "Rotate", and snapping by piece sits just above the vanilla "Cycle snapping" hint, showing `Q` `E` like it. The hints stay in place: ones that don't apply at the moment are hidden but keep their space, and they no longer follow the vanilla hints as those change. They're hidden while the build menu is open. "Move piece" reads "Move pieces" with two or more pieces selected, "Copy selection" is now "Save selection" and "Remove selection" is now "Destroy selection".
-- `Ctrl+Middle-Click` with pieces selected moves the whole selection wherever you look. Looking at one of its pieces snaps by that piece, and `Shift+Q`/`Shift+E` then go through the pieces in the order they were selected. Looking at nothing snaps by the first piece selected. Looking at a piece that isn't selected still moves just that piece, and the key hint reads "Move piece" or "Move pieces" to match.
-- The right-hand key hints' scroll icons line up with the vanilla "Rotate" icon.
-- Moving several pieces no longer aborts when your inventory changes (picking something up, an item breaking, and so on). The move carries on with the same rotation, snap point and reference piece. A single piece that starts at a random turn also keeps its turn.
+- Added `Alt+Shift+Middle-Click` to select a piece and every piece connected to it, and `Alt+Shift+Right-Click` to deselect them. The ground doesn't connect pieces. A search stops at `Max Connected Pieces` (1000 by default).
+- `Ctrl+Middle-Click` moves the whole selection wherever you look, snapping by the selected piece you look at, or by the first one selected. Looking at an unselected piece still moves just that piece.
+- While moving, `Ctrl+Right-Click` toggles the build grid and `Shift+Right-Click` pauses the move in repair mode, instead of aborting.
+- Moving a selection no longer aborts when your inventory changes.
+- Rearranged the key hints: selection and moving on the left below the hotbar, building aids on the right, and "Snap to piece" above the vanilla "Cycle snapping". They no longer move around and are hidden while the build menu is open.
+- Fixed the snap point message for saved copies showing `[betterhammer_copyReference]` (broken in 1.0.1).
 
 ## 1.0.1
 
