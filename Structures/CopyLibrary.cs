@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using BepInEx;
 using BepInEx.Configuration;
@@ -106,6 +107,12 @@ internal static class CopyLibrary
     private static GameObject _container;
     private static Piece.PieceCategory _category;
     private const int NameCharacterLimit = 40;
+
+    /// <summary>
+    /// About two lines of the build panel's description: a copy lists its pieces up to this many
+    /// characters.
+    /// </summary>
+    private const int DescriptionLength = 150;
 
     private static ConfigEntry<KeyCode> _deleteKey;
     private static ConfigEntry<KeyCode> _renameKey;
@@ -502,9 +509,37 @@ internal static class CopyLibrary
     /// </summary>
     internal static string DescribePieces(IEnumerable<Piece> pieces)
     {
-        return string.Join(", ", pieces
+        // The most common pieces first, up to about two lines of the build panel, then how many kinds
+        // are left out.
+        List<string> kinds = [.. pieces
             .GroupBy(piece => piece.m_name)
-            .Select(same => same.Count().ToString(CultureInfo.InvariantCulture) + "× " + Localization.instance.Localize(same.Key)));
+            .OrderByDescending(same => same.Count())
+            .Select(same => same.Count().ToString(CultureInfo.InvariantCulture) + "× " + Localization.instance.Localize(same.Key))];
+        StringBuilder text = new();
+        int shown = 0;
+        foreach (string kind in kinds)
+        {
+            if (shown > 0 && text.Length + kind.Length + 2 > DescriptionLength)
+            {
+                break;
+            }
+
+            if (shown > 0)
+            {
+                _ = text.Append(", ");
+            }
+
+            _ = text.Append(kind);
+            shown++;
+        }
+
+        if (shown < kinds.Count)
+        {
+            _ = text.Append(", ").Append(Localization.instance.Localize("$betterhammer_copy_more_kinds",
+                (kinds.Count - shown).ToString(CultureInfo.InvariantCulture)));
+        }
+
+        return text.ToString();
     }
 
     /// <summary>

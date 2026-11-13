@@ -42,6 +42,7 @@
   "betterhammer_copy_saved": "Saved as $1 in the Copies tab",
   "betterhammer_copy_failed": "Couldn't save this copy",
   "betterhammer_copy_materials_page": "Materials page $1 of $2",
+  "betterhammer_copy_more_kinds": "and $1 more",
   "betterhammer_copy_delete_title": "Delete copy",
   "betterhammer_copy_delete_text": "Delete $1? This can't be undone.",
   "betterhammer_copy_deleted": "Deleted $1",
