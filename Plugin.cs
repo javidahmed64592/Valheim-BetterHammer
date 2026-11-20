@@ -160,7 +160,8 @@ public class BetterHammerPlugin : BaseUnityPlugin
 
         // Alt+right-click is for the selection. While moving a piece, a plain right-click cancels the move,
         // but Shift+ and Ctrl+right-click still toggle repair mode (pausing the move) and the grid.
-        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !AltHeld() && !MultiCopy.RightClickConsumed)
+        // Only with a hammer: other build tools (such as BetterHoe's hoe) have their own uses for these keys.
+        if (player.InPlaceMode() && IsHammerEquipped(player) && Input.GetMouseButtonDown(1) && !AltHeld() && !MultiCopy.RightClickConsumed)
         {
             if (ShiftHeld())
             {
