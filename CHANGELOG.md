@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+- `Ctrl+Right-Click` and `Shift+Right-Click` now only toggle the build grid and repair mode while you hold a hammer. Before, they also fired with other build tools, so toggling BetterHoe's terrain grid also toggled the build grid.
+
 ## 1.1.0
 
 - Added `Alt+Shift+Middle-Click` to select a piece and every piece connected to it, and `Alt+Shift+Right-Click` to deselect them. The ground doesn't connect pieces. A search stops at `Max Connected Pieces` (1000 by default).

@@ -28,7 +28,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "javidahmed64592.betterhammer";
     public const string PluginName = "Better Hammer";
-    public const string PluginVersion = "1.1.0";
+    public const string PluginVersion = "1.1.1";
 
     private const string HammerPrefabName = "Hammer";
     private const string ButtonName = "BetterHammer_Toggle";
@@ -160,7 +160,8 @@ public class BetterHammerPlugin : BaseUnityPlugin
 
         // Alt+right-click is for the selection. While moving a piece, a plain right-click cancels the move,
         // but Shift+ and Ctrl+right-click still toggle repair mode (pausing the move) and the grid.
-        if (player.InPlaceMode() && Input.GetMouseButtonDown(1) && !AltHeld() && !MultiCopy.RightClickConsumed)
+        // Only with a hammer: other build tools (such as BetterHoe's hoe) have their own uses for these keys.
+        if (player.InPlaceMode() && IsHammerEquipped(player) && Input.GetMouseButtonDown(1) && !AltHeld() && !MultiCopy.RightClickConsumed)
         {
             if (ShiftHeld())
             {
