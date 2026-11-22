@@ -52,6 +52,12 @@ internal static class MultiCopy
     private static readonly List<Piece> Selected = [];
 
     /// <summary>
+    /// The last selection that was cleared or saved as a copy, by network ID (pieces unload and load again as
+    /// you move around), so the clear key can bring it back while nothing is selected.
+    /// </summary>
+    private static readonly List<ZDOID> Previous = [];
+
+    /// <summary>
     /// The saved copy being placed; its ghosts are a <see cref="GhostGroup"/>.
     /// </summary>
     private static CopyLibrary.Copy _active;
@@ -95,6 +101,11 @@ internal static class MultiCopy
     internal static bool Placing => _active != null && GhostGroup.ActiveOwner == GhostGroup.Owner.Copy;
 
     internal static bool HasSelection => Selected.Count > 0;
+
+    /// <summary>
+    /// Nothing is selected, and the clear key would bring the last selection back.
+    /// </summary>
+    internal static bool CanReselect => Selected.Count == 0 && Previous.Count > 0;
 
     /// <summary>
     /// Alt+right-click deselects, so it mustn't also open the build menu or toggle repair mode or the grid.
@@ -194,6 +205,7 @@ internal static class MultiCopy
     /// </summary>
     internal static void ReplaceSelected(Piece original, Piece replacement)
     {
+        ReplacePrevious(original, replacement);
         int index = Selected.IndexOf(original);
         if (index < 0 || replacement == null)
         {
@@ -206,12 +218,72 @@ internal static class MultiCopy
     }
 
     /// <summary>
+    /// A moved piece is a new object, so the remembered selection follows it to its new ID.
+    /// </summary>
+    private static void ReplacePrevious(Piece original, Piece replacement)
+    {
+        int index = Previous.IndexOf(IdOf(original));
+        if (index >= 0 && replacement != null)
+        {
+            Previous[index] = IdOf(replacement);
+        }
+    }
+
+    private static ZDOID IdOf(Piece piece)
+    {
+        ZNetView nview = piece != null ? piece.GetComponent<ZNetView>() : null;
+        return nview != null && nview.IsValid() ? nview.GetZDO().m_uid : ZDOID.None;
+    }
+
+    /// <summary>
+    /// Remembers the selection before it's cleared or saved, so it can be selected again.
+    /// </summary>
+    private static void RememberSelection()
+    {
+        Prune();
+        Previous.Clear();
+        foreach (Piece piece in Selected)
+        {
+            ZDOID id = IdOf(piece);
+            if (id != ZDOID.None)
+            {
+                Previous.Add(id);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The clear key with nothing selected: selects the remembered pieces again. Pieces removed since, or too
+    /// far away to be loaded, are left out.
+    /// </summary>
+    private static void Reselect(Player player)
+    {
+        int total = Previous.Count;
+        foreach (ZDOID id in Previous)
+        {
+            GameObject instance = ZNetScene.instance.FindInstance(id);
+            Piece piece = instance != null ? instance.GetComponent<Piece>() : null;
+            if (piece != null && !Selected.Contains(piece) && CanSelect(player, piece))
+            {
+                Selected.Add(piece);
+            }
+        }
+
+        Previous.Clear();
+        _selectionDirty = true;
+        player.Message(MessageHud.MessageType.TopLeft, Selected.Count == total
+            ? Localization.instance.Localize("$betterhammer_selection_reselected", Count(Selected.Count))
+            : Localization.instance.Localize("$betterhammer_selection_reselected_some", Count(Selected.Count), Count(total)));
+    }
+
+    /// <summary>
     /// With pieces selected and the build menu closed: the clear key deselects them all, and the delete
-    /// key asks, then removes them all.
+    /// key asks, then removes them all. With nothing selected, the clear key selects the last cleared or saved
+    /// selection again.
     /// </summary>
     internal static void UpdateSelectionKeys(Player player)
     {
-        if (Selected.Count == 0
+        if ((Selected.Count == 0 && Previous.Count == 0)
             || Hud.IsPieceSelectionVisible()
             || UnifiedPopup.IsVisible()
             || !player.InPlaceMode()
@@ -221,9 +293,20 @@ internal static class MultiCopy
             return;
         }
 
+        if (Selected.Count == 0)
+        {
+            if (Input.GetKeyDown(ClearKey))
+            {
+                Reselect(player);
+            }
+
+            return;
+        }
+
         if (Input.GetKeyDown(ClearKey))
         {
             int count = Selected.Count;
+            RememberSelection();
             ClearHighlights();
             Selected.Clear();
             _selectionDirty = true;
@@ -318,6 +401,7 @@ internal static class MultiCopy
     {
         ClearHighlights();
         Selected.Clear();
+        Previous.Clear();
         Deactivate();
         _kept = default;
         _selectionDirty = true;
@@ -526,6 +610,9 @@ internal static class MultiCopy
                 Remove(player, piece);
             }
 
+            // The cut pieces are gone, so there's nothing to select again.
+            Previous.Clear();
+
             player.Message(MessageHud.MessageType.TopLeft,
                 Localization.instance.Localize("$betterhammer_cut_done", Count(originals.Count), copy.Name));
         });
@@ -577,6 +664,7 @@ internal static class MultiCopy
             return null;
         }
 
+        RememberSelection();
         ClearHighlights();
         Selected.Clear();
         _selectionDirty = true;
