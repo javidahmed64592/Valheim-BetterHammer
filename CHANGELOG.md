@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- With nothing selected, `Backspace` selects your last selection again, whether you cleared it or saved it as a copy, so you can pick up a large build where you left off. Pieces moved since are still included.
+
 ## 1.1.1
 
 - `Ctrl+Right-Click` and `Shift+Right-Click` now only toggle the build grid and repair mode while you hold a hammer. Before, they also fired with other build tools, so toggling BetterHoe's terrain grid also toggled the build grid.

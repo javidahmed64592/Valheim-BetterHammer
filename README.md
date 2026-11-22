@@ -42,7 +42,7 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 | `Alt+Shift+Middle-Click` | Select the piece and every piece connected to it.              |
 | `Alt+Right-Click`        | Deselect the piece you are looking at.                         |
 | `Alt+Shift+Right-Click`  | Deselect the piece and every piece connected to it.            |
-| `Backspace`              | Clear the selection.                                           |
+| `Backspace`              | Clear the selection. With nothing selected, select the last cleared or saved selection again. |
 | `Delete`                 | Destroy every selected piece, dropping their materials.        |
 | `Q`/`E`                  | Cycle snap points while placing a copy or moved selection.     |
 | `Shift+Q`/`Shift+E`      | Cycle through pieces while placing a copy or moved selection.  |

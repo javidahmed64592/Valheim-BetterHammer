@@ -66,7 +66,7 @@ internal static class KeyHintUI
     /// </summary>
     private const float RightStackLift = 12f;
 
-    private enum HintVisibility { Always = 0, GridOnly = 1, BuildOnly = 2, SelectionOnly = 3, CopyOnly = 4, UndoOnly = 5, RedoOnly = 6 }
+    private enum HintVisibility { Always = 0, GridOnly = 1, BuildOnly = 2, SelectionOnly = 3, CopyOnly = 4, UndoOnly = 5, RedoOnly = 6, ReselectOnly = 7 }
 
     /// <summary>
     /// In a hint's keys, puts the keys either side of it next to each other without the usual "+", as
@@ -121,6 +121,7 @@ internal static class KeyHintUI
         new Hint { Label = "$betterhammer_hint_cut_selection", Side = Side.Left, Keys = ["Left Alt", "Left Shift", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$betterhammer_hint_delete_selection", Side = Side.Left, Keys = [DeleteKey], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$betterhammer_hint_clear_selection", Side = Side.Left, Keys = [ClearKey], Visibility = HintVisibility.SelectionOnly },
+        new Hint { Label = "$betterhammer_hint_reselect", Side = Side.Left, Keys = [ClearKey], Visibility = HintVisibility.ReselectOnly },
         new Hint { Label = "$betterhammer_hint_undo", Side = Side.Right, Keys = [UndoKey], Visibility = HintVisibility.UndoOnly },
         new Hint { Label = "$betterhammer_hint_redo", Side = Side.Right, Keys = [RedoKey], Visibility = HintVisibility.RedoOnly },
         new Hint { Label = "$betterhammer_hint_repair", Side = Side.Right, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
@@ -193,6 +194,7 @@ internal static class KeyHintUI
                 HintVisibility.BuildOnly => !repairing,
                 HintVisibility.GridOnly => !repairing && gridOn,
                 HintVisibility.SelectionOnly => MultiCopy.HasSelection,
+                HintVisibility.ReselectOnly => MultiCopy.CanReselect,
                 HintVisibility.CopyOnly => GhostGroup.Active,
                 HintVisibility.UndoOnly => UndoHistory.CanUndo,
                 HintVisibility.RedoOnly => UndoHistory.CanRedo,

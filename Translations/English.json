@@ -76,5 +76,8 @@
   "betterhammer_copy_name_title": "Name this copy",
   "betterhammer_copy_rename_title": "Rename copy",
   "betterhammer_copy_renamed": "Renamed $1 to $2",
-  "betterhammer_copy_menu_hint": "Press $1 to rename or $2 to delete this copy"
+  "betterhammer_copy_menu_hint": "Press $1 to rename or $2 to delete this copy",
+  "betterhammer_hint_reselect": "Reselect last selection",
+  "betterhammer_selection_reselected": "Selected the last selection again ($1 pieces)",
+  "betterhammer_selection_reselected_some": "Selected $1 of the last $2 pieces again (the rest were removed or are too far away)"
 }
