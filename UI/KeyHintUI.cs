@@ -66,7 +66,7 @@ internal static class KeyHintUI
     /// </summary>
     private const float RightStackLift = 12f;
 
-    private enum HintVisibility { Always = 0, GridOnly = 1, BuildOnly = 2, SelectionOnly = 3, CopyOnly = 4, UndoOnly = 5, RedoOnly = 6, ReselectOnly = 7 }
+    private enum HintVisibility { Always = 0, GridOnly = 1, BuildOnly = 2, SelectionOnly = 3, CopyOnly = 4, UndoOnly = 5, RedoOnly = 6, SelectionOrReselect = 7 }
 
     /// <summary>
     /// In a hint's keys, puts the keys either side of it next to each other without the usual "+", as
@@ -91,9 +91,12 @@ internal static class KeyHintUI
         public string Label;
 
         /// <summary>
-        /// If set, the label used while Ctrl+middle-click would move the whole selection.
+        /// If set, the label used while <see cref="UseAltLabel"/> says so, such as "Move selection" while
+        /// Ctrl+middle-click would move the whole selection. The row is sized for the longer of the two.
         /// </summary>
-        public string SelectionLabel;
+        public string AltLabel;
+
+        public System.Func<bool> UseAltLabel;
         public Side Side;
         /// <summary>
         /// localisation tokens or literal key names; ScrollIcon draws the scroll wheel icon and NoPlus
@@ -104,7 +107,7 @@ internal static class KeyHintUI
         public GameObject Item;
         public CanvasGroup Group;
         public TextMeshProUGUI LabelText;
-        public bool ShowingSelectionLabel;
+        public bool ShowingAltLabel;
     }
 
     /// <summary>
@@ -112,7 +115,7 @@ internal static class KeyHintUI
     /// </summary>
     private static readonly List<Hint> Hints =
     [
-        new Hint { Label = "$betterhammer_hint_move", SelectionLabel = "$betterhammer_hint_move_selection", Side = Side.Left, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_move", AltLabel = "$betterhammer_hint_move_selection", UseAltLabel = () => _movesSelection, Side = Side.Left, Keys = ["Left Ctrl", "$button_mouse2"], Visibility = HintVisibility.Always },
         new Hint { Label = "$betterhammer_hint_select", Side = Side.Left, Keys = ["Left Alt", "$button_mouse2"], Visibility = HintVisibility.Always },
         new Hint { Label = "$betterhammer_hint_select_connected", Side = Side.Left, Keys = ["Left Alt", "Left Shift", "$button_mouse2"], Visibility = HintVisibility.Always },
         new Hint { Label = "$betterhammer_hint_deselect", Side = Side.Left, Keys = ["Left Alt", "$button_mouse1"], Visibility = HintVisibility.SelectionOnly },
@@ -120,8 +123,17 @@ internal static class KeyHintUI
         new Hint { Label = "$betterhammer_hint_copy_selection", Side = Side.Left, Keys = ["Left Alt", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$betterhammer_hint_cut_selection", Side = Side.Left, Keys = ["Left Alt", "Left Shift", "$button_mouse0"], Visibility = HintVisibility.SelectionOnly },
         new Hint { Label = "$betterhammer_hint_delete_selection", Side = Side.Left, Keys = [DeleteKey], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$betterhammer_hint_clear_selection", Side = Side.Left, Keys = [ClearKey], Visibility = HintVisibility.SelectionOnly },
-        new Hint { Label = "$betterhammer_hint_reselect", Side = Side.Left, Keys = [ClearKey], Visibility = HintVisibility.ReselectOnly },
+        new Hint
+        {
+            // One row for both, so the key stays put: it clears the selection, or with nothing selected brings
+            // the last one back.
+            Label = "$betterhammer_hint_clear_selection",
+            AltLabel = "$betterhammer_hint_reselect",
+            UseAltLabel = () => MultiCopy.CanReselect,
+            Side = Side.Left,
+            Keys = [ClearKey],
+            Visibility = HintVisibility.SelectionOrReselect,
+        },
         new Hint { Label = "$betterhammer_hint_undo", Side = Side.Right, Keys = [UndoKey], Visibility = HintVisibility.UndoOnly },
         new Hint { Label = "$betterhammer_hint_redo", Side = Side.Right, Keys = [RedoKey], Visibility = HintVisibility.RedoOnly },
         new Hint { Label = "$betterhammer_hint_repair", Side = Side.Right, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
@@ -183,7 +195,7 @@ internal static class KeyHintUI
         }
 
         bool repairing = player.InRepairMode();
-        bool movesSelection = MultiCopy.MovesSelection(player.GetHoveringPiece());
+        _movesSelection = MultiCopy.MovesSelection(player.GetHoveringPiece());
         bool gridOn = BetterHammerPlugin.GridEnabled;
 
         foreach (Hint hint in Hints)
@@ -194,7 +206,7 @@ internal static class KeyHintUI
                 HintVisibility.BuildOnly => !repairing,
                 HintVisibility.GridOnly => !repairing && gridOn,
                 HintVisibility.SelectionOnly => MultiCopy.HasSelection,
-                HintVisibility.ReselectOnly => MultiCopy.CanReselect,
+                HintVisibility.SelectionOrReselect => MultiCopy.HasSelection || MultiCopy.CanReselect,
                 HintVisibility.CopyOnly => GhostGroup.Active,
                 HintVisibility.UndoOnly => UndoHistory.CanUndo,
                 HintVisibility.RedoOnly => UndoHistory.CanRedo,
@@ -202,11 +214,11 @@ internal static class KeyHintUI
             };
             hint.Group.alpha = shown ? 1f : 0f;
 
-            bool selectionLabel = hint.SelectionLabel != null && movesSelection;
-            if (selectionLabel != hint.ShowingSelectionLabel)
+            bool altLabel = hint.AltLabel != null && hint.UseAltLabel();
+            if (altLabel != hint.ShowingAltLabel)
             {
-                hint.ShowingSelectionLabel = selectionLabel;
-                hint.LabelText.text = Localization.instance.Localize(selectionLabel ? hint.SelectionLabel : hint.Label);
+                hint.ShowingAltLabel = altLabel;
+                hint.LabelText.text = Localization.instance.Localize(altLabel ? hint.AltLabel : hint.Label);
             }
         }
 
@@ -339,8 +351,9 @@ internal static class KeyHintUI
                 Object.DestroyImmediate(item.transform.GetChild(i).gameObject);
             }
 
-            hint.LabelText = AddText(labelTemplate, item.transform, Localization.instance.Localize(hint.Label));
-            hint.ShowingSelectionLabel = false;
+            // Sized with the longer of its labels, so switching label doesn't move the keys.
+            hint.LabelText = AddText(labelTemplate, item.transform, LongerLabel(hint));
+            hint.ShowingAltLabel = false;
 
             hint.Keys = ExpandShortcuts(hint.Keys);
             for (int i = 0; i < hint.Keys.Length; i++)
@@ -399,6 +412,12 @@ internal static class KeyHintUI
         EqualiseWidths(Side.Left);
         EqualiseWidths(Side.Right);
 
+        // Measured with the longer label; each row starts on its usual one.
+        foreach (Hint hint in Hints)
+        {
+            hint.LabelText.text = Localization.instance.Localize(hint.Label);
+        }
+
         _stacks = stacks;
         _snapAnchor = keyboard.Find("Snap") as RectTransform;
         _screen = (RectTransform)keyHints.GetComponentInParent<Canvas>().rootCanvas.transform;
@@ -433,6 +452,18 @@ internal static class KeyHintUI
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         return stack;
     }
+
+    private static string LongerLabel(Hint hint)
+    {
+        string label = Localization.instance.Localize(hint.Label);
+        string alt = hint.AltLabel != null ? Localization.instance.Localize(hint.AltLabel) : "";
+        return alt.Length > label.Length ? alt : label;
+    }
+
+    /// <summary>
+    /// Whether Ctrl+middle-click would move the whole selection, for the move hint's label this frame.
+    /// </summary>
+    private static bool _movesSelection;
 
     private static void EqualiseWidths(Side side)
     {
