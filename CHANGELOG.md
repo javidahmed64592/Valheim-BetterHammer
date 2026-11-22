@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0
 
 - With nothing selected, `Backspace` selects your last selection again, whether you cleared it or saved it as a copy, so you can pick up a large build where you left off. Pieces moved since are still included.
 
