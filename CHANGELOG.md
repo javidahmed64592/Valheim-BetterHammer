@@ -9,7 +9,7 @@
 - Hide pieces with `H`; they're listed in a Hidden category. Each category and material shows how many pieces it has, and the search box takes `@mod`, `#section` and `$material` prefixes.
 - Copies named with a folder, such as `Base/Tower`, are grouped by folder.
 - Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules.json`, and `Icon Size` under `Build Menu` changes the size of the piece buttons. Set `Sections` to false there to use the game's own menu.
-- The build panel sits lower and no longer moves when the menu opens, and the "Snap to piece" key hint is at the top of the right-hand hints.
+- The build panel sits lower and no longer moves when the menu opens, and the "Snap to piece" key hint is at the top of the right-hand hints, with its keys at their normal size.
 - Adding or removing favourites, or changing their categories, updates the Favorites tab and its counts straight away.
 - Typing a copy's name with the build menu open no longer switches tabs on `Q` or `E`, jumps to the search box on `F`, or closes the menu on `Escape`.
 
