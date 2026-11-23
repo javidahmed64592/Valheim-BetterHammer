@@ -66,13 +66,15 @@ internal sealed class CycleLabel : MonoBehaviour, IPointerClickHandler, IPointer
 }
 
 /// <summary>
-/// A bar above the piece grid with "Group" and "Sort" labels for the current tab. The piece grid is made
-/// shorter to make room, and the bar follows its left edge, which moves when the tab has no list of
-/// categories.
+/// A bar above the piece grid: "Group by" and "Sort by" for the current tab on the left, and the game's
+/// search box and repair button, moved here from above the list of categories, on the right. The piece
+/// grid is made shorter to make room, the list of categories taller, and the bar follows the grid's left
+/// edge, which moves when the tab has no list of categories (where the search box now still shows).
 /// </summary>
 internal sealed class MenuToolbar
 {
-    private const float Height = 26f;
+    private const float Height = 32f;
+    private const float SearchWidth = 190f;
     private const float Gap = 4f;
     private const float Spacing = 28f;
     private const float FontScale = 0.85f;
@@ -81,8 +83,9 @@ internal sealed class MenuToolbar
     private readonly CycleLabel _group;
     private readonly CycleLabel _sort;
     private readonly Action _changed;
+    private readonly GameObject _bar;
 
-    internal MenuToolbar(BuildUi ui, TextMeshProUGUI fontSource, Action changed)
+    internal MenuToolbar(BuildUi ui, TextMeshProUGUI fontSource, TMP_InputField search, Action changed)
     {
         _ui = ui;
         _changed = changed;
@@ -91,6 +94,7 @@ internal sealed class MenuToolbar
         pieceView.offsetMax = new Vector2(pieceView.offsetMax.x, pieceView.offsetMax.y - Height - Gap);
 
         GameObject bar = new("BetterHammer_Toolbar", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        _bar = bar;
         RectTransform rect = (RectTransform)bar.transform;
         rect.SetParent(pieceView, false);
         rect.anchorMin = new Vector2(0f, 1f);
@@ -112,6 +116,49 @@ internal sealed class MenuToolbar
         _sort = CreateLabel(rect, fontSource, "$betterhammer_view_sort");
         _group.Cycled += step => Change(sort: false, step);
         _sort.Cycled += step => Change(sort: true, step);
+
+        GameObject spacer = new("Spacer", typeof(RectTransform), typeof(LayoutElement));
+        spacer.transform.SetParent(rect, false);
+        spacer.GetComponent<LayoutElement>().flexibleWidth = 1f;
+
+        MoveSearchAndRepair(ui, rect, search);
+    }
+
+    /// <summary>
+    /// Moves the search box and repair button into the bar, and lets the list of categories take the
+    /// space they leave. Leaves them where they are if the game's layout isn't as expected.
+    /// </summary>
+    private static void MoveSearchAndRepair(BuildUi ui, RectTransform bar, TMP_InputField search)
+    {
+        RectTransform row = search != null ? search.transform.parent as RectTransform : null;
+        if (row == null || ui.m_specialButtonsContainer == null || ui.m_specialButtonsContainer.parent != row
+            || ui.m_tagListScrollRect == null)
+        {
+            Debug.LogWarning("BetterHammer: build menu search box not as expected, leaving it where it is.");
+            return;
+        }
+
+        search.transform.SetParent(bar, false);
+        Size(search.gameObject, SearchWidth);
+        ui.m_specialButtonsContainer.SetParent(bar, false);
+        Size(ui.m_specialButtonsContainer.gameObject, Height);
+        row.gameObject.SetActive(false);
+
+        RectTransform list = (RectTransform)ui.m_tagListScrollRect.transform;
+        list.offsetMax = new Vector2(list.offsetMax.x, 0f);
+    }
+
+    private static void Size(GameObject element, float width)
+    {
+        if (!element.TryGetComponent(out LayoutElement layout))
+        {
+            layout = element.AddComponent<LayoutElement>();
+        }
+
+        layout.minWidth = width;
+        layout.preferredWidth = width;
+        layout.flexibleWidth = 0f;
+        layout.preferredHeight = Height;
     }
 
     /// <summary>
@@ -119,6 +166,8 @@ internal sealed class MenuToolbar
     /// </summary>
     internal void Refresh()
     {
+        // Build tools with the simple menu (no tabs) don't get the bar either.
+        _bar.SetActive(_ui.m_currentBuildTool == null || !_ui.m_currentBuildTool.m_hideAdvancedMenu);
         string tab = CurrentTab();
         _group.Show(Localization.instance.Localize(MenuView.Label(MenuState.GroupOf(tab))));
         _sort.Show(Localization.instance.Localize(MenuView.Label(MenuState.SortOf(tab))));

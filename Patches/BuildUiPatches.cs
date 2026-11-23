@@ -24,6 +24,19 @@ internal static class BuildUiPatches
         SectionedGrid.Attach(__instance);
     }
 
+    /// <summary>
+    /// Sizes the menu each time it opens, in case the screen or GUI scale changed.
+    /// </summary>
+    [HarmonyPostfix]
+    [HarmonyPatch(nameof(BuildUi.OpenBuildMenu))]
+    private static void OpenBuildMenu_Postfix(BuildUi __instance)
+    {
+        if (SectionedGrid.For(__instance) != null)
+        {
+            MenuLayout.Apply(__instance);
+        }
+    }
+
     [HarmonyPrefix]
     [HarmonyPatch("UpdateTagButtons")]
     private static void UpdateTagButtons_Prefix(BuildUi __instance)

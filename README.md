@@ -67,13 +67,13 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 
 ## Build Menu
 
-The build menu's categories are grouped into Construction, Utility, Comfort, Food and Mods, and the pieces are split into sections, each with a header and its own grid.
+The build menu is taller than the game's, its categories are grouped into Construction, Utility, Comfort, Food and Mods, and the pieces are split into sections, each with a header and its own grid.
 
 - **Show All** has a section for each category. Every piece is in exactly one category, the most fitting of the ones the game gives it, so a wall is under Walls rather than Building. **Building** shows every piece in the construction categories, by category.
 - **Each category** is split into sections: for example Beams, Diagonal beams, Roof crosses, Arches, and Poles and pillars under Architecture, and a section for each crafting station with its upgrades under Crafting.
 - **Modded** has every piece added by other mods, with a section per mod. Modded pieces also appear in the sections they fit, and again in a Modded section at the bottom.
 - Click a header to collapse its section. Collapsed sections are remembered and open up while you search.
-- **Group by** and **Sort by** above the pieces change how the current tab is laid out. Click to step forward through the options, and right-click to step back. Each tab remembers its own choice.
+- The bar above the pieces has the search box and repair button on the right, and **Group by** and **Sort by** on the left, which change how the current tab is laid out. Click to step forward through the options, and right-click to step back. Each tab remembers its own choice.
   - Group by: Type (the sections above, and categories in Recent), Material (the material a piece needs most of), Crafting station, or None.
   - Sort by: Default (the game's order, or most recent first in Recent), Name, Material, or Crafting station. It doesn't offer what the pieces are already grouped by.
 
