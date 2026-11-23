@@ -64,7 +64,8 @@ internal static class MenuSections
 
     /// <summary>
     /// Most specific first. A piece goes under the first of its tags in this list: a wood wall is tagged
-    /// both Building and Wall, so it goes under Wall.
+    /// both Building and Wall, so it goes under Wall. Building is the game's tag for every construction
+    /// piece, so it comes last, as does Misc: a dragon adornment tagged Building and Decor goes under Decor.
     /// </summary>
     private static readonly Piece.UsageTagFlags[] Priority =
     [
@@ -74,7 +75,6 @@ internal static class MenuSections
         Piece.UsageTagFlags.Wall,
         Piece.UsageTagFlags.Roof,
         Piece.UsageTagFlags.Architecture,
-        Piece.UsageTagFlags.Building,
         Piece.UsageTagFlags.Lighting,
         Piece.UsageTagFlags.Storage,
         Piece.UsageTagFlags.Crafting,
@@ -87,8 +87,34 @@ internal static class MenuSections
         Piece.UsageTagFlags.Meads,
         Piece.UsageTagFlags.Food,
         Piece.UsageTagFlags.Stacks,
+        Piece.UsageTagFlags.Building,
         Piece.UsageTagFlags.Misc,
     ];
+
+    /// <summary>
+    /// Vanilla pieces whose tags put them in the wrong section, by prefab name. A piece only moves if the
+    /// section exists in the tab.
+    /// </summary>
+    private static readonly Dictionary<string, Piece.UsageTagFlags> Overrides = new()
+    {
+        // The other inverted wood walls are tagged Wall; this one was missed.
+        ["wood_wall_roof_upsidedown"] = Piece.UsageTagFlags.Wall,
+
+        // Black marble: the solid blocks go with the tile walls (some are also tagged Floor), and the
+        // shaped trim (plinths and their corners, overhangs, columns, the arch and the spire) goes
+        // together in Architecture.
+        ["blackmarble_1x1"] = Piece.UsageTagFlags.Wall,
+        ["blackmarble_2x1x1"] = Piece.UsageTagFlags.Wall,
+        ["blackmarble_2x2x1"] = Piece.UsageTagFlags.Wall,
+        ["blackmarble_2x2x2"] = Piece.UsageTagFlags.Wall,
+        ["blackmarble_base_1"] = Piece.UsageTagFlags.Architecture,
+        ["blackmarble_base_2"] = Piece.UsageTagFlags.Architecture,
+        ["blackmarble_basecorner"] = Piece.UsageTagFlags.Architecture,
+        ["blackmarble_out_1"] = Piece.UsageTagFlags.Architecture,
+        ["blackmarble_out_2"] = Piece.UsageTagFlags.Architecture,
+        ["blackmarble_outcorner"] = Piece.UsageTagFlags.Architecture,
+        ["blackmarble_tip"] = Piece.UsageTagFlags.Architecture,
+    };
 
     private const string OtherKey = "other";
 
@@ -116,6 +142,7 @@ internal static class MenuSections
     private static List<SectionSpec> ByUsageTag(ByUsagePieceList list, PieceTable table, IReadOnlyList<Piece> pieces)
     {
         Dictionary<Piece, (int Rank, SectionSpec Section)> placed = [];
+        Dictionary<Piece.UsageTagFlags, SectionSpec> byFlag = [];
         List<SectionSpec> sections = [];
         int vanillaTags = list.m_usageTags.Length;
 
@@ -138,6 +165,7 @@ internal static class MenuSections
                 Piece.UsageTagFlags flag = list.GetTagById(id);
                 rank = IndexOr(Priority, flag, Priority.Length);
                 section = new SectionSpec(flag.ToString(), title, IndexOr(DisplayOrder, flag, 500 + i));
+                byFlag[flag] = section;
             }
 
             sections.Add(section);
@@ -161,6 +189,14 @@ internal static class MenuSections
         SectionSpec other = null;
         foreach (Piece piece in pieces)
         {
+            if (Overrides.TryGetValue(piece.gameObject.name, out Piece.UsageTagFlags moved)
+                && byFlag.TryGetValue(moved, out SectionSpec target) && placed.TryGetValue(piece, out (int Rank, SectionSpec Section) current)
+                && current.Rank >= 0)
+            {
+                // Pieces a mod put in its own category stay there.
+                placed[piece] = (current.Rank, target);
+            }
+
             if (placed.TryGetValue(piece, out (int Rank, SectionSpec Section) entry))
             {
                 entry.Section.Pieces.Add(piece);
