@@ -1,26 +1,17 @@
 # Changelog
 
-## Unreleased
+## 1.3.0
 
-- The build menu's Show All splits pieces into sections by category, each with a header and its own grid. A piece goes under its most specific category (a wall under Walls rather than Building), and categories added by mods, such as the Copies tab, come last. Click a header to collapse its section; collapsed sections are remembered and open up while you search. Turn `Sections` off under `Build Menu` in the config to use the game's own menu.
-- Picking a category shows exactly the pieces in its Show All section, split into sections such as Beams, Diagonal beams and Poles and pillars under Architecture, or one section per crafting station with its upgrades under Crafting. Building shows every piece in the construction categories (floors to doors), by category.
-- The categories on the left are grouped under Construction, Utility, Comfort, Food and Mods headers, and categories with nothing in them are hidden.
-- A new Modded category has every piece other mods add, with a section per mod. Modded pieces also stay in the sections they fit, and appear again in a Modded section at the bottom.
-- Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules.json`: move a piece to another category, or replace a category's sections. The built-in rules are written next to it to copy from.
-- Group by and Sort by above the pieces lay out each tab your way: group by type, main material, crafting station or not at all, and sort by name, material or crafting station. Click to step through the options and right-click to step back. Each tab remembers its choice.
-- The Recent tab is split by category, with the most recent pieces first in each.
-- The Favorites tab is split into your favourites categories, in your order, then Uncategorised. Drag a piece to rearrange it, or onto another section to move it there; dropping it on Uncategorised takes it out of its categories. Drag a category in the list on the left to reorder it, and right-click it to rename it. Your categories stay in your character as before; only the arranged order is kept by the mod.
-- Hover a piece in the build menu and press `H` to hide it from every tab. Hidden pieces are listed in a Hidden category, where `H` brings them back.
-- Show, in the bar above the pieces, switches between all pieces and only those you have the materials for (counting nearby chests).
-- The lists on the left show how many pieces each category, material or favourites category has.
-- Search prefixes: `@` finds pieces by the mod they come from, `#` by the section they're in, and `$` by a material they need, such as `@half beam`, `#roof` or `$iron`.
-- `Icon Size` under `Build Menu` in the config makes the piece buttons smaller or bigger (60 to 140%).
-- Copies named with a folder, such as `Base/Tower`, are grouped by folder in the Copies tab.
-- Typing in the text box for naming or renaming a copy with the build menu open no longer switches tabs on `Q` or `E`, jumps to the search box on `F`, or closes the menu on `Escape`.
-- The Materials tab lists its materials by biome, from Meadows to Deep North, under a header for each, with other mods' materials last under Other. Its Show All is split by the biome of each piece's main material, and a material by category. Grouping or sorting by material anywhere follows the same biome order.
-- The build menu is taller, so more pieces fit: it grows into the space above it, and the panel with the selected piece's materials sits lower, just above the game's key hints, whether the menu is open or not.
-- The "Snap to piece" key hint is at the top of the right-hand hints instead of in the middle above "Cycle snapping", out of the build panel's way.
-- The search box and repair button sit on the right of the bar above the pieces, so the list of categories runs from the top. The search box also works in the Recent tab.
+- The build menu is sectioned: every tab is split into sections with headers you can collapse, and the build menu is taller, with the search box, repair button and new options in a bar above the pieces.
+- Categories: every piece is in exactly one category, each category is split further (such as Beams and Arches under Architecture, or a section per crafting station and its upgrades under Crafting), and the categories are grouped into Construction, Utility, Comfort, Food and Mods. A new Modded category lists other mods' pieces by mod.
+- Materials are listed by biome, Recent is split by category, and Favorites by your favourites categories, which you can rearrange by dragging and rename by right-clicking.
+- Group by, Sort by and Show (all or only buildable pieces) in the bar change how each tab is laid out.
+- Hide pieces with `H`; they're listed in a Hidden category. Each category and material shows how many pieces it has, and the search box takes `@mod`, `#section` and `$material` prefixes.
+- Copies named with a folder, such as `Base/Tower`, are grouped by folder.
+- Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules.json`, and `Icon Size` under `Build Menu` changes the size of the piece buttons. Set `Sections` to false there to use the game's own menu.
+- The build panel sits lower and no longer moves when the menu opens, and the "Snap to piece" key hint is at the top of the right-hand hints, with its keys at their normal size.
+- Adding or removing favourites, or changing their categories, updates the Favorites tab and its counts straight away.
+- Typing a copy's name with the build menu open no longer switches tabs on `Q` or `E`, jumps to the search box on `F`, or closes the menu on `Escape`.
 
 ## 1.2.0
 

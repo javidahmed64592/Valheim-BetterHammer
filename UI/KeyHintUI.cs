@@ -107,6 +107,12 @@ internal static class KeyHintUI
         public CanvasGroup Group;
         public TextMeshProUGUI LabelText;
         public bool ShowingAltLabel;
+
+        /// <summary>
+        /// How many of the row's parts line up with the other rows of its stack. A pair of keys shown
+        /// without a "+" (such as Q E) isn't lined up, so its keys keep their own size.
+        /// </summary>
+        public int AlignedParts = int.MaxValue;
     }
 
     /// <summary>
@@ -343,6 +349,8 @@ internal static class KeyHintUI
             {
                 if (hint.Keys[i] == NoPlus)
                 {
+                    // The key before it starts the pair: only the parts before that key line up.
+                    hint.AlignedParts = Mathf.Min(hint.AlignedParts, item.transform.childCount - 1);
                     continue;
                 }
 
@@ -449,34 +457,45 @@ internal static class KeyHintUI
 
     private static void EqualiseWidths(Side side)
     {
-        List<Transform> items = [];
+        // The columns every row has line up. A row with a key pair (see Hint.AlignedParts) doesn't count
+        // towards that, and only lines up the parts before its pair.
+        int parts = int.MaxValue;
+        foreach (Hint hint in Hints)
+        {
+            if (hint.Side == side && hint.AlignedParts == int.MaxValue)
+            {
+                parts = Mathf.Min(parts, hint.Item.transform.childCount);
+            }
+        }
+
+        List<(Transform Item, int Parts)> rows = [];
         foreach (Hint hint in Hints)
         {
             if (hint.Side == side)
             {
-                items.Add(hint.Item.transform);
+                rows.Add((hint.Item.transform, Mathf.Min(Mathf.Min(parts, hint.Item.transform.childCount), hint.AlignedParts)));
             }
-        }
-
-        int parts = int.MaxValue;
-        foreach (Transform item in items)
-        {
-            parts = Mathf.Min(parts, item.childCount);
         }
 
         for (int part = 0; part < parts; part++)
         {
             float width = 0f;
-            foreach (Transform item in items)
+            foreach ((Transform item, int count) in rows)
             {
-                width = Mathf.Max(width, ((RectTransform)item.GetChild(part)).rect.width);
+                if (part < count)
+                {
+                    width = Mathf.Max(width, ((RectTransform)item.GetChild(part)).rect.width);
+                }
             }
 
-            foreach (Transform item in items)
+            foreach ((Transform item, int count) in rows)
             {
-                GameObject child = item.GetChild(part).gameObject;
-                LayoutElement layout = child.GetComponent<LayoutElement>() ?? child.AddComponent<LayoutElement>();
-                layout.minWidth = width;
+                if (part < count)
+                {
+                    GameObject child = item.GetChild(part).gameObject;
+                    LayoutElement layout = child.GetComponent<LayoutElement>() ?? child.AddComponent<LayoutElement>();
+                    layout.minWidth = width;
+                }
             }
         }
     }

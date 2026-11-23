@@ -210,6 +210,37 @@ internal static class BuildUiPatches
         return false;
     }
 
+    /// <summary>
+    /// After favourites change (added, removed, or moved between categories with the middle-click
+    /// dropdown), the Favorites tab is laid out again, so its sections and counts are right straight
+    /// away rather than after switching tabs. With the dropdown, that waits until it closes, so ticking
+    /// several categories doesn't close it each time.
+    /// </summary>
+    [HarmonyPostfix]
+    [HarmonyPatch("OnFavoritesDropdownClosed")]
+    private static void OnFavoritesDropdownClosed_Postfix(BuildUi __instance)
+    {
+        RefreshFavorites(__instance);
+    }
+
+    [HarmonyPostfix]
+    [HarmonyPatch(nameof(BuildUi.PressedFavoriteButton))]
+    private static void PressedFavoriteButton_Postfix(BuildUi __instance)
+    {
+        if (!__instance.m_favoritesDropdown.IsOpen())
+        {
+            RefreshFavorites(__instance);
+        }
+    }
+
+    private static void RefreshFavorites(BuildUi ui)
+    {
+        if (SectionedGrid.For(ui) != null && ui.gameObject.activeSelf && ui.m_pieceLists[ui.m_currentPieceList] is FavoritePieceList)
+        {
+            ui.SelectPieceList(ui.m_currentPieceList, refreshOnly: true);
+        }
+    }
+
     [HarmonyPostfix]
     [HarmonyPatch("OnFavoritePieceAdded")]
     private static void OnFavoritePieceAdded_Postfix(BuildUi __instance, string pieceName)
