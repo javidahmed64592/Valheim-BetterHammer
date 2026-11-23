@@ -64,9 +64,10 @@ internal sealed class SectionedGrid
         _template = _pool.GetComponent<GridLayoutGroup>();
         _fontSource = FindLabel(ui.m_showAllTagsButton);
         TagHeaders = new TagListHeaders(ui, _fontSource);
-        _toolbar = new MenuToolbar(ui, _fontSource, Rebuild);
         _dividerSource = ui.m_materialSeparator != null ? ui.m_materialSeparator.GetComponent<Image>() : null;
         _search = ui.m_tagListContainer != null ? ui.m_tagListContainer.GetComponentInChildren<TMP_InputField>(true) : null;
+        _toolbar = new MenuToolbar(ui, _fontSource, _search, Rebuild);
+        MenuLayout.Apply(ui);
 
         GameObject root = new("BetterHammer_Sections", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         _root = (RectTransform)root.transform;

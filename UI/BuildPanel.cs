@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 
+using BetterHammer.BuildMenu;
+
 using TMPro;
 
 using UnityEngine;
@@ -176,29 +178,63 @@ internal static class BuildPanel
 
     /// <summary>
     /// Keeps the panel where the game has it, or raised just enough for its bottom to clear a row of
-    /// key hints on top of the vanilla ones. Only moves it when that changes.
+    /// key hints on top of the vanilla ones. While the sectioned build menu is open, BetterHammer's key
+    /// hints are hidden, so the panel drops to just above the vanilla ones to make room for a taller menu.
+    /// Only moves it when that changes.
     /// </summary>
     private static void KeepClearOfHints()
     {
-        Transform row = KeyHints.instance != null && KeyHints.instance.m_buildHints != null
-            ? KeyHints.instance.m_buildHints.transform.Find("Keyboard")
-            : null;
-        float scale = _panel.lossyScale.y;
-        if (row is not RectTransform rowRect || scale <= 0f)
+        if (!TryGetBaseBottom(out float baseBottom, out float hintsTop, out float scale))
         {
             return;
         }
 
-        Vector3[] corners = new Vector3[4];
-        rowRect.GetWorldCorners(corners);
-        float clear = corners[1].y + ((HintRowHeight + HintRowGap) * scale);
-
-        _panel.GetWorldCorners(corners);
-        float baseBottom = corners[0].y - ((_panel.anchoredPosition.y - _baseY) * scale);
-        float y = _baseY + Mathf.Max(0f, (clear - baseBottom) / scale);
+        float y = MenuOpen()
+            ? _baseY - Mathf.Max(0f, (baseBottom - hintsTop - (HintRowGap * scale)) / scale)
+            : _baseY + Mathf.Max(0f, (hintsTop + ((HintRowHeight + HintRowGap) * scale) - baseBottom) / scale);
         if (Mathf.Abs(_panel.anchoredPosition.y - y) > 0.01f)
         {
             _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, y);
         }
+    }
+
+    /// <summary>
+    /// How far the panel drops while the build menu is open, in the HUD's units, so the menu can grow
+    /// down by the same amount.
+    /// </summary>
+    internal static float MenuOpenDrop()
+    {
+        return _panel != null && BuildMenuConfig.Sections && TryGetBaseBottom(out float baseBottom, out float hintsTop, out float scale)
+            ? Mathf.Max(0f, (baseBottom - hintsTop - (HintRowGap * scale)) / scale)
+            : 0f;
+    }
+
+    private static bool MenuOpen()
+    {
+        return BuildMenuConfig.Sections && Hud.IsPieceSelectionVisible();
+    }
+
+    /// <summary>
+    /// The world heights of the panel's bottom where the game has it and of the top of the vanilla key
+    /// hints, and the HUD's scale.
+    /// </summary>
+    private static bool TryGetBaseBottom(out float baseBottom, out float hintsTop, out float scale)
+    {
+        baseBottom = hintsTop = 0f;
+        Transform row = KeyHints.instance != null && KeyHints.instance.m_buildHints != null
+            ? KeyHints.instance.m_buildHints.transform.Find("Keyboard")
+            : null;
+        scale = _panel.lossyScale.y;
+        if (row is not RectTransform rowRect || scale <= 0f)
+        {
+            return false;
+        }
+
+        Vector3[] corners = new Vector3[4];
+        rowRect.GetWorldCorners(corners);
+        hintsTop = corners[1].y;
+        _panel.GetWorldCorners(corners);
+        baseBottom = corners[0].y - ((_panel.anchoredPosition.y - _baseY) * scale);
+        return true;
     }
 }
