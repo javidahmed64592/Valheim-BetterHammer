@@ -6,20 +6,36 @@ using System.IO;
 using BepInEx;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 using UnityEngine;
 
 namespace BetterHammer.BuildMenu;
 
 /// <summary>
-/// What the build menu remembers between sessions, for all characters: which sections are collapsed.
+/// What the build menu remembers between sessions, for all characters: which sections are collapsed,
+/// and how each tab groups and sorts its pieces.
 /// Saved in <c>BepInEx/config/BetterHammer/build_menu.json</c>.
 /// </summary>
 internal static class MenuState
 {
     private sealed class StateFile
     {
-        public List<string> Collapsed = [];
+        public List<string> Collapsed { get; set; } = [];
+
+        /// <summary>
+        /// Tab (its piece list's type name) to how it groups and sorts.
+        /// </summary>
+        public Dictionary<string, ViewState> Views { get; set; } = [];
+    }
+
+    private sealed class ViewState
+    {
+        [JsonConverter(typeof(StringEnumConverter))]
+        public GroupMode Group { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        public SortMode Sort { get; set; }
     }
 
     private static StateFile _file;
@@ -42,6 +58,30 @@ internal static class MenuState
             _file.Collapsed.Sort(StringComparer.Ordinal);
             Save();
         }
+    }
+
+    internal static GroupMode GroupOf(string tab)
+    {
+        EnsureLoaded();
+        return _file.Views.TryGetValue(tab, out ViewState view) && view != null ? view.Group : GroupMode.Type;
+    }
+
+    /// <summary>
+    /// How the tab sorts; Default if it would sort by what it's grouped by.
+    /// </summary>
+    internal static SortMode SortOf(string tab)
+    {
+        EnsureLoaded();
+        return _file.Views.TryGetValue(tab, out ViewState view) && view != null && MenuView.Allowed(view.Group, view.Sort)
+            ? view.Sort
+            : SortMode.Default;
+    }
+
+    internal static void SetView(string tab, GroupMode group, SortMode sort)
+    {
+        EnsureLoaded();
+        _file.Views[tab] = new ViewState { Group = group, Sort = sort };
+        Save();
     }
 
     private static void EnsureLoaded()
@@ -76,6 +116,7 @@ internal static class MenuState
 
         _file ??= new StateFile();
         _file.Collapsed ??= [];
+        _file.Views ??= [];
         _collapsed = [.. _file.Collapsed];
     }
 

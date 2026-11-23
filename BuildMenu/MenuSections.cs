@@ -35,7 +35,7 @@ internal sealed class SectionSpec
 /// <item>Modded: one section per mod.</item>
 /// </list>
 /// Wherever modded pieces show, they're also gathered in a Modded section at the bottom. The other tabs
-/// are one section without a header, as in the game.
+/// are one section without a header, as in the game, except Recent, which is split by category too.
 /// </summary>
 internal static class MenuSections
 {
@@ -48,8 +48,42 @@ internal static class MenuSections
     /// <param name="tagId">The selected tag, or -1 for Show All.</param>
     /// <param name="table">The build tool's piece table.</param>
     /// <param name="pieces">The pieces the game shows, in its order. Every one ends up in a section.</param>
-    internal static List<SectionSpec> Build(IPieceList list, int tagId, PieceTable table, IReadOnlyList<Piece> pieces)
+    /// <param name="categories">The Categories tab's list, for sorting other tabs' pieces into categories.</param>
+    internal static List<SectionSpec> Build(IPieceList list, int tagId, PieceTable table, IReadOnlyList<Piece> pieces, ByUsagePieceList categories)
     {
+        string tab = TabKey(list);
+        List<SectionSpec> sections = Group(list, tagId, table, pieces, MenuState.GroupOf(tab), categories);
+        MenuView.Sort(sections, MenuState.SortOf(tab));
+        return sections;
+    }
+
+    /// <summary>
+    /// Names a tab for remembering how it's grouped and sorted.
+    /// </summary>
+    internal static string TabKey(IPieceList list)
+    {
+        return list.GetType().Name;
+    }
+
+    private static List<SectionSpec> Group(IPieceList list, int tagId, PieceTable table, IReadOnlyList<Piece> pieces, GroupMode mode, ByUsagePieceList categories)
+    {
+        string view = ViewKey(list, tagId, table);
+        if (mode is GroupMode.Material or GroupMode.Station)
+        {
+            return MenuView.GroupBy(pieces, mode, view);
+        }
+
+        if (mode == GroupMode.None)
+        {
+            return [Single(pieces)];
+        }
+
+        // Recent pieces by category, most recent first in each.
+        if (list is RecentPieceList && categories != null && table != null)
+        {
+            return ByCategory(categories, table, pieces, "recent");
+        }
+
         if (list is ByUsagePieceList usage && list.ShowTags)
         {
             if (tagId == PieceCategories.ModdedTagId)
@@ -69,9 +103,27 @@ internal static class MenuSections
             }
         }
 
+        return [Single(pieces)];
+    }
+
+    private static SectionSpec Single(IReadOnlyList<Piece> pieces)
+    {
         SectionSpec single = new("all", "", 0);
         single.Pieces.AddRange(pieces);
-        return [single];
+        return single;
+    }
+
+    /// <summary>
+    /// Names what the tab shows (Show All, a category), so collapsed sections are remembered per view.
+    /// </summary>
+    private static string ViewKey(IPieceList list, int tagId, PieceTable table)
+    {
+        return tagId switch
+        {
+            -1 => "all",
+            _ when list is ByUsagePieceList usage && PieceCategories.Find(usage, table, tagId) is CategoryInfo category => category.Key,
+            _ => tagId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        };
     }
 
     private static List<SectionSpec> ByCategory(ByUsagePieceList list, PieceTable table, IReadOnlyList<Piece> pieces, string view)
