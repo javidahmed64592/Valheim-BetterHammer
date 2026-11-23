@@ -44,7 +44,7 @@ The bar above the pieces holds the search box and repair button, and three optio
 - **Copies**: Copies named with a folder, such as `Base/Tower`, are grouped by folder in the Copies tab.
 - Collapsed sections, grouping, sorting, hidden pieces and the order of your favourites are remembered for all your characters. Your favourites categories themselves stay in your character, as in the game.
 
-![Build Menu Favorites](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/build_menu_favorites.png)
+![Build Menu Favorites](https://github.com/javidahmed64592/Valheim-BetterHammer/raw/main/images/build_menu_favourites.png)
 
 ### Where Pieces Go
 
