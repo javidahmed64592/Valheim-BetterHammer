@@ -16,6 +16,7 @@
 - Search prefixes: `@` finds pieces by the mod they come from, `#` by the section they're in, and `$` by a material they need, such as `@half beam`, `#roof` or `$iron`.
 - `Icon Size` under `Build Menu` in the config makes the piece buttons smaller or bigger (60 to 140%).
 - Copies named with a folder, such as `Base/Tower`, are grouped by folder in the Copies tab.
+- Typing in the text box for naming or renaming a copy with the build menu open no longer switches tabs on `Q` or `E`, jumps to the search box on `F`, or closes the menu on `Escape`.
 - The Materials tab lists its materials by biome, from Meadows to Deep North, under a header for each, with other mods' materials last under Other. Its Show All is split by the biome of each piece's main material, and a material by category. Grouping or sorting by material anywhere follows the same biome order.
 - The build menu is taller, so more pieces fit: it grows into the space above it, and the panel with the selected piece's materials sits lower, just above the game's key hints, whether the menu is open or not.
 - The "Snap to piece" key hint is at the top of the right-hand hints instead of in the middle above "Cycle snapping", out of the build panel's way.

@@ -40,15 +40,24 @@ internal static class BuildUiPatches
     /// <summary>
     /// Right-click is the game's key for closing the build menu. Over one of the player's favourites
     /// categories it renames the category instead (see <see cref="TagDrag"/>), so the menu stays open.
+    /// While the game's text box is open (naming or renaming a copy), the menu's keys are left alone, so
+    /// typing F doesn't jump to the search box and Escape only closes the text box.
     /// </summary>
     [HarmonyPrefix]
     [HarmonyPatch("NavigationUpdate")]
-    private static void NavigationUpdate_Prefix(BuildUi __instance)
+    private static bool NavigationUpdate_Prefix(BuildUi __instance)
     {
+        if (TextInput.IsVisible())
+        {
+            return false;
+        }
+
         if (SectionedGrid.For(__instance) != null && Input.GetMouseButtonDown(1) && TagDrag.IsRenameTarget(__instance, __instance.m_currentHoveredTagButton))
         {
             ZInput.ResetButtonStatus("BuildMenu");
         }
+
+        return true;
     }
 
     [HarmonyPrefix]
