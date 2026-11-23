@@ -14,7 +14,7 @@ namespace BetterHammer.BuildMenu;
 
 /// <summary>
 /// What the build menu remembers between sessions, for all characters: which sections are collapsed,
-/// and how each tab groups and sorts its pieces.
+/// how each tab groups and sorts its pieces, and the order of pieces in each favourites category.
 /// Saved in <c>BepInEx/config/BetterHammer/build_menu.json</c>.
 /// </summary>
 internal static class MenuState
@@ -27,6 +27,12 @@ internal static class MenuState
         /// Tab (its piece list's type name) to how it groups and sorts.
         /// </summary>
         public Dictionary<string, ViewState> Views { get; set; } = [];
+
+        /// <summary>
+        /// Favourites category name ("" for uncategorised) to its pieces' prefab names, in the order the
+        /// player arranged them.
+        /// </summary>
+        public Dictionary<string, List<string>> FavoriteOrder { get; set; } = [];
     }
 
     private sealed class ViewState
@@ -84,6 +90,36 @@ internal static class MenuState
         Save();
     }
 
+    /// <summary>
+    /// The order the player arranged a favourites category's pieces in, as prefab names; empty if never.
+    /// </summary>
+    internal static IReadOnlyList<string> FavoriteOrderOf(string category)
+    {
+        EnsureLoaded();
+        return _file.FavoriteOrder.TryGetValue(category, out List<string> order) && order != null ? order : [];
+    }
+
+    internal static void SetFavoriteOrder(string category, List<string> order)
+    {
+        EnsureLoaded();
+        _file.FavoriteOrder[category] = order;
+        Save();
+    }
+
+    /// <summary>
+    /// Keeps a category's arranged order when it's renamed.
+    /// </summary>
+    internal static void RenameFavoriteOrder(string from, string to)
+    {
+        EnsureLoaded();
+        if (_file.FavoriteOrder.TryGetValue(from, out List<string> order))
+        {
+            _ = _file.FavoriteOrder.Remove(from);
+            _file.FavoriteOrder[to] = order;
+            Save();
+        }
+    }
+
     private static void EnsureLoaded()
     {
         if (_file != null)
@@ -117,6 +153,7 @@ internal static class MenuState
         _file ??= new StateFile();
         _file.Collapsed ??= [];
         _file.Views ??= [];
+        _file.FavoriteOrder ??= [];
         _collapsed = [.. _file.Collapsed];
     }
 
