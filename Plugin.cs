@@ -5,6 +5,7 @@ using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 
+using BetterHammer.BuildMenu;
 using BetterHammer.Core;
 using BetterHammer.Grid;
 using BetterHammer.History;
@@ -92,6 +93,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
         MultiCopy.BindConfig(Config);
         ConnectedPieces.BindConfig(Config);
         UndoHistory.BindConfig(Config);
+        BuildMenuConfig.Bind(Config);
         Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.

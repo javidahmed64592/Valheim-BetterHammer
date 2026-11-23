@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The build menu's Show All splits pieces into sections by category, each with a header and its own grid. A piece goes under its most specific category (a wall under Walls rather than Building), and categories added by mods, such as the Copies tab, come last. Click a header to collapse its section; collapsed sections are remembered and open up while you search. Turn `Sections` off under `Build Menu` in the config to use the game's own menu.
+
 ## 1.2.0
 
 - With nothing selected, `Backspace` selects your last selection again, whether you cleared it or saved it as a copy, so you can pick up a large build where you left off. Pieces moved since are still included.
