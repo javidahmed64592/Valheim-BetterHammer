@@ -114,6 +114,14 @@ internal static class MenuSections
         ["blackmarble_out_2"] = Piece.UsageTagFlags.Architecture,
         ["blackmarble_outcorner"] = Piece.UsageTagFlags.Architecture,
         ["blackmarble_tip"] = Piece.UsageTagFlags.Architecture,
+
+        // Tagged Doors as well as Wall, but they're walls with a window cut out.
+        ["Piece_grausten_window_2x2"] = Piece.UsageTagFlags.Wall,
+        ["Piece_grausten_window_4x2"] = Piece.UsageTagFlags.Wall,
+
+        // Gates that lift away, built to keep enemies out.
+        ["piece_drawbridge"] = Piece.UsageTagFlags.Defense,
+        ["piece_drawbridge_log"] = Piece.UsageTagFlags.Defense,
     };
 
     private const string OtherKey = "other";
