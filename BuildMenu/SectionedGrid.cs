@@ -48,6 +48,7 @@ internal sealed class SectionedGrid
     /// The menu's search box (the game's own input field type, which derives from this one).
     /// </summary>
     private readonly TMP_InputField _search;
+    private readonly MenuToolbar _toolbar;
     private readonly List<Section> _sections = [];
     private readonly List<BuildUiPieceButton> _extras = [];
     private readonly Stack<BuildUiPieceButton> _extraPool = new();
@@ -63,6 +64,7 @@ internal sealed class SectionedGrid
         _template = _pool.GetComponent<GridLayoutGroup>();
         _fontSource = FindLabel(ui.m_showAllTagsButton);
         TagHeaders = new TagListHeaders(ui, _fontSource);
+        _toolbar = new MenuToolbar(ui, _fontSource, Rebuild);
         _dividerSource = ui.m_materialSeparator != null ? ui.m_materialSeparator.GetComponent<Image>() : null;
         _search = ui.m_tagListContainer != null ? ui.m_tagListContainer.GetComponentInChildren<TMP_InputField>(true) : null;
 
@@ -140,6 +142,7 @@ internal sealed class SectionedGrid
 
     private void Rebuild()
     {
+        _toolbar.Refresh();
         foreach (BuildUiPieceButton extra in _extras)
         {
             extra.gameObject.SetActive(false);

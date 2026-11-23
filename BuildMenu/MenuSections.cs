@@ -50,6 +50,33 @@ internal static class MenuSections
     /// <param name="pieces">The pieces the game shows, in its order. Every one ends up in a section.</param>
     internal static List<SectionSpec> Build(IPieceList list, int tagId, PieceTable table, IReadOnlyList<Piece> pieces)
     {
+        string tab = TabKey(list);
+        List<SectionSpec> sections = Group(list, tagId, table, pieces, MenuState.GroupOf(tab));
+        MenuView.Sort(sections, MenuState.SortOf(tab));
+        return sections;
+    }
+
+    /// <summary>
+    /// Names a tab for remembering how it's grouped and sorted.
+    /// </summary>
+    internal static string TabKey(IPieceList list)
+    {
+        return list.GetType().Name;
+    }
+
+    private static List<SectionSpec> Group(IPieceList list, int tagId, PieceTable table, IReadOnlyList<Piece> pieces, GroupMode mode)
+    {
+        string view = ViewKey(list, tagId, table);
+        if (mode is GroupMode.Material or GroupMode.Station)
+        {
+            return MenuView.GroupBy(pieces, mode, view);
+        }
+
+        if (mode == GroupMode.None)
+        {
+            return [Single(pieces)];
+        }
+
         if (list is ByUsagePieceList usage && list.ShowTags)
         {
             if (tagId == PieceCategories.ModdedTagId)
@@ -69,9 +96,27 @@ internal static class MenuSections
             }
         }
 
+        return [Single(pieces)];
+    }
+
+    private static SectionSpec Single(IReadOnlyList<Piece> pieces)
+    {
         SectionSpec single = new("all", "", 0);
         single.Pieces.AddRange(pieces);
-        return [single];
+        return single;
+    }
+
+    /// <summary>
+    /// Names what the tab shows (Show All, a category), so collapsed sections are remembered per view.
+    /// </summary>
+    private static string ViewKey(IPieceList list, int tagId, PieceTable table)
+    {
+        return tagId switch
+        {
+            -1 => "all",
+            _ when list is ByUsagePieceList usage && PieceCategories.Find(usage, table, tagId) is CategoryInfo category => category.Key,
+            _ => tagId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        };
     }
 
     private static List<SectionSpec> ByCategory(ByUsagePieceList list, PieceTable table, IReadOnlyList<Piece> pieces, string view)

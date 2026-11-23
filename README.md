@@ -73,6 +73,9 @@ The build menu's categories are grouped into Construction, Utility, Comfort, Foo
 - **Each category** is split into sections: for example Beams, Diagonal beams, Roof crosses, Arches, and Poles and pillars under Architecture, and a section for each crafting station with its upgrades under Crafting.
 - **Modded** has every piece added by other mods, with a section per mod. Modded pieces also appear in the sections they fit, and again in a Modded section at the bottom.
 - Click a header to collapse its section. Collapsed sections are remembered and open up while you search.
+- **Group by** and **Sort by** above the pieces change how the current tab is laid out. Click to step forward through the options, and right-click to step back. Each tab remembers its own choice.
+  - Group by: Type (the sections above), Material (the material a piece needs most of), Crafting station, or None.
+  - Sort by: Default (the game's order, or most recent first in Recent), Name, Material, Crafting station, or Cost (the total number of materials).
 
 Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules.json`. The built-in rules are written next to it as `build_menu_rules.defaults.json`, to copy from:
 

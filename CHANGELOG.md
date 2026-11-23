@@ -7,6 +7,7 @@
 - The categories on the left are grouped under Construction, Utility, Comfort, Food and Mods headers, and categories with nothing in them are hidden.
 - A new Modded category has every piece other mods add, with a section per mod. Modded pieces also stay in the sections they fit, and appear again in a Modded section at the bottom.
 - Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules.json`: move a piece to another category, or replace a category's sections. The built-in rules are written next to it to copy from.
+- Group by and Sort by above the pieces lay out each tab your way: group by type, main material, crafting station or not at all, and sort by name, material, crafting station or cost. Click to step through the options and right-click to step back. Each tab remembers its choice.
 
 ## 1.2.0
 
