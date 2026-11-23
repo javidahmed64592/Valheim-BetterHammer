@@ -37,6 +37,20 @@ internal static class BuildUiPatches
         }
     }
 
+    /// <summary>
+    /// Right-click is the game's key for closing the build menu. Over one of the player's favourites
+    /// categories it renames the category instead (see <see cref="TagDrag"/>), so the menu stays open.
+    /// </summary>
+    [HarmonyPrefix]
+    [HarmonyPatch("NavigationUpdate")]
+    private static void NavigationUpdate_Prefix(BuildUi __instance)
+    {
+        if (SectionedGrid.For(__instance) != null && Input.GetMouseButtonDown(1) && TagDrag.IsRenameTarget(__instance, __instance.m_currentHoveredTagButton))
+        {
+            ZInput.ResetButtonStatus("BuildMenu");
+        }
+    }
+
     [HarmonyPrefix]
     [HarmonyPatch("UpdateTagButtons")]
     private static void UpdateTagButtons_Prefix(BuildUi __instance)

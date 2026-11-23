@@ -337,32 +337,35 @@ internal sealed class SectionedGrid
     }
 
     /// <summary>
-    /// Where a dragged favourite lands: the section under the pointer (its piece, header or empty grid),
-    /// that section's pieces, and the piece it goes before (null for the end).
+    /// Where a dragged favourite lands: the section under the pointer, that section's pieces, and the
+    /// piece it was dropped on (null when dropped on the header or empty space, for the end).
     /// </summary>
-    internal bool TryGetDrop(GameObject hit, out int tag, out List<Piece> pieces, out Piece before)
+    internal bool TryGetDrop(PointerEventData eventData, out int tag, out List<Piece> pieces, out Piece before)
     {
         tag = FavoriteSections.Uncategorised;
         pieces = null;
         before = null;
-        for (Transform at = hit != null ? hit.transform : null; at != null && at != _root; at = at.parent)
+        GameObject hit = eventData.pointerCurrentRaycast.gameObject;
+        for (int i = 0; i < _used; i++)
         {
-            for (int i = 0; i < _used; i++)
+            Section section = _sections[i];
+            if (section.FavoriteTag == null || !section.Root.activeInHierarchy)
             {
-                Section section = _sections[i];
-                if (section.FavoriteTag == null
-                    || (at.gameObject != section.Header && at != section.Grid && at.gameObject != section.Root
-                        && !section.Buttons.Exists(button => button.gameObject == at.gameObject)))
-                {
-                    continue;
-                }
-
-                BuildUiPieceButton onto = section.Buttons.Find(button => button.gameObject == at.gameObject);
-                tag = section.FavoriteTag.Value;
-                pieces = section.Buttons.ConvertAll(button => button.Piece);
-                before = onto != null ? onto.Piece : null;
-                return true;
+                continue;
             }
+
+            BuildUiPieceButton onto = hit != null ? section.Buttons.Find(button => hit.transform.IsChildOf(button.transform)) : null;
+            bool over = onto != null
+                || RectTransformUtility.RectangleContainsScreenPoint((RectTransform)section.Root.transform, eventData.position, eventData.pressEventCamera);
+            if (!over)
+            {
+                continue;
+            }
+
+            tag = section.FavoriteTag.Value;
+            pieces = section.Buttons.ConvertAll(button => button.Piece);
+            before = onto != null ? onto.Piece : null;
+            return true;
         }
 
         return false;

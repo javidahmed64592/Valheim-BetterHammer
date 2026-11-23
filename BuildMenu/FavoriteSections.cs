@@ -189,7 +189,7 @@ internal static class FavoriteSections
     /// <param name="from">The section it was dragged from.</param>
     /// <param name="to">The section it was dropped on.</param>
     /// <param name="toPieces">The pieces of that section, in order.</param>
-    /// <param name="before">The piece it was dropped on, to go before; null for the end.</param>
+    /// <param name="before">The piece it was dropped on; null for the end.</param>
     internal static void MovePiece(BuildUi ui, Piece piece, int from, int to, IReadOnlyList<Piece> toPieces, Piece before)
     {
         FavoritePieceList list = ui.m_favoritePieceList;
@@ -218,9 +218,19 @@ internal static class FavoriteSections
             }
         }
 
-        List<string> order = [.. toPieces.Where(other => other != piece).Select(other => other.gameObject.name)];
+        // Dropped on a piece further along its own section, it goes after that piece, so dragging the
+        // first piece onto the last swaps them; otherwise it goes before the piece it was dropped on.
+        List<Piece> pieces = [.. toPieces];
+        bool after = from == to && before != null && pieces.IndexOf(piece) >= 0 && pieces.IndexOf(piece) < pieces.IndexOf(before);
+        List<string> order = [.. pieces.Where(other => other != piece).Select(other => other.gameObject.name)];
         int at = before != null && before != piece ? order.IndexOf(before.gameObject.name) : -1;
-        order.Insert(at >= 0 ? at : order.Count, name);
+        int place = at switch
+        {
+            < 0 => order.Count,
+            _ when after => at + 1,
+            _ => at,
+        };
+        order.Insert(place, name);
         MenuState.SetFavoriteOrder(OrderKey(list, to), order);
     }
 

@@ -68,7 +68,7 @@ internal sealed class PieceDrag : MonoBehaviour, IInitializePotentialDragHandler
         _ghost = null;
         SectionedGrid grid = SectionedGrid.Current;
         if (grid != null && grid.FavoriteTagOf(_button) is int from
-            && grid.TryGetDrop(eventData.pointerCurrentRaycast.gameObject, out int to, out System.Collections.Generic.List<Piece> pieces, out Piece before))
+            && grid.TryGetDrop(eventData, out int to, out System.Collections.Generic.List<Piece> pieces, out Piece before))
         {
             FavoriteSections.MovePiece(grid.Ui, _button.Piece, from, to, pieces, before);
             grid.Rearranged();
@@ -108,7 +108,15 @@ internal sealed class TagDrag : MonoBehaviour, IInitializePotentialDragHandler, 
 
     private bool IsFavoriteCategory()
     {
-        return _ui.m_pieceLists[_ui.m_currentPieceList] is FavoritePieceList && _button.m_canDeleteTag && _button.m_tagId >= 0;
+        return IsRenameTarget(_ui, _button);
+    }
+
+    /// <summary>
+    /// Whether the button is one of the player's favourites categories, which can be renamed and moved.
+    /// </summary>
+    internal static bool IsRenameTarget(BuildUi ui, BuildUiTagButton button)
+    {
+        return button != null && ui.m_pieceLists[ui.m_currentPieceList] is FavoritePieceList && button.m_canDeleteTag && button.m_tagId >= 0;
     }
 
     public void OnInitializePotentialDrag(PointerEventData eventData)
