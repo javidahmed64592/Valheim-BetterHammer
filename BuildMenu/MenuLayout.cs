@@ -6,8 +6,8 @@ namespace BetterHammer.BuildMenu;
 
 /// <summary>
 /// Makes the build menu taller: up into the empty space above it, and down by as much as the build panel
-/// drops while the menu is open (see <see cref="BuildPanel.MenuOpenDrop"/>), so the gap between them
-/// stays the game's. Worked out again each time the menu opens, in case the screen or GUI scale changed.
+/// was lowered (see <see cref="BuildPanel.Drop"/>), so the gap between them stays the game's. Worked out
+/// again each time the menu opens, in case the screen or GUI scale changed.
 /// </summary>
 internal static class MenuLayout
 {
@@ -44,7 +44,7 @@ internal static class MenuLayout
         _bar.anchoredPosition = _position;
 
         float up = Mathf.Min(ExtraUp, Mathf.Max(0f, SpaceAbove() - TopMargin));
-        float down = BuildPanel.MenuOpenDrop();
+        float down = BuildPanel.Drop();
         _bar.sizeDelta = _size + new Vector2(0f, up + down);
         _bar.anchoredPosition = _position + new Vector2(0f, (up - down) / 2f);
     }

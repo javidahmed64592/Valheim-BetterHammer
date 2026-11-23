@@ -17,20 +17,19 @@ namespace BetterHammer.UI;
 /// pieces). Each hint is built from clones of the vanilla hint pieces (label, boxed key, "+" and
 /// the scroll icon), and is only shown while a hammer the mod patches is equipped and the build menu is
 /// closed. They stand in two stacks: selecting, copying and moving at the left edge of the screen, just
-/// below the hotbar, and building aids on the right just above the vanilla "Rotate" hint. Snapping by
-/// piece sits just above the vanilla "Cycle snapping" hint. The vanilla row is right-aligned, so those
-/// two vanilla hints stay put. A hint that doesn't apply at the moment is hidden but keeps its space, so
-/// the others never move.
+/// below the hotbar, and building aids on the right just above the vanilla "Rotate" hint, which stays
+/// put because the vanilla row is right-aligned. Nothing sits in the middle above the vanilla row, so
+/// the build panel can sit just above it. A hint that doesn't apply at the moment is hidden but keeps
+/// its space, so the others never move.
 /// </summary>
 internal static class KeyHintUI
 {
     private const string ContainerName = "BetterHammer_KeyHints";
 
     /// <summary>
-    /// Where a hint goes: the left stack, the right stack, or just above the vanilla "Cycle snapping"
-    /// hint, which its keys go with.
+    /// Where a hint goes: the left stack or the right stack.
     /// </summary>
-    private enum Side { Left = 0, Right = 1, Snap = 2 }
+    private enum Side { Left = 0, Right = 1 }
     private const string ScrollIcon = "@scroll";
 
     private const float LabelFontSize = 16f;
@@ -134,13 +133,13 @@ internal static class KeyHintUI
             Keys = [ClearKey],
             Visibility = HintVisibility.SelectionOrReselect,
         },
+        new Hint { Label = "$betterhammer_hint_copy_piece", Side = Side.Right, Keys = ["Left Shift", "$KEY_TabLeft", NoPlus, "$KEY_TabRight"], Visibility = HintVisibility.CopyOnly },
         new Hint { Label = "$betterhammer_hint_undo", Side = Side.Right, Keys = [UndoKey], Visibility = HintVisibility.UndoOnly },
         new Hint { Label = "$betterhammer_hint_redo", Side = Side.Right, Keys = [RedoKey], Visibility = HintVisibility.RedoOnly },
         new Hint { Label = "$betterhammer_hint_repair", Side = Side.Right, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
         new Hint { Label = "$betterhammer_hint_grid", Side = Side.Right, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
         new Hint { Label = "$betterhammer_hint_grid_distance", Side = Side.Right, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
         new Hint { Label = "$betterhammer_hint_zoom", Side = Side.Right, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
-        new Hint { Label = "$betterhammer_hint_copy_piece", Side = Side.Snap, Keys = ["Left Shift", "$KEY_TabLeft", NoPlus, "$KEY_TabRight"], Visibility = HintVisibility.CopyOnly },
     ];
 
     /// <summary>
@@ -148,7 +147,6 @@ internal static class KeyHintUI
     /// </summary>
     private static GameObject _container;
     private static RectTransform[] _stacks;
-    private static RectTransform _snapAnchor;
 
     /// <summary>
     /// One of the right stack's scroll icons, to line them up with the vanilla "Rotate" icon.
@@ -273,9 +271,8 @@ internal static class KeyHintUI
 
     /// <summary>
     /// The right stack sits on top of the vanilla hints, its right edge lined up with the right edge of
-    /// the vanilla "Rotate" icon as drawn (the icon's rect is wider than the sprite inside it). The snap
-    /// hint sits on top of the vanilla "Cycle snapping" hint, right edges lined up. The left stack is at a
-    /// fixed place near the screen's top left corner.
+    /// the vanilla "Rotate" icon as drawn (the icon's rect is wider than the sprite inside it). The left
+    /// stack is at a fixed place near the screen's top left corner.
     /// </summary>
     private static void AlignStacks()
     {
@@ -296,20 +293,6 @@ internal static class KeyHintUI
         {
             float offset = iconCentre.x - _rightScrollIcon.TransformPoint(_rightScrollIcon.rect.center).x;
             rightStack.position += new Vector3(offset, 0f, 0f);
-            right += offset;
-        }
-
-        RectTransform snapStack = _stacks[(int)Side.Snap];
-        if (_snapAnchor != null)
-        {
-            _snapAnchor.GetWorldCorners(corners);
-            snapStack.position = new Vector3(corners[2].x, top, z);
-        }
-        else
-        {
-            // No vanilla snapping hint to go with: on top of the right stack instead.
-            float above = (rightStack.rect.height + RowSpacing) * rightStack.lossyScale.y;
-            snapStack.position = new Vector3(right, top + above, z);
         }
 
         _screen.GetWorldCorners(corners);
@@ -338,7 +321,7 @@ internal static class KeyHintUI
         RectTransform rect = new GameObject(ContainerName, typeof(RectTransform)).GetComponent<RectTransform>();
         rect.SetParent(keyHints.m_buildHints.transform, false);
 
-        RectTransform[] stacks = [CreateStack(rect, Side.Left), CreateStack(rect, Side.Right), CreateStack(rect, Side.Snap)];
+        RectTransform[] stacks = [CreateStack(rect, Side.Left), CreateStack(rect, Side.Right)];
 
         foreach (Hint hint in Hints)
         {
@@ -419,7 +402,6 @@ internal static class KeyHintUI
         }
 
         _stacks = stacks;
-        _snapAnchor = keyboard.Find("Snap") as RectTransform;
         _screen = (RectTransform)keyHints.GetComponentInParent<Canvas>().rootCanvas.transform;
         _rotateAnchor = (RectTransform)rotate;
         _rotateIcon = (RectTransform)iconTemplate;
@@ -582,7 +564,6 @@ internal static class KeyHintUI
     {
         _container = null;
         _stacks = null;
-        _snapAnchor = null;
         _rightScrollIcon = null;
         _screen = null;
         _rotateAnchor = null;

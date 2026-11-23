@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 
-using BetterHammer.BuildMenu;
-
 using TMPro;
 
 using UnityEngine;
@@ -12,8 +10,8 @@ namespace BetterHammer.UI;
 /// Gives the build panel (the selected piece's name, description, materials and station at the bottom of
 /// the screen) room for up to <see cref="MaxSlots"/> material and station slots instead of the game's six.
 /// The panel is only as wide as it needs to be: the game's width for a single piece, wider two slots at a
-/// time for a copy or selection that needs more. It's also raised just enough to clear the row of key
-/// hints above the vanilla ones.
+/// time for a copy or selection that needs more. It sits just above the vanilla key hints, lower than the
+/// game has it, so the build menu above it can be taller.
 /// </summary>
 internal static class BuildPanel
 {
@@ -30,10 +28,9 @@ internal static class BuildPanel
     private const float SlotStep = 66f;
 
     /// <summary>
-    /// Room kept under the panel for one row of key hints (a key is 32 high) above the vanilla row.
+    /// Space kept between the panel and the vanilla key hints below it.
     /// </summary>
-    private const float HintRowHeight = 32f;
-    private const float HintRowGap = 12f;
+    private const float HintGap = 12f;
 
     /// <summary>
     /// The smallest the description is shrunk to fit; below this it's cut short instead.
@@ -177,10 +174,9 @@ internal static class BuildPanel
     }
 
     /// <summary>
-    /// Keeps the panel where the game has it, or raised just enough for its bottom to clear a row of
-    /// key hints on top of the vanilla ones. While the sectioned build menu is open, BetterHammer's key
-    /// hints are hidden, so the panel drops to just above the vanilla ones to make room for a taller menu.
-    /// Only moves it when that changes.
+    /// Keeps the panel just above the vanilla key hints, below where the game has it, to make room for a
+    /// taller build menu. BetterHammer's own hints stand to the sides, so nothing sits in between, and the
+    /// panel stays in the same place whether the build menu is open or not. Only moves it when that changes.
     /// </summary>
     private static void KeepClearOfHints()
     {
@@ -189,9 +185,7 @@ internal static class BuildPanel
             return;
         }
 
-        float y = MenuOpen()
-            ? _baseY - Mathf.Max(0f, (baseBottom - hintsTop - (HintRowGap * scale)) / scale)
-            : _baseY + Mathf.Max(0f, (hintsTop + ((HintRowHeight + HintRowGap) * scale) - baseBottom) / scale);
+        float y = _baseY + ((hintsTop + (HintGap * scale) - baseBottom) / scale);
         if (Mathf.Abs(_panel.anchoredPosition.y - y) > 0.01f)
         {
             _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, y);
@@ -199,19 +193,14 @@ internal static class BuildPanel
     }
 
     /// <summary>
-    /// How far the panel drops while the build menu is open, in the HUD's units, so the menu can grow
-    /// down by the same amount.
+    /// How much lower the panel sits than where the game has it, in the HUD's units, so the build menu
+    /// can grow down by the same amount.
     /// </summary>
-    internal static float MenuOpenDrop()
+    internal static float Drop()
     {
-        return _panel != null && BuildMenuConfig.Sections && TryGetBaseBottom(out float baseBottom, out float hintsTop, out float scale)
-            ? Mathf.Max(0f, (baseBottom - hintsTop - (HintRowGap * scale)) / scale)
+        return _panel != null && TryGetBaseBottom(out float baseBottom, out float hintsTop, out float scale)
+            ? Mathf.Max(0f, (baseBottom - hintsTop - (HintGap * scale)) / scale)
             : 0f;
-    }
-
-    private static bool MenuOpen()
-    {
-        return BuildMenuConfig.Sections && Hud.IsPieceSelectionVisible();
     }
 
     /// <summary>
