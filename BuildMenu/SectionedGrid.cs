@@ -22,7 +22,7 @@ internal sealed class SectionedGrid
     /// <summary>
     /// The orange of the build menu's active tab.
     /// </summary>
-    private static readonly Color TitleColor = new(1f, 0.682f, 0f);
+    internal static readonly Color TitleColor = new(1f, 0.682f, 0f);
 
     private sealed class Section
     {
@@ -62,6 +62,7 @@ internal sealed class SectionedGrid
         _pool = ui.m_pieceButtonsContainer;
         _template = _pool.GetComponent<GridLayoutGroup>();
         _fontSource = FindLabel(ui.m_showAllTagsButton);
+        TagHeaders = new TagListHeaders(ui, _fontSource);
         _dividerSource = ui.m_materialSeparator != null ? ui.m_materialSeparator.GetComponent<Image>() : null;
         _search = ui.m_tagListContainer != null ? ui.m_tagListContainer.GetComponentInChildren<TMP_InputField>(true) : null;
 
@@ -89,6 +90,11 @@ internal sealed class SectionedGrid
     }
 
     internal static SectionedGrid Current { get; private set; }
+
+    /// <summary>
+    /// The group headers in the list of categories on the left.
+    /// </summary>
+    internal TagListHeaders TagHeaders { get; }
 
     /// <summary>
     /// The sectioned grid of this build menu, or null when sections are off.

@@ -1,0 +1,111 @@
+{
+  "Moves": {
+    "wood_wall_roof_upsidedown": "Wall",
+    "blackmarble_1x1": "Wall",
+    "blackmarble_2x1x1": "Wall",
+    "blackmarble_2x2x1": "Wall",
+    "blackmarble_2x2x2": "Wall",
+    "blackmarble_base_1": "Architecture",
+    "blackmarble_base_2": "Architecture",
+    "blackmarble_basecorner": "Architecture",
+    "blackmarble_out_1": "Architecture",
+    "blackmarble_out_2": "Architecture",
+    "blackmarble_outcorner": "Architecture",
+    "blackmarble_tip": "Architecture",
+    "Piece_grausten_window_2x2": "Wall",
+    "Piece_grausten_window_4x2": "Wall",
+    "piece_drawbridge": "Defense",
+    "piece_drawbridge_log": "Defense",
+    "Sled": "Transport"
+  },
+  "Sections": {
+    "Floor": [
+      { "Name": "$betterhammer_section_floors", "Fallback": true },
+      { "Name": "$betterhammer_section_floor_tiles", "Match": "tile_floor|floor_triangle|deco_floor" },
+      { "Name": "$betterhammer_section_cage_floors", "Match": "iron_floor" },
+      { "Name": "$betterhammer_section_blocks", "Match": "icecube" }
+    ],
+    "Wall": [
+      { "Name": "$betterhammer_section_walls", "Fallback": true },
+      { "Name": "$betterhammer_section_half_walls", "Match": "halfwall|quarterwall|wall_half|wall_quarter" },
+      { "Name": "$betterhammer_section_angled_walls", "Match": "wall_roof" },
+      { "Name": "$betterhammer_section_arched_walls", "Match": "wall_arch" },
+      { "Name": "$betterhammer_section_decorative_walls", "Match": "deco_?wall|divider|window" },
+      { "Name": "$betterhammer_section_blocks", "Match": "^blackmarble_\\d|icecube" },
+      { "Name": "$betterhammer_section_cage_walls", "Match": "iron_wall" },
+      { "Name": "$betterhammer_section_fences", "Match": "fence|stake" }
+    ],
+    "Roof": [
+      { "Name": "$betterhammer_section_roofs", "Fallback": true },
+      { "Name": "$betterhammer_section_ridges", "Match": "roof_top" },
+      { "Name": "$betterhammer_section_inner_corners", "Match": "icorner" },
+      { "Name": "$betterhammer_section_outer_corners", "Match": "ocorner|corner" }
+    ],
+    "Architecture": [
+      { "Name": "$betterhammer_section_beams", "Match": "(beam(_1|_\\dm|4x4|_small|_medium)?|pillarbeam_\\w+|wall_log.*)$" },
+      { "Name": "$betterhammer_section_diagonal_beams", "Match": "(beam|log)_(26|45|67)$" },
+      { "Name": "$betterhammer_section_roof_crosses", "Match": "cross|wall_roof_top" },
+      { "Name": "$betterhammer_section_arches", "Match": "arch" },
+      { "Name": "$betterhammer_section_poles", "Match": "pole|pillar|column" },
+      { "Name": "$betterhammer_section_trim", "Match": "^blackmarble_(base|out|tip)" }
+    ],
+    "Stairs": [
+      { "Name": "$betterhammer_section_stairs", "Fallback": true },
+      { "Name": "$betterhammer_section_spiral_stairs", "Match": "spiral" },
+      { "Name": "$betterhammer_section_ladders", "Match": "ladder" }
+    ],
+    "Doors": [
+      { "Name": "$betterhammer_section_doors", "Match": "^(?!.*hexagonal).*door" },
+      { "Name": "$betterhammer_section_gates", "Match": "gate|grate|door" },
+      { "Name": "$betterhammer_section_windows", "Match": "window|crystal" }
+    ],
+    "Crafting": [
+      { "Name": "$piece_workbench", "Match": "workbench" },
+      { "Name": "$piece_forge", "Match": "^forge" },
+      { "Name": "$piece_stonecutter", "Match": "stonecutter" },
+      { "Name": "$piece_artisanstation", "Match": "artisan" },
+      { "Name": "$piece_blackforge", "Match": "^blackforge" },
+      { "Name": "$piece_magetable", "Match": "magetable" },
+      { "Name": "$piece_cauldron", "Match": "^(piece_cauldron$|cauldron_ext)" },
+      { "Name": "$betterhammer_section_cooking", "Match": "cookingstation|oven|fermenter|preptable|meadcauldron" },
+      { "Name": "$betterhammer_section_production", "Fallback": true }
+    ],
+    "Storage": [
+      { "Name": "$betterhammer_section_chests", "Match": "chest" },
+      { "Name": "$betterhammer_section_item_stands", "Match": "stand" },
+      { "Name": "$betterhammer_section_containers", "Fallback": true }
+    ],
+    "Transport": [
+      { "Name": "$betterhammer_section_ships", "Match": "ship|karve|raft" },
+      { "Name": "$betterhammer_section_carts", "Match": "cart|sled" },
+      { "Name": "$betterhammer_section_portals", "Match": "portal" }
+    ],
+    "Defense": [
+      { "Name": "$betterhammer_section_wards", "Match": "guard_?stone|shieldgenerator|homebubble" },
+      { "Name": "$betterhammer_section_stakes", "Match": "stake" },
+      { "Name": "$betterhammer_section_drawbridges", "Match": "drawbridge" },
+      { "Name": "$betterhammer_section_siege", "Match": "catapult|batteringram|turret|trap" }
+    ],
+    "Furniture": [
+      { "Name": "$betterhammer_section_beds", "Match": "bed" },
+      { "Name": "$betterhammer_section_seating", "Match": "chair|bench|stool|throne|logbench" },
+      { "Name": "$betterhammer_section_tables", "Match": "table" }
+    ],
+    "Lighting": [
+      { "Name": "$betterhammer_section_fires", "Match": "fire_pit|hearth|bonfire|pyre|brazier" },
+      { "Name": "$betterhammer_section_torches", "Match": "torch" },
+      { "Name": "$betterhammer_section_lanterns", "Fallback": true }
+    ],
+    "Decor": [
+      { "Name": "$betterhammer_section_banners", "Match": "banner" },
+      { "Name": "$betterhammer_section_rugs", "Match": "rug_|carpet" },
+      { "Name": "$betterhammer_section_curtains", "Match": "cloth_hanging" },
+      { "Name": "$betterhammer_section_adornments", "Match": "darkwood_raven|darkwood_wolf|dragon|skeleton" }
+    ],
+    "Stacks": [
+      { "Name": "$betterhammer_section_wood_stacks", "Match": "wood" },
+      { "Name": "$betterhammer_section_metal_stacks", "Match": "^bar_" },
+      { "Name": "$betterhammer_section_piles", "Fallback": true }
+    ]
+  }
+}

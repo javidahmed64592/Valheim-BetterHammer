@@ -94,6 +94,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
         ConnectedPieces.BindConfig(Config);
         UndoHistory.BindConfig(Config);
         BuildMenuConfig.Bind(Config);
+        ModdedPieces.Enable();
         Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.
