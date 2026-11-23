@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+
+using BetterHammer.Structures;
 
 namespace BetterHammer.BuildMenu;
 
@@ -43,7 +46,7 @@ internal sealed class SectionSpec
 /// <list type="bullet">
 /// <item>Categories → Show All, and Building: one section per category.</item>
 /// <item>Any other category: its sections from <see cref="SectionRules"/>, such as Beams and Poles.</item>
-/// <item>Modded: one section per mod.</item>
+/// <item>Modded: one section per mod. Hidden: one section per category.</item>
 /// </list>
 /// Wherever modded pieces show, they're also gathered in a Modded section at the bottom. The other tabs
 /// are split too: Materials' Show All by biome and a material by category, Recent by category, and
@@ -117,6 +120,12 @@ internal static class MenuSections
                 return ByMod(pieces);
             }
 
+            // Hidden pieces by the category they'd be in.
+            if (tagId == PieceCategories.HiddenTagId)
+            {
+                return ByCategory(usage, table, pieces, "hidden");
+            }
+
             CategoryInfo category = tagId == -1 ? null : PieceCategories.Find(usage, table, tagId);
             if (tagId == -1 || category?.Flag == Piece.UsageTagFlags.Building)
             {
@@ -126,6 +135,12 @@ internal static class MenuSections
             if (category != null && category.Flag != 0)
             {
                 return WithModded(ByType(category, pieces), pieces, category.Key);
+            }
+
+            // The Copies tab: by the folder in each copy's name ("Base/Tower" is in Base).
+            if (pieces.Count > 0 && pieces.All(piece => CopyLibrary.Find(piece) != null))
+            {
+                return ByCopyFolder(pieces, view);
             }
         }
 
@@ -216,6 +231,32 @@ internal static class MenuSections
 
         sections.Sort((a, b) => a.Order.CompareTo(b.Order));
         return sections;
+    }
+
+    /// <summary>
+    /// Copies by folder: the part of the name before the first "/". Copies without one come first.
+    /// </summary>
+    private static List<SectionSpec> ByCopyFolder(IReadOnlyList<Piece> pieces, string view)
+    {
+        Dictionary<string, SectionSpec> byFolder = [];
+        foreach (Piece piece in pieces)
+        {
+            string name = piece.m_name ?? "";
+            int slash = name.IndexOf('/');
+            string folder = slash > 0 ? name.Substring(0, slash).Trim() : "";
+            if (!byFolder.TryGetValue(folder, out SectionSpec section))
+            {
+                section = new SectionSpec(
+                    view + "/folder/" + folder,
+                    folder.Length > 0 ? folder : Localization.instance.Localize("$betterhammer_copies_no_folder"),
+                    folder.Length > 0 ? 1 : 0);
+                byFolder[folder] = section;
+            }
+
+            section.Pieces.Add(piece);
+        }
+
+        return [.. byFolder.Values.OrderBy(section => section.Order).ThenBy(section => section.Title, StringComparer.CurrentCultureIgnoreCase)];
     }
 
     private static List<SectionSpec> ByMod(IReadOnlyList<Piece> pieces)

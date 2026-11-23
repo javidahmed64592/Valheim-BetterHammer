@@ -66,10 +66,11 @@ internal sealed class CycleLabel : MonoBehaviour, IPointerClickHandler, IPointer
 }
 
 /// <summary>
-/// A bar above the piece grid: "Group by" and "Sort by" for the current tab on the left, and the game's
-/// search box and repair button, moved here from above the list of categories, on the right. The piece
-/// grid is made shorter to make room, the list of categories taller, and the bar follows the grid's left
-/// edge, which moves when the tab has no list of categories (where the search box now still shows).
+/// A bar above the piece grid: "Group by" and "Sort by" for the current tab and "Show" (all pieces, or only
+/// buildable ones) on the left, and the game's search box and repair button, moved here from above the
+/// list of categories, on the right. The piece grid is made shorter to make room, the list of categories
+/// taller, and the bar follows the grid's left edge, which moves when the tab has no list of categories
+/// (where the search box now still shows).
 /// </summary>
 internal sealed class MenuToolbar
 {
@@ -82,6 +83,7 @@ internal sealed class MenuToolbar
     private readonly BuildUi _ui;
     private readonly CycleLabel _group;
     private readonly CycleLabel _sort;
+    private readonly CycleLabel _show;
     private readonly Action _changed;
     private readonly GameObject _bar;
 
@@ -114,8 +116,10 @@ internal sealed class MenuToolbar
 
         _group = CreateLabel(rect, fontSource, "$betterhammer_view_group");
         _sort = CreateLabel(rect, fontSource, "$betterhammer_view_sort");
+        _show = CreateLabel(rect, fontSource, "$betterhammer_view_show");
         _group.Cycled += step => Change(sort: false, step);
         _sort.Cycled += step => Change(sort: true, step);
+        _show.Cycled += _ => ToggleBuildableOnly();
 
         GameObject spacer = new("Spacer", typeof(RectTransform), typeof(LayoutElement));
         spacer.transform.SetParent(rect, false);
@@ -171,6 +175,7 @@ internal sealed class MenuToolbar
         string tab = CurrentTab();
         _group.Show(Localization.instance.Localize(MenuView.Label(MenuState.GroupOf(tab))));
         _sort.Show(Localization.instance.Localize(MenuView.Label(MenuState.SortOf(tab))));
+        _show.Show(Localization.instance.Localize(MenuState.BuildableOnly ? "$betterhammer_view_buildable" : "$betterhammer_view_all"));
     }
 
     private string CurrentTab()
@@ -200,6 +205,17 @@ internal sealed class MenuToolbar
         }
 
         MenuState.SetView(tab, groupMode, sortMode);
+        Player.m_localPlayer?.PlayButtonSound();
+        Refresh();
+        _changed();
+    }
+
+    /// <summary>
+    /// Shows every piece, or only those the player has the materials for, in every tab.
+    /// </summary>
+    private void ToggleBuildableOnly()
+    {
+        MenuState.BuildableOnly = !MenuState.BuildableOnly;
         Player.m_localPlayer?.PlayButtonSound();
         Refresh();
         _changed();

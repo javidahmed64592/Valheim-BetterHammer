@@ -14,7 +14,8 @@ namespace BetterHammer.BuildMenu;
 
 /// <summary>
 /// What the build menu remembers between sessions, for all characters: which sections are collapsed,
-/// how each tab groups and sorts its pieces, and the order of pieces in each favourites category.
+/// how each tab groups and sorts its pieces, the order of pieces in each favourites category, hidden
+/// pieces, and whether only buildable pieces are shown.
 /// Saved in <c>BepInEx/config/BetterHammer/build_menu.json</c>.
 /// </summary>
 internal static class MenuState
@@ -33,6 +34,16 @@ internal static class MenuState
         /// player arranged them.
         /// </summary>
         public Dictionary<string, List<string>> FavoriteOrder { get; set; } = [];
+
+        /// <summary>
+        /// Prefab names of the pieces the player hid from the build menu.
+        /// </summary>
+        public List<string> Hidden { get; set; } = [];
+
+        /// <summary>
+        /// Whether the build menu only shows pieces the player has the materials for.
+        /// </summary>
+        public bool BuildableOnly { get; set; }
     }
 
     private sealed class ViewState
@@ -46,6 +57,7 @@ internal static class MenuState
 
     private static StateFile _file;
     private static HashSet<string> _collapsed;
+    private static HashSet<string> _hidden;
 
     private static string FilePath => Path.Combine(Paths.ConfigPath, "BetterHammer", "build_menu.json");
 
@@ -120,6 +132,47 @@ internal static class MenuState
         }
     }
 
+    internal static bool IsHidden(string prefabName)
+    {
+        EnsureLoaded();
+        return _hidden.Contains(prefabName);
+    }
+
+    internal static bool AnyHidden()
+    {
+        EnsureLoaded();
+        return _hidden.Count > 0;
+    }
+
+    /// <summary>
+    /// Hides a piece, or shows it again. Returns whether it's now hidden.
+    /// </summary>
+    internal static bool ToggleHidden(string prefabName)
+    {
+        EnsureLoaded();
+        bool hidden = _hidden.Add(prefabName) || !_hidden.Remove(prefabName);
+        _file.Hidden = [.. _hidden];
+        _file.Hidden.Sort(StringComparer.Ordinal);
+        Save();
+        return hidden;
+    }
+
+    internal static bool BuildableOnly
+    {
+        get
+        {
+            EnsureLoaded();
+            return _file.BuildableOnly;
+        }
+
+        set
+        {
+            EnsureLoaded();
+            _file.BuildableOnly = value;
+            Save();
+        }
+    }
+
     private static void EnsureLoaded()
     {
         if (_file != null)
@@ -154,6 +207,8 @@ internal static class MenuState
         _file.Collapsed ??= [];
         _file.Views ??= [];
         _file.FavoriteOrder ??= [];
+        _file.Hidden ??= [];
+        _hidden = [.. _file.Hidden];
         _collapsed = [.. _file.Collapsed];
     }
 
