@@ -1,4 +1,14 @@
 {
+  "Biomes": [
+    { "Name": "$biome_meadows", "Items": [ "Wood", "Stone", "Flint", "Resin", "LeatherScraps", "DeerHide", "Feathers", "Raspberry", "Dandelion", "Mushroom", "QueenBee", "Acorn" ] },
+    { "Name": "$biome_blackforest", "Items": [ "FineWood", "RoundLog", "Copper", "Tin", "Bronze", "BronzeNails", "SurtlingCore", "Coal", "GreydwarfEye", "BoneFragments", "TrollHide", "Thistle", "Blueberries", "Carrot", "PineCone", "FirCone", "Coins", "BjornHide", "BjornPaw", "TrophySkeleton", "Ruby", "SilverNecklace" ] },
+    { "Name": "$biome_swamp", "Items": [ "Iron", "IronNails", "ElderBark", "Chain", "Guck", "Ectoplasm", "Bloodbag", "Turnip", "CharcoalResin" ] },
+    { "Name": "$biome_mountain", "Items": [ "Silver", "Obsidian", "WolfPelt", "WolfClaw", "Crystal", "DragonTear", "TrophyWolf" ] },
+    { "Name": "$biome_plains", "Items": [ "BlackMetal", "Tar", "LoxPelt", "Barley", "Flax", "Cloudberry", "JuteRed", "YagluthDrop" ] },
+    { "Name": "$biome_mistlands", "Items": [ "YggdrasilWood", "BlackMarble", "BlackCore", "Eitr", "Sap", "ScaleHide", "JuteBlue", "Lantern", "DvergrNeedle", "MechanicalSpring", "Pot_Shard_Green", "Wisp", "QueenDrop" ] },
+    { "Name": "$biome_ashlands", "Items": [ "Blackwood", "FlametalNew", "Flametal", "Grausten", "AskHide", "AsksvinCarrionNeck", "AsksvinCarrionPelvic", "AsksvinCarrionRibcage", "AsksvinCarrionSkull", "TrophyAsksvin", "CharredBone", "Charredskull", "CharredCogwheel", "TrophyCharredMelee", "MorgenSinew", "MoltenCore", "ProustitePowder", "SulfurStone", "CelestialFeather", "FaderDrop", "GemstoneRed" ] },
+    { "Name": "$biome_deepnorth", "Items": [ "Frostwood", "FrostCore", "Ice", "Snowball", "SealHide", "MooseHide", "MooseSinew", "TrophyMoose", "Gold" ] }
+  ],
   "Moves": {
     "wood_wall_roof_upsidedown": "Wall",
     "blackmarble_1x1": "Wall",

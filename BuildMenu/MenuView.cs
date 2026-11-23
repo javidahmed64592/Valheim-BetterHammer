@@ -81,8 +81,9 @@ internal static class MenuView
     }
 
     /// <summary>
-    /// Splits the pieces by their main material or crafting station. Sections follow the order each one
-    /// first appears in, so the build tool's early materials and stations (wood, the workbench) come first.
+    /// Splits the pieces by their main material or crafting station. Materials follow the biomes in
+    /// <see cref="SectionRules"/>; stations follow the order each first appears in, so the workbench
+    /// comes first.
     /// </summary>
     internal static List<SectionSpec> GroupBy(IReadOnlyList<Piece> pieces, GroupMode mode, string view)
     {
@@ -93,7 +94,8 @@ internal static class MenuView
             (string key, string title) = mode == GroupMode.Material ? MainMaterial(piece) : Station(piece);
             if (!sections.TryGetValue(key, out SectionSpec section))
             {
-                section = new SectionSpec(view + "/" + mode.ToString().ToLowerInvariant() + "/" + key, title, ordered.Count);
+                int order = mode == GroupMode.Material ? MaterialOrder(key) : ordered.Count;
+                section = new SectionSpec(view + "/" + mode.ToString().ToLowerInvariant() + "/" + key, title, order);
                 sections[key] = section;
                 ordered.Add(section);
             }
@@ -101,7 +103,38 @@ internal static class MenuView
             section.Pieces.Add(piece);
         }
 
-        return ordered;
+        // Stable, so materials in the same place keep the order they first appeared in.
+        return [.. ordered.OrderBy(section => section.Order)];
+    }
+
+    /// <summary>
+    /// Splits the pieces by the biome their main material comes from, in biome order.
+    /// </summary>
+    internal static List<SectionSpec> GroupByBiome(IReadOnlyList<Piece> pieces, string view)
+    {
+        Dictionary<int, SectionSpec> sections = [];
+        foreach (Piece piece in pieces)
+        {
+            SectionRules.Biome biome = SectionRules.BiomeOf(MainMaterial(piece).Key);
+            if (!sections.TryGetValue(biome.Index, out SectionSpec section))
+            {
+                section = new SectionSpec(view + "/biome/" + biome.Name, Localization.instance.Localize(biome.Name), biome.Index);
+                sections[biome.Index] = section;
+            }
+
+            section.Pieces.Add(piece);
+        }
+
+        return [.. sections.Values.OrderBy(section => section.Order)];
+    }
+
+    /// <summary>
+    /// A material's place in biome order, for sorting: its biome, then its place in the biome's list.
+    /// </summary>
+    private static int MaterialOrder(string itemPrefabName)
+    {
+        SectionRules.Biome biome = SectionRules.BiomeOf(itemPrefabName);
+        return (biome.Index * 1000) + biome.ItemIndex;
     }
 
     /// <summary>
@@ -118,7 +151,7 @@ internal static class MenuView
         {
             List<Piece> sorted = mode switch
             {
-                SortMode.Material => [.. section.Pieces.OrderBy(p => MainMaterial(p).Title, StringComparer.CurrentCultureIgnoreCase).ThenBy(Name, StringComparer.CurrentCultureIgnoreCase)],
+                SortMode.Material => [.. section.Pieces.OrderBy(p => MaterialOrder(MainMaterial(p).Key)).ThenBy(p => MainMaterial(p).Title, StringComparer.CurrentCultureIgnoreCase).ThenBy(Name, StringComparer.CurrentCultureIgnoreCase)],
                 SortMode.Station => [.. section.Pieces.OrderBy(p => Station(p).Title, StringComparer.CurrentCultureIgnoreCase).ThenBy(Name, StringComparer.CurrentCultureIgnoreCase)],
                 _ => [.. section.Pieces.OrderBy(Name, StringComparer.CurrentCultureIgnoreCase)],
             };

@@ -36,6 +36,42 @@ internal static class SectionRules
         /// Category (a usage tag name) to its sections, in the order they're shown.
         /// </summary>
         public Dictionary<string, List<SectionRule>> Sections { get; set; } = [];
+
+        /// <summary>
+        /// The biomes in order, each with the materials (item prefab names) found there. When given, it
+        /// replaces the whole list.
+        /// </summary>
+        public List<BiomeRule> Biomes { get; set; }
+    }
+
+    private sealed class BiomeRule
+    {
+        /// <summary>
+        /// The header, as text or a $translation token.
+        /// </summary>
+        public string Name { get; set; }
+
+        public List<string> Items { get; set; }
+    }
+
+    /// <summary>
+    /// Where a material comes from: its biome's place in the list and name, and its own place in that
+    /// biome's list.
+    /// </summary>
+    internal readonly struct Biome
+    {
+        internal Biome(int index, string name, int itemIndex)
+        {
+            Index = index;
+            Name = name;
+            ItemIndex = itemIndex;
+        }
+
+        internal int Index { get; }
+
+        internal string Name { get; }
+
+        internal int ItemIndex { get; }
     }
 
     private sealed class SectionRule
@@ -78,7 +114,11 @@ internal static class SectionRules
         internal int Position { get; }
     }
 
+    private const string OtherBiome = "$betterhammer_biome_other";
+
     private static Dictionary<string, Piece.UsageTagFlags> _moves;
+    private static Dictionary<string, Biome> _biomes;
+    private static int _biomeCount;
     private static Dictionary<Piece.UsageTagFlags, List<Section>> _sections;
 
     private static string FilePath => Path.Combine(Paths.ConfigPath, "BetterHammer", "build_menu_rules.json");
@@ -123,6 +163,18 @@ internal static class SectionRules
     }
 
     /// <summary>
+    /// The biome a material (by item prefab name) comes from. Materials not in the list, such as other
+    /// mods', come last, under Other.
+    /// </summary>
+    internal static Biome BiomeOf(string itemPrefabName)
+    {
+        EnsureLoaded();
+        return itemPrefabName != null && _biomes.TryGetValue(itemPrefabName, out Biome biome)
+            ? biome
+            : new Biome(_biomeCount, OtherBiome, 0);
+    }
+
+    /// <summary>
     /// Whether the category is split into sections at all.
     /// </summary>
     internal static bool HasSections(Piece.UsageTagFlags category)
@@ -139,6 +191,7 @@ internal static class SectionRules
         }
 
         _moves = [];
+        _biomes = [];
         _sections = [];
 
         string defaults = ReadDefaults();
@@ -197,6 +250,30 @@ internal static class SectionRules
                 {
                     _moves[move.Key] = category;
                 }
+            }
+        }
+
+        if (file.Biomes is { Count: > 0 })
+        {
+            _biomes.Clear();
+            _biomeCount = 0;
+            foreach (BiomeRule biome in file.Biomes)
+            {
+                if (biome == null || string.IsNullOrEmpty(biome.Name))
+                {
+                    continue;
+                }
+
+                List<string> items = biome.Items ?? [];
+                for (int i = 0; i < items.Count; i++)
+                {
+                    if (!string.IsNullOrEmpty(items[i]) && !_biomes.ContainsKey(items[i]))
+                    {
+                        _biomes[items[i]] = new Biome(_biomeCount, biome.Name, i);
+                    }
+                }
+
+                _biomeCount++;
             }
         }
 

@@ -8,8 +8,9 @@ using UnityEngine.UI;
 namespace BetterHammer.BuildMenu;
 
 /// <summary>
-/// Group headers in the Categories tab's list on the left: Construction, Utility, Comfort, Food and Mods,
-/// each above its categories. They're plain labels, so keyboard and gamepad navigation skip them.
+/// Group headers in the list on the left: Construction, Utility, Comfort, Food and Mods above the
+/// Categories tab's categories, and biomes above the Materials tab's materials. They're plain labels,
+/// so keyboard and gamepad navigation skip them.
 /// </summary>
 internal sealed class TagListHeaders
 {
@@ -50,7 +51,8 @@ internal sealed class TagListHeaders
     internal void Place()
     {
         Park();
-        if (_ui.m_pieceLists[_ui.m_currentPieceList] is not ByUsagePieceList list
+        IPieceList list = _ui.m_pieceLists[_ui.m_currentPieceList];
+        if (list is not (ByUsagePieceList or ByMaterialPieceList)
             || !_ui.m_tagListContainer.gameObject.activeSelf
             || _ui.m_currentBuildTool == null)
         {
@@ -58,10 +60,10 @@ internal sealed class TagListHeaders
         }
 
         int used = 0;
-        CategoryGroup? last = null;
+        string last = null;
         foreach (BuildUiTagButton button in _ui.m_tagButtons)
         {
-            CategoryGroup group = PieceCategories.Find(list, _ui.m_currentBuildTool, button.m_tagId)?.Group ?? CategoryGroup.Mods;
+            string group = GroupToken(list, button.m_tagId);
             if (group == last)
             {
                 continue;
@@ -69,10 +71,20 @@ internal sealed class TagListHeaders
 
             last = group;
             RectTransform header = Take(used++);
-            header.GetComponent<TextMeshProUGUI>().text = Localization.instance.Localize(Token(group));
+            header.GetComponent<TextMeshProUGUI>().text = Localization.instance.Localize(group);
             header.SetParent(_ui.m_tagListScrollContent, false);
             header.SetSiblingIndex(button.transform.GetSiblingIndex());
         }
+    }
+
+    /// <summary>
+    /// The header a tag goes under: its group of categories, or its material's biome.
+    /// </summary>
+    private string GroupToken(IPieceList list, int tagId)
+    {
+        return list is ByMaterialPieceList materials
+            ? MaterialTags.BiomeOfTag(materials, tagId).Name
+            : Token(PieceCategories.Find((ByUsagePieceList)list, _ui.m_currentBuildTool, tagId)?.Group ?? CategoryGroup.Mods);
     }
 
     private static string Token(CategoryGroup group)

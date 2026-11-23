@@ -35,7 +35,7 @@ internal sealed class SectionSpec
 /// <item>Modded: one section per mod.</item>
 /// </list>
 /// Wherever modded pieces show, they're also gathered in a Modded section at the bottom. The other tabs
-/// are one section without a header, as in the game, except Recent, which is split by category too.
+/// are split too: Materials' Show All by biome and a material by category, and Recent by category.
 /// </summary>
 internal static class MenuSections
 {
@@ -76,6 +76,14 @@ internal static class MenuSections
         if (mode == GroupMode.None)
         {
             return [Single(pieces)];
+        }
+
+        // Materials: Show All by the biome of each piece's main material, and a material by category.
+        if (list is ByMaterialPieceList)
+        {
+            return tagId == -1 || categories == null || table == null
+                ? MenuView.GroupByBiome(pieces, view)
+                : ByCategory(categories, table, pieces, view);
         }
 
         // Recent pieces by category, most recent first in each.

@@ -71,15 +71,18 @@ The build menu is taller than the game's, its categories are grouped into Constr
 
 - **Show All** has a section for each category. Every piece is in exactly one category, the most fitting of the ones the game gives it, so a wall is under Walls rather than Building. **Building** shows every piece in the construction categories, by category.
 - **Each category** is split into sections: for example Beams, Diagonal beams, Roof crosses, Arches, and Poles and pillars under Architecture, and a section for each crafting station with its upgrades under Crafting.
+- **Materials** lists the materials by biome, from Meadows to Deep North. Its Show All is split by the biome of each piece's main material, and each material by category.
+- **Recent** is split by category, with the most recent pieces first in each.
 - **Modded** has every piece added by other mods, with a section per mod. Modded pieces also appear in the sections they fit, and again in a Modded section at the bottom.
 - Click a header to collapse its section. Collapsed sections are remembered and open up while you search.
 - The bar above the pieces has the search box and repair button on the right, and **Group by** and **Sort by** on the left, which change how the current tab is laid out. Click to step forward through the options, and right-click to step back. Each tab remembers its own choice.
-  - Group by: Type (the sections above, and categories in Recent), Material (the material a piece needs most of), Crafting station, or None.
+  - Group by: Type (the sections above), Material (the material a piece needs most of), Crafting station, or None.
   - Sort by: Default (the game's order, or most recent first in Recent), Name, Material, or Crafting station. It doesn't offer what the pieces are already grouped by.
 
 Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules.json`. The built-in rules are written next to it as `build_menu_rules.defaults.json`, to copy from:
 
 - `Moves` puts a piece in another category, by prefab name: `"Sled": "Transport"`.
+- `Biomes` lists the biomes in order, each with the materials found there, by item prefab name: `{ "Name": "$biome_meadows", "Items": [ "Wood", "Stone" ] }`. It replaces the whole list.
 - `Sections` replaces a category's sections. Each section has a `Name` and a `Match`, a regular expression on the prefab name; the first match wins, and a section with `"Fallback": true` takes the rest.
 
 Categories are named as in the game's code: `Misc`, `Crafting`, `Building`, `Floor`, `Wall`, `Roof`, `Architecture`, `Furniture`, `Lighting`, `Decor`, `Storage`, `Transport`, `Food`, `Meads`, `Feasts`, `Defense`, `Stacks`, `Stairs`, `Doors` and `Seasonal`. Set `Sections` to false under `Build Menu` in the config to use the game's own menu.
