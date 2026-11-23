@@ -48,7 +48,9 @@ internal static class BuildUiPatches
     [HarmonyPatch("UpdateTagButtons")]
     private static void UpdateTagButtons_Postfix(BuildUi __instance)
     {
-        SectionedGrid.For(__instance)?.TagHeaders.Place();
+        SectionedGrid grid = SectionedGrid.For(__instance);
+        grid?.TagHeaders.Place();
+        grid?.HookTagButtons();
     }
 
     [HarmonyPrefix]

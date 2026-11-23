@@ -35,9 +35,10 @@ internal sealed class SectionedGrid
         internal string Key { get; set; }
         internal string TitleText { get; set; }
         internal List<BuildUiPieceButton> Buttons { get; } = [];
+        internal int? FavoriteTag { get; set; }
+        internal bool KeepEmpty { get; set; }
     }
 
-    private readonly BuildUi _ui;
     private readonly RectTransform _root;
     private readonly RectTransform _pool;
     private readonly GridLayoutGroup _template;
@@ -59,7 +60,7 @@ internal sealed class SectionedGrid
 
     private SectionedGrid(BuildUi ui)
     {
-        _ui = ui;
+        Ui = ui;
         _pool = ui.m_pieceButtonsContainer;
         _template = _pool.GetComponent<GridLayoutGroup>();
         _fontSource = FindLabel(ui.m_showAllTagsButton);
@@ -94,6 +95,8 @@ internal sealed class SectionedGrid
 
     internal static SectionedGrid Current { get; private set; }
 
+    internal BuildUi Ui { get; }
+
     /// <summary>
     /// The group headers in the list of categories on the left.
     /// </summary>
@@ -104,7 +107,7 @@ internal sealed class SectionedGrid
     /// </summary>
     internal static SectionedGrid For(BuildUi ui)
     {
-        return Current != null && Current._ui == ui ? Current : null;
+        return Current != null && Current.Ui == ui ? Current : null;
     }
 
     internal static void Attach(BuildUi ui)
@@ -155,15 +158,15 @@ internal sealed class SectionedGrid
 
         _pieces.Clear();
         Dictionary<Piece, BuildUiPieceButton> unplaced = [];
-        foreach (BuildUiPieceButton button in _ui.m_pieceButtons)
+        foreach (BuildUiPieceButton button in Ui.m_pieceButtons)
         {
             _pieces.Add(button.Piece);
             unplaced[button.Piece] = button;
         }
 
-        IPieceList list = _ui.m_pieceLists[_ui.m_currentPieceList];
-        List<SectionSpec> specs = MenuSections.Build(list, _ui.m_currentTagId, _ui.m_currentBuildTool, _pieces, CategoriesList());
-        bool headers = specs.Count > 1;
+        IPieceList list = Ui.m_pieceLists[Ui.m_currentPieceList];
+        List<SectionSpec> specs = MenuSections.Build(list, Ui.m_currentTagId, Ui.m_currentBuildTool, _pieces, CategoriesList());
+        bool headers = specs.Count > 1 || specs.Exists(spec => spec.KeepEmpty);
         string scope = list.GetType().Name + "/";
 
         _used = 0;
@@ -174,6 +177,8 @@ internal sealed class SectionedGrid
             section.Key = scope + spec.Key;
             section.TitleText = spec.Title;
             section.Header.SetActive(headers);
+            section.FavoriteTag = spec.FavoriteTag;
+            section.KeepEmpty = spec.KeepEmpty;
             foreach (Piece piece in spec.Pieces)
             {
                 if (unplaced.TryGetValue(piece, out BuildUiPieceButton button))
@@ -202,7 +207,7 @@ internal sealed class SectionedGrid
             _sections[i].Buttons.Clear();
         }
 
-        foreach (BuildUiPieceButton pooled in _ui.m_pieceButtonPool)
+        foreach (BuildUiPieceButton pooled in Ui.m_pieceButtonPool)
         {
             pooled.transform.SetParent(_pool, false);
         }
@@ -212,7 +217,7 @@ internal sealed class SectionedGrid
 
     private ByUsagePieceList CategoriesList()
     {
-        foreach (IPieceList list in _ui.m_pieceLists)
+        foreach (IPieceList list in Ui.m_pieceLists)
         {
             if (list is ByUsagePieceList categories)
             {
@@ -223,8 +228,13 @@ internal sealed class SectionedGrid
         return null;
     }
 
-    private static void Place(Section section, BuildUiPieceButton button)
+    private void Place(Section section, BuildUiPieceButton button)
     {
+        if (!button.TryGetComponent(out PieceDrag _))
+        {
+            button.gameObject.AddComponent<PieceDrag>().Init(button, Ui.m_pieceScrollRect);
+        }
+
         button.transform.SetParent(section.Grid, false);
         button.transform.SetAsLastSibling();
         section.Buttons.Add(button);
@@ -234,10 +244,10 @@ internal sealed class SectionedGrid
     {
         BuildUiPieceButton button = _extraPool.Count > 0
             ? _extraPool.Pop()
-            : Object.Instantiate(_ui.m_pieceButtonPrefab, _pool).GetComponent<BuildUiPieceButton>();
+            : Object.Instantiate(Ui.m_pieceButtonPrefab, _pool).GetComponent<BuildUiPieceButton>();
 
         button.gameObject.SetActive(true);
-        button.Setup(piece, _ui);
+        button.Setup(piece, Ui);
         _extras.Add(button);
         return button;
     }
@@ -273,13 +283,13 @@ internal sealed class SectionedGrid
 
             // While searching every section is open, so no match is hidden.
             bool collapsed = term.Length == 0 && section.Header.activeSelf && MenuState.IsCollapsed(section.Key);
-            section.Root.SetActive(shown > 0);
+            section.Root.SetActive(shown > 0 || (section.KeepEmpty && term.Length == 0));
             section.Grid.gameObject.SetActive(!collapsed);
             section.Title.text = section.TitleText + "  <alpha=#99>" + shown;
             section.Arrow.localEulerAngles = new Vector3(0f, 0f, collapsed ? 90f : 0f);
         }
 
-        _ui.ConfigureButtonNavigation();
+        Ui.ConfigureButtonNavigation();
     }
 
     private string SearchTerm()
@@ -308,6 +318,76 @@ internal sealed class SectionedGrid
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The favourites category of the section a button is in, or null outside the Favorites tab.
+    /// </summary>
+    internal int? FavoriteTagOf(BuildUiPieceButton button)
+    {
+        for (int i = 0; i < _used; i++)
+        {
+            if (_sections[i].Buttons.Contains(button))
+            {
+                return _sections[i].FavoriteTag;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Where a dragged favourite lands: the section under the pointer (its piece, header or empty grid),
+    /// that section's pieces, and the piece it goes before (null for the end).
+    /// </summary>
+    internal bool TryGetDrop(GameObject hit, out int tag, out List<Piece> pieces, out Piece before)
+    {
+        tag = FavoriteSections.Uncategorised;
+        pieces = null;
+        before = null;
+        for (Transform at = hit != null ? hit.transform : null; at != null && at != _root; at = at.parent)
+        {
+            for (int i = 0; i < _used; i++)
+            {
+                Section section = _sections[i];
+                if (section.FavoriteTag == null
+                    || (at.gameObject != section.Header && at != section.Grid && at.gameObject != section.Root
+                        && !section.Buttons.Exists(button => button.gameObject == at.gameObject)))
+                {
+                    continue;
+                }
+
+                BuildUiPieceButton onto = section.Buttons.Find(button => button.gameObject == at.gameObject);
+                tag = section.FavoriteTag.Value;
+                pieces = section.Buttons.ConvertAll(button => button.Piece);
+                before = onto != null ? onto.Piece : null;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Lays the sections out again after favourites were moved.
+    /// </summary>
+    internal void Rearranged()
+    {
+        Rebuild();
+    }
+
+    /// <summary>
+    /// Lets the player's favourites categories in the list on the left be dragged and renamed.
+    /// </summary>
+    internal void HookTagButtons()
+    {
+        foreach (BuildUiTagButton button in Ui.m_tagButtons)
+        {
+            if (!button.TryGetComponent(out TagDrag _))
+            {
+                button.gameObject.AddComponent<TagDrag>().Init(Ui, button, Ui.m_tagListScrollRect);
+            }
+        }
     }
 
     private void Toggle(Section section)

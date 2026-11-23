@@ -25,6 +25,17 @@ internal sealed class SectionSpec
     internal int Order { get; }
 
     internal List<Piece> Pieces { get; } = [];
+
+    /// <summary>
+    /// For the Favorites tab: the favourites category the section shows (-1 for uncategorised), so
+    /// pieces can be dragged in and out of it. Null elsewhere.
+    /// </summary>
+    internal int? FavoriteTag { get; set; }
+
+    /// <summary>
+    /// Shown with its header even when it's empty or the only section, so pieces can be dragged into it.
+    /// </summary>
+    internal bool KeepEmpty { get; set; }
 }
 
 /// <summary>
@@ -35,7 +46,8 @@ internal sealed class SectionSpec
 /// <item>Modded: one section per mod.</item>
 /// </list>
 /// Wherever modded pieces show, they're also gathered in a Modded section at the bottom. The other tabs
-/// are split too: Materials' Show All by biome and a material by category, and Recent by category.
+/// are split too: Materials' Show All by biome and a material by category, Recent by category, and
+/// Favorites by the player's own categories.
 /// </summary>
 internal static class MenuSections
 {
@@ -84,6 +96,12 @@ internal static class MenuSections
             return tagId == -1 || categories == null || table == null
                 ? MenuView.GroupByBiome(pieces, view)
                 : ByCategory(categories, table, pieces, view);
+        }
+
+        // Favourites: Show All by the player's categories, a category on its own.
+        if (list is FavoritePieceList favorites)
+        {
+            return FavoriteSections.Group(favorites, tagId, pieces);
         }
 
         // Recent pieces by category, most recent first in each.

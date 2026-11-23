@@ -73,6 +73,10 @@ The build menu is taller than the game's, its categories are grouped into Constr
 - **Each category** is split into sections: for example Beams, Diagonal beams, Roof crosses, Arches, and Poles and pillars under Architecture, and a section for each crafting station with its upgrades under Crafting.
 - **Materials** lists the materials by biome, from Meadows to Deep North. Its Show All is split by the biome of each piece's main material, and each material by category.
 - **Recent** is split by category, with the most recent pieces first in each.
+- **Favorites** is split into your favourites categories, then Uncategorised.
+  - Drag a piece to rearrange it, or onto another section to move it there. Dropping it on Uncategorised takes it out of its categories.
+  - Drag a category in the list on the left to reorder it, and right-click it to rename it.
+  - This works while Favorites is grouped by Type and sorted by Default.
 - **Modded** has every piece added by other mods, with a section per mod. Modded pieces also appear in the sections they fit, and again in a Modded section at the bottom.
 - Click a header to collapse its section. Collapsed sections are remembered and open up while you search.
 - The bar above the pieces has the search box and repair button on the right, and **Group by** and **Sort by** on the left, which change how the current tab is laid out. Click to step forward through the options, and right-click to step back. Each tab remembers its own choice.
@@ -117,7 +121,7 @@ Settings marked "(Synced with server)" use the server's values when the server h
 
 ## Uninstalling
 
-Nothing is saved to your world or character, so the mod can be removed at any time. Saved copies and the build menu's settings stay in `BepInEx/config/BetterHammer/` until you delete them.
+Nothing is saved to your world, so the mod can be removed at any time. Favourites categories you rename or reorder are saved in your character the game's way and keep working without the mod. Saved copies and the build menu's settings, including the order you arranged favourites in, stay in `BepInEx/config/BetterHammer/` until you delete them.
 
 ## License
 
