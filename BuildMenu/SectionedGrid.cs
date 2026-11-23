@@ -174,7 +174,7 @@ internal sealed class SectionedGrid
         bool buildableOnly = MenuState.BuildableOnly;
         foreach (BuildUiPieceButton button in Ui.m_pieceButtons)
         {
-            if (!hiddenView && (HiddenPieces.IsHidden(button.Piece) || (buildableOnly && !Buildable(button.Piece))))
+            if ((!hiddenView && HiddenPieces.IsHidden(button.Piece)) || (buildableOnly && !Buildable(button.Piece)))
             {
                 button.transform.SetParent(_setAside, false);
                 continue;

@@ -46,7 +46,7 @@ internal sealed class SectionSpec
 /// <list type="bullet">
 /// <item>Categories → Show All, and Building: one section per category.</item>
 /// <item>Any other category: its sections from <see cref="SectionRules"/>, such as Beams and Poles.</item>
-/// <item>Modded: one section per mod.</item>
+/// <item>Modded: one section per mod. Hidden: one section per category.</item>
 /// </list>
 /// Wherever modded pieces show, they're also gathered in a Modded section at the bottom. The other tabs
 /// are split too: Materials' Show All by biome and a material by category, Recent by category, and
@@ -118,6 +118,12 @@ internal static class MenuSections
             if (tagId == PieceCategories.ModdedTagId)
             {
                 return ByMod(pieces);
+            }
+
+            // Hidden pieces by the category they'd be in.
+            if (tagId == PieceCategories.HiddenTagId)
+            {
+                return ByCategory(usage, table, pieces, "hidden");
             }
 
             CategoryInfo category = tagId == -1 ? null : PieceCategories.Find(usage, table, tagId);
