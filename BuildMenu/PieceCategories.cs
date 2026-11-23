@@ -58,7 +58,8 @@ internal enum CategoryGroup
 /// category in Show All and when its category is picked on the left. The game tags most pieces several
 /// times; the most specific tag wins, a move in <see cref="SectionRules"/> overrides it, and a category
 /// another mod put the piece in beats them all. Building is the game's tag for every construction piece,
-/// so it only wins when a piece has no other tag; picking Building shows all construction pieces.
+/// so it only wins when a piece has no other tag; picking Building shows every piece in a construction
+/// category.
 /// </summary>
 internal static class PieceCategories
 {
@@ -133,12 +134,27 @@ internal static class PieceCategories
         ModdedTagId, 0, Localization.instance.Localize("$betterhammer_menu_modded"), "modded", 2000, CategoryGroup.Mods);
 
     /// <summary>
-    /// True when the tag is one of the game's own usage tags (not Building), whose pieces are the ones
-    /// in that category.
+    /// True when the tag is one of the game's own usage tags, which show the pieces in that category
+    /// (see <see cref="Shows"/>) rather than every piece tagged with it.
     /// </summary>
     internal static bool IsSortedTag(ByUsagePieceList list, int tagId)
     {
-        return tagId >= 0 && tagId < list.m_usageTags.Length && list.m_usageTags[tagId] != Piece.UsageTagFlags.Building;
+        return tagId >= 0 && tagId < list.m_usageTags.Length;
+    }
+
+    /// <summary>
+    /// Whether picking the category shows the piece: the pieces in it, or for Building, every piece in
+    /// a construction category.
+    /// </summary>
+    internal static bool Shows(ByUsagePieceList list, PieceTable table, int tagId, Piece piece)
+    {
+        bool building = tagId < list.m_usageTags.Length && list.m_usageTags[tagId] == Piece.UsageTagFlags.Building;
+        return Of(list, table, piece) switch
+        {
+            null => false,
+            CategoryInfo category when building => category.Group == CategoryGroup.Construction,
+            CategoryInfo category => category.TagId == tagId,
+        };
     }
 
     /// <summary>
@@ -240,14 +256,14 @@ internal static class PieceCategories
     }
 
     /// <summary>
-    /// Whether any available piece is in the category.
+    /// Whether picking the category would show any piece.
     /// </summary>
     internal static bool HasPieces(ByUsagePieceList list, PieceTable table, int tagId)
     {
         EnsureFresh(list, table);
-        foreach (CategoryInfo category in Primary.Values)
+        foreach (Piece piece in Primary.Keys)
         {
-            if (category.TagId == tagId)
+            if (Shows(list, table, tagId, piece))
             {
                 return true;
             }

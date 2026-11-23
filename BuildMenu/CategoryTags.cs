@@ -50,15 +50,16 @@ internal static class CategoryTags
     }
 
     /// <summary>
-    /// One of the game's categories (not Building): exactly the pieces in it, rather than every piece
-    /// tagged with it. Keeps the repair and remove tools the game adds to every category.
+    /// One of the game's categories: exactly the pieces in it (for Building, the pieces in every
+    /// construction category), rather than every piece tagged with it. Keeps the repair and remove tools
+    /// the game adds to every category.
     /// </summary>
     internal static void Filter(ByUsagePieceList list, int tagId, PieceTable table, IList<Piece> result)
     {
         result.Clear();
         foreach (Piece piece in table.m_availablePieces)
         {
-            if (piece != null && (PieceCategories.IsSpecial(piece) || PieceCategories.Of(list, table, piece)?.TagId == tagId))
+            if (piece != null && (PieceCategories.IsSpecial(piece) || PieceCategories.Shows(list, table, tagId, piece)))
             {
                 result.Add(piece);
             }

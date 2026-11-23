@@ -42,7 +42,7 @@
       { "Name": "$betterhammer_section_outer_corners", "Match": "ocorner|corner" }
     ],
     "Architecture": [
-      { "Name": "$betterhammer_section_beams", "Match": "(beam(_1|_\\dm|4x4)?|pillarbeam_\\w+|wall_log.*)$" },
+      { "Name": "$betterhammer_section_beams", "Match": "(beam(_1|_\\dm|4x4|_small|_medium)?|pillarbeam_\\w+|wall_log.*)$" },
       { "Name": "$betterhammer_section_diagonal_beams", "Match": "(beam|log)_(26|45|67)$" },
       { "Name": "$betterhammer_section_roof_crosses", "Match": "cross|wall_roof_top" },
       { "Name": "$betterhammer_section_arches", "Match": "arch" },
@@ -60,9 +60,14 @@
       { "Name": "$betterhammer_section_windows", "Match": "window|crystal" }
     ],
     "Crafting": [
-      { "Name": "$betterhammer_section_stations", "Match": "^(piece_)?(workbench|forge|blackforge|stonecutter|artisanstation|magetable)$" },
-      { "Name": "$betterhammer_section_station_upgrades", "Match": "_ext" },
-      { "Name": "$betterhammer_section_cooking", "Match": "cauldron|cookingstation|oven|fermenter|preptable" },
+      { "Name": "$piece_workbench", "Match": "workbench" },
+      { "Name": "$piece_forge", "Match": "^forge" },
+      { "Name": "$piece_stonecutter", "Match": "stonecutter" },
+      { "Name": "$piece_artisanstation", "Match": "artisan" },
+      { "Name": "$piece_blackforge", "Match": "^blackforge" },
+      { "Name": "$piece_magetable", "Match": "magetable" },
+      { "Name": "$piece_cauldron", "Match": "^(piece_cauldron$|cauldron_ext)" },
+      { "Name": "$betterhammer_section_cooking", "Match": "cookingstation|oven|fermenter|preptable|meadcauldron" },
       { "Name": "$betterhammer_section_production", "Fallback": true }
     ],
     "Storage": [
@@ -76,7 +81,7 @@
       { "Name": "$betterhammer_section_portals", "Match": "portal" }
     ],
     "Defense": [
-      { "Name": "$betterhammer_section_wards", "Match": "guard_?stone|shieldgenerator" },
+      { "Name": "$betterhammer_section_wards", "Match": "guard_?stone|shieldgenerator|homebubble" },
       { "Name": "$betterhammer_section_stakes", "Match": "stake" },
       { "Name": "$betterhammer_section_drawbridges", "Match": "drawbridge" },
       { "Name": "$betterhammer_section_siege", "Match": "catapult|batteringram|turret|trap" }

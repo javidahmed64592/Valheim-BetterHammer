@@ -69,8 +69,8 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 
 The build menu's categories are grouped into Construction, Utility, Comfort, Food and Mods, and the pieces are split into sections, each with a header and its own grid.
 
-- **Show All** has a section for each category. Every piece is in exactly one category, the most fitting of the ones the game gives it, so a wall is under Walls rather than Building. **Building** shows every construction piece, by category.
-- **Each category** is split into sections: for example Beams, Diagonal beams, Roof crosses, Arches, and Poles and pillars under Architecture.
+- **Show All** has a section for each category. Every piece is in exactly one category, the most fitting of the ones the game gives it, so a wall is under Walls rather than Building. **Building** shows every piece in the construction categories, by category.
+- **Each category** is split into sections: for example Beams, Diagonal beams, Roof crosses, Arches, and Poles and pillars under Architecture, and a section for each crafting station with its upgrades under Crafting.
 - **Modded** has every piece added by other mods, with a section per mod. Modded pieces also appear in the sections they fit, and again in a Modded section at the bottom.
 - Click a header to collapse its section. Collapsed sections are remembered and open up while you search.
 

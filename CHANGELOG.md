@@ -3,7 +3,7 @@
 ## Unreleased
 
 - The build menu's Show All splits pieces into sections by category, each with a header and its own grid. A piece goes under its most specific category (a wall under Walls rather than Building), and categories added by mods, such as the Copies tab, come last. Click a header to collapse its section; collapsed sections are remembered and open up while you search. Turn `Sections` off under `Build Menu` in the config to use the game's own menu.
-- Picking a category shows exactly the pieces in its Show All section, split into sections such as Beams, Diagonal beams and Poles and pillars under Architecture. Building shows every construction piece, by category.
+- Picking a category shows exactly the pieces in its Show All section, split into sections such as Beams, Diagonal beams and Poles and pillars under Architecture, or one section per crafting station with its upgrades under Crafting. Building shows every piece in the construction categories (floors to doors), by category.
 - The categories on the left are grouped under Construction, Utility, Comfort, Food and Mods headers, and categories with nothing in them are hidden.
 - A new Modded category has every piece other mods add, with a section per mod. Modded pieces also stay in the sections they fit, and appear again in a Modded section at the bottom.
 - Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules.json`: move a piece to another category, or replace a category's sections. The built-in rules are written next to it to copy from.
