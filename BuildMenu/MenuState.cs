@@ -66,10 +66,15 @@ internal static class MenuState
         return _file.Views.TryGetValue(tab, out ViewState view) && view != null ? view.Group : GroupMode.Type;
     }
 
+    /// <summary>
+    /// How the tab sorts; Default if it would sort by what it's grouped by.
+    /// </summary>
     internal static SortMode SortOf(string tab)
     {
         EnsureLoaded();
-        return _file.Views.TryGetValue(tab, out ViewState view) && view != null ? view.Sort : SortMode.Default;
+        return _file.Views.TryGetValue(tab, out ViewState view) && view != null && MenuView.Allowed(view.Group, view.Sort)
+            ? view.Sort
+            : SortMode.Default;
     }
 
     internal static void SetView(string tab, GroupMode group, SortMode sort)

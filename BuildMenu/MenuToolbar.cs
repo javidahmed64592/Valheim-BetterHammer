@@ -139,11 +139,15 @@ internal sealed class MenuToolbar
         SortMode sortMode = MenuState.SortOf(tab);
         if (sort)
         {
-            sortMode = Step(MenuView.SortModes, sortMode, step);
+            sortMode = Step(MenuView.SortOptions(groupMode), sortMode, step);
         }
         else
         {
             groupMode = Step(MenuView.GroupModes, groupMode, step);
+            if (!MenuView.Allowed(groupMode, sortMode))
+            {
+                sortMode = SortMode.Default;
+            }
         }
 
         MenuState.SetView(tab, groupMode, sortMode);

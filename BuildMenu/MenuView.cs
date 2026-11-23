@@ -30,7 +30,6 @@ internal enum SortMode
     Name = 1,
     Material = 2,
     Station = 3,
-    Cost = 4,
 }
 
 /// <summary>
@@ -40,7 +39,24 @@ internal static class MenuView
 {
     internal static readonly GroupMode[] GroupModes = [GroupMode.Type, GroupMode.Material, GroupMode.Station, GroupMode.None];
 
-    internal static readonly SortMode[] SortModes = [SortMode.Default, SortMode.Name, SortMode.Material, SortMode.Station, SortMode.Cost];
+    internal static readonly SortMode[] SortModes = [SortMode.Default, SortMode.Name, SortMode.Material, SortMode.Station];
+
+    /// <summary>
+    /// Sorting by what the pieces are already grouped by would do nothing, so it isn't offered.
+    /// </summary>
+    internal static bool Allowed(GroupMode group, SortMode sort)
+    {
+        return !(group == GroupMode.Material && sort == SortMode.Material)
+            && !(group == GroupMode.Station && sort == SortMode.Station);
+    }
+
+    /// <summary>
+    /// The sort options that make sense with the grouping.
+    /// </summary>
+    internal static SortMode[] SortOptions(GroupMode group)
+    {
+        return [.. SortModes.Where(sort => Allowed(group, sort))];
+    }
 
     internal static string Label(GroupMode mode)
     {
@@ -60,7 +76,6 @@ internal static class MenuView
             SortMode.Name => "$betterhammer_view_name",
             SortMode.Material => "$betterhammer_view_material",
             SortMode.Station => "$betterhammer_view_station",
-            SortMode.Cost => "$betterhammer_view_cost",
             _ => "$betterhammer_view_default",
         };
     }
@@ -105,7 +120,6 @@ internal static class MenuView
             {
                 SortMode.Material => [.. section.Pieces.OrderBy(p => MainMaterial(p).Title, StringComparer.CurrentCultureIgnoreCase).ThenBy(Name, StringComparer.CurrentCultureIgnoreCase)],
                 SortMode.Station => [.. section.Pieces.OrderBy(p => Station(p).Title, StringComparer.CurrentCultureIgnoreCase).ThenBy(Name, StringComparer.CurrentCultureIgnoreCase)],
-                SortMode.Cost => [.. section.Pieces.OrderBy(Cost).ThenBy(Name, StringComparer.CurrentCultureIgnoreCase)],
                 _ => [.. section.Pieces.OrderBy(Name, StringComparer.CurrentCultureIgnoreCase)],
             };
             section.Pieces.Clear();
@@ -143,16 +157,5 @@ internal static class MenuView
         return station == null
             ? ("none", Localization.instance.Localize("$betterhammer_view_no_station"))
             : (station.m_name, Localization.instance.Localize(station.m_name));
-    }
-
-    private static int Cost(Piece piece)
-    {
-        int total = 0;
-        foreach (Piece.Requirement requirement in piece.m_resources ?? [])
-        {
-            total += requirement?.m_amount ?? 0;
-        }
-
-        return total;
     }
 }

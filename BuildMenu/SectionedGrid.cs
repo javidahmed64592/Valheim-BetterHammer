@@ -161,7 +161,7 @@ internal sealed class SectionedGrid
         }
 
         IPieceList list = _ui.m_pieceLists[_ui.m_currentPieceList];
-        List<SectionSpec> specs = MenuSections.Build(list, _ui.m_currentTagId, _ui.m_currentBuildTool, _pieces);
+        List<SectionSpec> specs = MenuSections.Build(list, _ui.m_currentTagId, _ui.m_currentBuildTool, _pieces, CategoriesList());
         bool headers = specs.Count > 1;
         string scope = list.GetType().Name + "/";
 
@@ -207,6 +207,19 @@ internal sealed class SectionedGrid
         }
 
         Refresh();
+    }
+
+    private ByUsagePieceList CategoriesList()
+    {
+        foreach (IPieceList list in _ui.m_pieceLists)
+        {
+            if (list is ByUsagePieceList categories)
+            {
+                return categories;
+            }
+        }
+
+        return null;
     }
 
     private static void Place(Section section, BuildUiPieceButton button)
