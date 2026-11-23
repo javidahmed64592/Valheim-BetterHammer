@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>BetterHammer</AssemblyName>
-    <Description>Open the build menu without a hammer, build with nearby materials, snap to a build grid, and copy and move structures.</Description>
+    <Description>Open the build menu without a hammer, build with nearby materials, snap to a build grid, copy and move structures, and find pieces in a sectioned build menu.</Description>
     <Version>1.2.0</Version>
     <LangVersion>latest</LangVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -24,6 +24,7 @@
   <!-- Translations/<Language>.json, embedded and loaded by Translations.Load. -->
   <ItemGroup>
     <EmbeddedResource Include="Translations\*.json" LogicalName="BetterHammer.Translations.%(Filename).json" />
+    <EmbeddedResource Include="BuildMenu\DefaultRules.json" LogicalName="BetterHammer.BuildMenu.DefaultRules.json" />
   </ItemGroup>
 
   <!-- In CI (GitHub Actions) there is no local Valheim install, so game/BepInEx DLLs

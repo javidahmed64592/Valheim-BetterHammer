@@ -14,6 +14,7 @@ This mod adds several improvements to the vanilla base hammer:
 - **Undo and redo**: Undo your last build, move or removal with `Ctrl+Z`, and redo it with `Ctrl+Y`.
 - **Repair mode**: Toggle repair mode by pressing `Shift+Right-Click`.
 - **Zoom camera**: Zoom the camera in and out without needing to unequip the hammer by scrolling while holding `Alt`.
+- **Sectioned build menu**: Pieces are grouped under headers you can collapse, every category is split into sections such as beams, poles and angled walls, and modded pieces have their own category.
 
 ## Build Grid
 
@@ -64,6 +65,22 @@ Look at built pieces and press `Alt+Middle-Click` to select them. Then:
 - If any of the pieces can't be handled, for example because they're too far away or behind someone else's ward, nothing happens.
 - The history lasts until you log out and holds 50 actions by default.
 
+## Build Menu
+
+The build menu's categories are grouped into Construction, Utility, Comfort, Food and Mods, and the pieces are split into sections, each with a header and its own grid.
+
+- **Show All** has a section for each category. Every piece is in exactly one category, the most fitting of the ones the game gives it, so a wall is under Walls rather than Building. **Building** shows every construction piece, by category.
+- **Each category** is split into sections: for example Beams, Diagonal beams, Roof crosses, Arches, and Poles and pillars under Architecture.
+- **Modded** has every piece added by other mods, with a section per mod. Modded pieces also appear in the sections they fit, and again in a Modded section at the bottom.
+- Click a header to collapse its section. Collapsed sections are remembered and open up while you search.
+
+Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules.json`. The built-in rules are written next to it as `build_menu_rules.defaults.json`, to copy from:
+
+- `Moves` puts a piece in another category, by prefab name: `"Sled": "Transport"`.
+- `Sections` replaces a category's sections. Each section has a `Name` and a `Match`, a regular expression on the prefab name; the first match wins, and a section with `"Fallback": true` takes the rest.
+
+Categories are named as in the game's code: `Misc`, `Crafting`, `Building`, `Floor`, `Wall`, `Roof`, `Architecture`, `Furniture`, `Lighting`, `Decor`, `Storage`, `Transport`, `Food`, `Meads`, `Feasts`, `Defense`, `Stacks`, `Stairs`, `Doors` and `Seasonal`. Set `Sections` to false under `Build Menu` in the config to use the game's own menu.
+
 ## Keyhints
 
 The mod adds on-screen keyhints with all the listed keybinds.
@@ -89,11 +106,12 @@ Settings marked "(Synced with server)" use the server's values when the server h
 
 - Mods that also build from nearby chests or ground items (such as AzuCraftyBoxes, or the craft from chests option in Valheim Plus) overlap with this mod's materials feature. Turn one of them off: here, set `Use Nearby Chests` to false and the ground items `Radius` to 0.
 - Mods that change how pieces snap or add their own build key hints may clash with the build grid or its hints.
+- Other mods that change the build menu's piece grid or categories may clash with the sectioned menu. Set `Sections` to false under `Build Menu` to leave the menu to them.
 - This mod has not been tested with a gamepad, only with keyboard and mouse.
 
 ## Uninstalling
 
-Nothing is saved to your world or character, so the mod can be removed at any time.
+Nothing is saved to your world or character, so the mod can be removed at any time. Saved copies and the build menu's settings stay in `BepInEx/config/BetterHammer/` until you delete them.
 
 ## License
 

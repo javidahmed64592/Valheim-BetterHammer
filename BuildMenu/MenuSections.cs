@@ -28,105 +28,18 @@ internal sealed class SectionSpec
 }
 
 /// <summary>
-/// Splits the pieces a build menu tab shows into sections. Categories → Show All gets one section per
-/// usage tag, with each piece under its most specific tag. Categories that other mods add (such as the
-/// Copies tab) come after the game's own. Everything else is one section without a header, as in the
-/// game.
+/// Splits the pieces a build menu tab shows into sections.
+/// <list type="bullet">
+/// <item>Categories → Show All, and Building: one section per category.</item>
+/// <item>Any other category: its sections from <see cref="SectionRules"/>, such as Beams and Poles.</item>
+/// <item>Modded: one section per mod.</item>
+/// </list>
+/// Wherever modded pieces show, they're also gathered in a Modded section at the bottom. The other tabs
+/// are one section without a header, as in the game.
 /// </summary>
 internal static class MenuSections
 {
-    /// <summary>
-    /// The order of the sections in Show All, grouped as construction, utility, comfort and food.
-    /// </summary>
-    private static readonly Piece.UsageTagFlags[] DisplayOrder =
-    [
-        Piece.UsageTagFlags.Building,
-        Piece.UsageTagFlags.Floor,
-        Piece.UsageTagFlags.Wall,
-        Piece.UsageTagFlags.Roof,
-        Piece.UsageTagFlags.Architecture,
-        Piece.UsageTagFlags.Stairs,
-        Piece.UsageTagFlags.Doors,
-        Piece.UsageTagFlags.Crafting,
-        Piece.UsageTagFlags.Storage,
-        Piece.UsageTagFlags.Transport,
-        Piece.UsageTagFlags.Defense,
-        Piece.UsageTagFlags.Misc,
-        Piece.UsageTagFlags.Furniture,
-        Piece.UsageTagFlags.Lighting,
-        Piece.UsageTagFlags.Decor,
-        Piece.UsageTagFlags.Seasonal,
-        Piece.UsageTagFlags.Food,
-        Piece.UsageTagFlags.Meads,
-        Piece.UsageTagFlags.Feasts,
-        Piece.UsageTagFlags.Stacks,
-    ];
-
-    /// <summary>
-    /// Most specific first. A piece goes under the first of its tags in this list: a wood wall is tagged
-    /// both Building and Wall, so it goes under Wall. Building is the game's tag for every construction
-    /// piece, so it comes last, as does Misc: a dragon adornment tagged Building and Decor goes under Decor.
-    /// </summary>
-    private static readonly Piece.UsageTagFlags[] Priority =
-    [
-        Piece.UsageTagFlags.Stairs,
-        Piece.UsageTagFlags.Doors,
-        Piece.UsageTagFlags.Floor,
-        Piece.UsageTagFlags.Wall,
-        Piece.UsageTagFlags.Roof,
-        Piece.UsageTagFlags.Architecture,
-        Piece.UsageTagFlags.Lighting,
-        Piece.UsageTagFlags.Storage,
-        Piece.UsageTagFlags.Crafting,
-        Piece.UsageTagFlags.Furniture,
-        Piece.UsageTagFlags.Transport,
-        Piece.UsageTagFlags.Defense,
-        Piece.UsageTagFlags.Seasonal,
-        Piece.UsageTagFlags.Decor,
-        Piece.UsageTagFlags.Feasts,
-        Piece.UsageTagFlags.Meads,
-        Piece.UsageTagFlags.Food,
-        Piece.UsageTagFlags.Stacks,
-        Piece.UsageTagFlags.Building,
-        Piece.UsageTagFlags.Misc,
-    ];
-
-    /// <summary>
-    /// Vanilla pieces whose tags put them in the wrong section, by prefab name. A piece only moves if the
-    /// section exists in the tab.
-    /// </summary>
-    private static readonly Dictionary<string, Piece.UsageTagFlags> Overrides = new()
-    {
-        // The other inverted wood walls are tagged Wall; this one was missed.
-        ["wood_wall_roof_upsidedown"] = Piece.UsageTagFlags.Wall,
-
-        // Black marble: the solid blocks go with the tile walls (some are also tagged Floor), and the
-        // shaped trim (plinths and their corners, overhangs, columns, the arch and the spire) goes
-        // together in Architecture.
-        ["blackmarble_1x1"] = Piece.UsageTagFlags.Wall,
-        ["blackmarble_2x1x1"] = Piece.UsageTagFlags.Wall,
-        ["blackmarble_2x2x1"] = Piece.UsageTagFlags.Wall,
-        ["blackmarble_2x2x2"] = Piece.UsageTagFlags.Wall,
-        ["blackmarble_base_1"] = Piece.UsageTagFlags.Architecture,
-        ["blackmarble_base_2"] = Piece.UsageTagFlags.Architecture,
-        ["blackmarble_basecorner"] = Piece.UsageTagFlags.Architecture,
-        ["blackmarble_out_1"] = Piece.UsageTagFlags.Architecture,
-        ["blackmarble_out_2"] = Piece.UsageTagFlags.Architecture,
-        ["blackmarble_outcorner"] = Piece.UsageTagFlags.Architecture,
-        ["blackmarble_tip"] = Piece.UsageTagFlags.Architecture,
-
-        // Tagged Doors as well as Wall, but they're walls with a window cut out.
-        ["Piece_grausten_window_2x2"] = Piece.UsageTagFlags.Wall,
-        ["Piece_grausten_window_4x2"] = Piece.UsageTagFlags.Wall,
-
-        // Gates that lift away, built to keep enemies out.
-        ["piece_drawbridge"] = Piece.UsageTagFlags.Defense,
-        ["piece_drawbridge_log"] = Piece.UsageTagFlags.Defense,
-    };
-
-    private const string OtherKey = "other";
-
-    private static readonly List<Piece> TagPieces = [];
+    private const int LastOrder = int.MaxValue - 1;
 
     /// <summary>
     /// The sections for a tab's current tag.
@@ -137,9 +50,23 @@ internal static class MenuSections
     /// <param name="pieces">The pieces the game shows, in its order. Every one ends up in a section.</param>
     internal static List<SectionSpec> Build(IPieceList list, int tagId, PieceTable table, IReadOnlyList<Piece> pieces)
     {
-        if (list is ByUsagePieceList usage && tagId == -1 && list.ShowTags && list.TagCount > 1)
+        if (list is ByUsagePieceList usage && list.ShowTags)
         {
-            return ByUsageTag(usage, table, pieces);
+            if (tagId == PieceCategories.ModdedTagId)
+            {
+                return ByMod(pieces);
+            }
+
+            CategoryInfo category = tagId == -1 ? null : PieceCategories.Find(usage, table, tagId);
+            if (tagId == -1 || category?.Flag == Piece.UsageTagFlags.Building)
+            {
+                return WithModded(ByCategory(usage, table, pieces, category?.Key ?? "all"), pieces, category?.Key ?? "all");
+            }
+
+            if (category != null && category.Flag != 0)
+            {
+                return WithModded(ByType(category, pieces), pieces, category.Key);
+            }
         }
 
         SectionSpec single = new("all", "", 0);
@@ -147,88 +74,117 @@ internal static class MenuSections
         return [single];
     }
 
-    private static List<SectionSpec> ByUsageTag(ByUsagePieceList list, PieceTable table, IReadOnlyList<Piece> pieces)
+    private static List<SectionSpec> ByCategory(ByUsagePieceList list, PieceTable table, IReadOnlyList<Piece> pieces, string view)
     {
-        Dictionary<Piece, (int Rank, SectionSpec Section)> placed = [];
-        Dictionary<Piece.UsageTagFlags, SectionSpec> byFlag = [];
-        List<SectionSpec> sections = [];
-        int vanillaTags = list.m_usageTags.Length;
-
-        for (int i = 0; i < list.TagCount; i++)
-        {
-            int id = list.GetTagIdByIndex(i);
-            string title = Localization.instance.Localize(list.GetTagDisplayName(i));
-            SectionSpec section;
-            int rank;
-
-            // Ids past the game's own tags are categories other mods add (Jotunn adds them this way).
-            // They go first in priority, since a mod chose to put its pieces there.
-            if (id >= vanillaTags)
-            {
-                rank = -1;
-                section = new SectionSpec("category:" + list.GetTagDisplayName(i), title, 1000 + i);
-            }
-            else
-            {
-                Piece.UsageTagFlags flag = list.GetTagById(id);
-                rank = IndexOr(Priority, flag, Priority.Length);
-                section = new SectionSpec(flag.ToString(), title, IndexOr(DisplayOrder, flag, 500 + i));
-                byFlag[flag] = section;
-            }
-
-            sections.Add(section);
-            TagPieces.Clear();
-            list.GetAvailablePiecesWithTag(id, table, TagPieces);
-            foreach (Piece piece in TagPieces)
-            {
-                if (piece == null || piece.m_repairPiece || piece.m_removePiece)
-                {
-                    continue;
-                }
-
-                if (!placed.TryGetValue(piece, out (int Rank, SectionSpec Section) current) || rank < current.Rank)
-                {
-                    placed[piece] = (rank, section);
-                }
-            }
-        }
-
-        TagPieces.Clear();
+        Dictionary<CategoryInfo, SectionSpec> byCategory = [];
         SectionSpec other = null;
         foreach (Piece piece in pieces)
         {
-            if (Overrides.TryGetValue(piece.gameObject.name, out Piece.UsageTagFlags moved)
-                && byFlag.TryGetValue(moved, out SectionSpec target) && placed.TryGetValue(piece, out (int Rank, SectionSpec Section) current)
-                && current.Rank >= 0)
+            CategoryInfo category = PieceCategories.Of(list, table, piece);
+            SectionSpec section;
+            if (category == null)
             {
-                // Pieces a mod put in its own category stay there.
-                placed[piece] = (current.Rank, target);
+                section = other ??= Other(view);
+            }
+            else if (!byCategory.TryGetValue(category, out section))
+            {
+                section = new SectionSpec(view + "/" + category.Key, category.Title, category.Order);
+                byCategory[category] = section;
             }
 
-            if (placed.TryGetValue(piece, out (int Rank, SectionSpec Section) entry))
-            {
-                entry.Section.Pieces.Add(piece);
-            }
-            else
-            {
-                other ??= new SectionSpec(OtherKey, Localization.instance.Localize("$betterhammer_menu_other"), int.MaxValue);
-                other.Pieces.Add(piece);
-            }
+            section.Pieces.Add(piece);
         }
 
+        List<SectionSpec> sections = [.. byCategory.Values];
         if (other != null)
         {
             sections.Add(other);
         }
 
-        _ = sections.RemoveAll(section => section.Pieces.Count == 0);
         sections.Sort((a, b) => a.Order.CompareTo(b.Order));
         return sections;
     }
 
-    private static int IndexOr(Piece.UsageTagFlags[] array, Piece.UsageTagFlags flag, int fallback)
+    private static List<SectionSpec> ByType(CategoryInfo category, IReadOnlyList<Piece> pieces)
     {
-        int index = Array.IndexOf(array, flag);
-        return index >= 0 ? index : fallback;
+        Dictionary<SectionRules.Section, SectionSpec> byRule = [];
+        SectionSpec unsorted = null;
+        foreach (Piece piece in pieces)
+        {
+            SectionRules.Section rule = SectionRules.SectionOf(category.Flag, piece.gameObject.name);
+            SectionSpec section;
+            if (rule == null)
+            {
+                // Without any sections, the category is one section under its own name.
+                unsorted ??= !SectionRules.HasSections(category.Flag)
+                    ? new SectionSpec(category.Key + "/" + category.Key, category.Title, 0)
+                    : Other(category.Key);
+                section = unsorted;
+            }
+            else if (!byRule.TryGetValue(rule, out section))
+            {
+                section = new SectionSpec(category.Key + "/" + rule.Name, Localization.instance.Localize(rule.Name), rule.Position);
+                byRule[rule] = section;
+            }
+
+            section.Pieces.Add(piece);
+        }
+
+        List<SectionSpec> sections = [.. byRule.Values];
+        if (unsorted != null)
+        {
+            sections.Add(unsorted);
+        }
+
+        sections.Sort((a, b) => a.Order.CompareTo(b.Order));
+        return sections;
+    }
+
+    private static List<SectionSpec> ByMod(IReadOnlyList<Piece> pieces)
+    {
+        Dictionary<string, SectionSpec> byMod = [];
+        foreach (Piece piece in pieces)
+        {
+            string mod = ModdedPieces.SourceOf(piece) ?? "?";
+            if (!byMod.TryGetValue(mod, out SectionSpec section))
+            {
+                section = new SectionSpec("modded/" + mod, mod, 0);
+                byMod[mod] = section;
+            }
+
+            section.Pieces.Add(piece);
+        }
+
+        List<SectionSpec> sections = [.. byMod.Values];
+        sections.Sort((a, b) => string.Compare(a.Title, b.Title, StringComparison.OrdinalIgnoreCase));
+        return sections;
+    }
+
+    /// <summary>
+    /// Adds a Modded section at the bottom with every modded piece shown above, again.
+    /// </summary>
+    private static List<SectionSpec> WithModded(List<SectionSpec> sections, IReadOnlyList<Piece> pieces, string view)
+    {
+        SectionSpec modded = null;
+        foreach (Piece piece in pieces)
+        {
+            if (ModdedPieces.IsModded(piece))
+            {
+                modded ??= new SectionSpec(view + "/modded", PieceCategories.Modded.Title, int.MaxValue);
+                modded.Pieces.Add(piece);
+            }
+        }
+
+        if (modded != null)
+        {
+            sections.Add(modded);
+        }
+
+        return sections;
+    }
+
+    private static SectionSpec Other(string view)
+    {
+        return new SectionSpec(view + "/other", Localization.instance.Localize("$betterhammer_menu_other"), LastOrder);
     }
 }

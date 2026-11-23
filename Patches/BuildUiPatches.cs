@@ -25,6 +25,20 @@ internal static class BuildUiPatches
     }
 
     [HarmonyPrefix]
+    [HarmonyPatch("UpdateTagButtons")]
+    private static void UpdateTagButtons_Prefix(BuildUi __instance)
+    {
+        SectionedGrid.For(__instance)?.TagHeaders.Park();
+    }
+
+    [HarmonyPostfix]
+    [HarmonyPatch("UpdateTagButtons")]
+    private static void UpdateTagButtons_Postfix(BuildUi __instance)
+    {
+        SectionedGrid.For(__instance)?.TagHeaders.Place();
+    }
+
+    [HarmonyPrefix]
     [HarmonyPatch("UpdatePieceButtons")]
     private static void UpdatePieceButtons_Prefix(BuildUi __instance)
     {
