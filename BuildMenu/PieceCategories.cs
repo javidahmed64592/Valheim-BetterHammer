@@ -70,6 +70,11 @@ internal static class PieceCategories
     internal const int ModdedTagId = 1_000_000;
 
     /// <summary>
+    /// The tag id of BetterHammer's Hidden category, for the pieces the player hid.
+    /// </summary>
+    internal const int HiddenTagId = 1_000_001;
+
+    /// <summary>
     /// The order categories are listed in, in groups: construction, utility, comfort and food.
     /// </summary>
     private static readonly (Piece.UsageTagFlags Flag, CategoryGroup Group)[] DisplayOrder =
@@ -129,6 +134,17 @@ internal static class PieceCategories
     private static ByUsagePieceList _list;
     private static PieceTable _table;
     private static int _pieceCount = -1;
+
+    internal static CategoryInfo Hidden => new(
+        HiddenTagId, 0, Localization.instance.Localize("$betterhammer_menu_hidden"), "hidden", 2001, CategoryGroup.Mods);
+
+    /// <summary>
+    /// True for BetterHammer's own categories (Modded, Hidden), which it fills itself.
+    /// </summary>
+    internal static bool IsOwnTag(int tagId)
+    {
+        return tagId is ModdedTagId or HiddenTagId;
+    }
 
     internal static CategoryInfo Modded => new(
         ModdedTagId, 0, Localization.instance.Localize("$betterhammer_menu_modded"), "modded", 2000, CategoryGroup.Mods);
@@ -196,7 +212,7 @@ internal static class PieceCategories
         for (int i = 0; i < list.m_availableTags.Count; i++)
         {
             int id = list.m_availableTags[i];
-            if (id < list.m_usageTags.Length || id == ModdedTagId)
+            if (id < list.m_usageTags.Length || IsOwnTag(id))
             {
                 continue;
             }
@@ -249,6 +265,11 @@ internal static class PieceCategories
         if (tagId == ModdedTagId)
         {
             return Modded;
+        }
+
+        if (tagId == HiddenTagId)
+        {
+            return Hidden;
         }
 
         EnsureFresh(list, table);

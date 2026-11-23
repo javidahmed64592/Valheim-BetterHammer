@@ -78,8 +78,11 @@ The build menu is taller than the game's, its categories are grouped into Constr
   - Drag a category in the list on the left to reorder it, and right-click it to rename it.
   - This works while Favorites is grouped by Type and sorted by Default.
 - **Modded** has every piece added by other mods, with a section per mod. Modded pieces also appear in the sections they fit, and again in a Modded section at the bottom.
+- Each entry in the lists on the left shows how many pieces it has. Copies named with a folder, such as `Base/Tower`, are grouped by folder in the Copies tab.
+- Hover a piece and press `H` to hide it from every tab. Hidden pieces are listed in the Hidden category, where `H` brings them back.
+- Search by name or material as usual, or with a prefix: `@` for the mod a piece comes from, `#` for its section, and `$` for a material it needs (`@half beam`, `#roof`, `$iron`).
 - Click a header to collapse its section. Collapsed sections are remembered and open up while you search.
-- The bar above the pieces has the search box and repair button on the right, and **Group by** and **Sort by** on the left, which change how the current tab is laid out. Click to step forward through the options, and right-click to step back. Each tab remembers its own choice.
+- The bar above the pieces has the search box and repair button on the right, and **Group by**, **Sort by** and **Show** on the left. Group by and Sort by change how the current tab is laid out, and Show switches between all pieces and only those you have the materials for, counting nearby chests. Click to step forward through the options, and right-click to step back. Each tab remembers its own choice.
   - Group by: Type (the sections above), Material (the material a piece needs most of), Crafting station, or None.
   - Sort by: Default (the game's order, or most recent first in Recent), Name, Material, or Crafting station. It doesn't offer what the pieces are already grouped by.
 
@@ -89,7 +92,7 @@ Where pieces go is set by rules in `BepInEx/config/BetterHammer/build_menu_rules
 - `Biomes` lists the biomes in order, each with the materials found there, by item prefab name: `{ "Name": "$biome_meadows", "Items": [ "Wood", "Stone" ] }`. It replaces the whole list.
 - `Sections` replaces a category's sections. Each section has a `Name` and a `Match`, a regular expression on the prefab name; the first match wins, and a section with `"Fallback": true` takes the rest.
 
-Categories are named as in the game's code: `Misc`, `Crafting`, `Building`, `Floor`, `Wall`, `Roof`, `Architecture`, `Furniture`, `Lighting`, `Decor`, `Storage`, `Transport`, `Food`, `Meads`, `Feasts`, `Defense`, `Stacks`, `Stairs`, `Doors` and `Seasonal`. Set `Sections` to false under `Build Menu` in the config to use the game's own menu.
+Categories are named as in the game's code: `Misc`, `Crafting`, `Building`, `Floor`, `Wall`, `Roof`, `Architecture`, `Furniture`, `Lighting`, `Decor`, `Storage`, `Transport`, `Food`, `Meads`, `Feasts`, `Defense`, `Stacks`, `Stairs`, `Doors` and `Seasonal`. Set `Sections` to false under `Build Menu` in the config to use the game's own menu, and change `Icon Size` there to fit more or fewer pieces in each row.
 
 ## Keyhints
 

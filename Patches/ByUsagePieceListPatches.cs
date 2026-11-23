@@ -7,7 +7,7 @@ using HarmonyLib;
 namespace BetterHammer.Patches;
 
 /// <summary>
-/// The Categories tab's list: categories in groups, a Modded category, and each category showing exactly
+/// The Categories tab's list: categories in groups, Modded and Hidden categories, and each category showing exactly
 /// the pieces in it. Runs after Jotunn, which adds other mods' categories the same way. With sections
 /// turned off, the game's list is left alone.
 /// </summary>
@@ -31,28 +31,28 @@ internal static class ByUsagePieceListPatches
     [HarmonyPatch(nameof(ByUsagePieceList.GetTagDisplayName))]
     private static bool GetTagDisplayName_Prefix(ByUsagePieceList __instance, int index, ref string __result)
     {
-        if (index < 0 || index >= __instance.m_availableTags.Count || __instance.m_availableTags[index] != PieceCategories.ModdedTagId)
+        if (index < 0 || index >= __instance.m_availableTags.Count || !PieceCategories.IsOwnTag(__instance.m_availableTags[index]))
         {
             return true;
         }
 
-        __result = "$betterhammer_menu_modded";
+        __result = __instance.m_availableTags[index] == PieceCategories.ModdedTagId ? "$betterhammer_menu_modded" : "$betterhammer_menu_hidden";
         return false;
     }
 
     /// <summary>
-    /// The Modded category is filled here: the game would look its id up as a usage tag.
+    /// The Modded and Hidden categories are filled here: the game would look their ids up as usage tags.
     /// </summary>
     [HarmonyPrefix]
     [HarmonyPatch(nameof(ByUsagePieceList.GetAvailablePiecesWithTag))]
     private static bool GetAvailablePiecesWithTag_Prefix(int tagId, PieceTable pieceTable, IList<Piece> resultOut)
     {
-        if (tagId != PieceCategories.ModdedTagId)
+        if (!PieceCategories.IsOwnTag(tagId))
         {
             return true;
         }
 
-        CategoryTags.AddModdedPieces(pieceTable, resultOut);
+        CategoryTags.AddOwnPieces(tagId, pieceTable, resultOut);
         return false;
     }
 

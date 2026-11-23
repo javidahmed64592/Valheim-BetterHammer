@@ -65,6 +65,7 @@ internal static class BuildUiPatches
         SectionedGrid grid = SectionedGrid.For(__instance);
         grid?.TagHeaders.Place();
         grid?.HookTagButtons();
+        grid?.ShowCounts();
     }
 
     [HarmonyPrefix]

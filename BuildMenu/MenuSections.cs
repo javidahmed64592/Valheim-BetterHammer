@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+
+using BetterHammer.Structures;
 
 namespace BetterHammer.BuildMenu;
 
@@ -127,6 +130,12 @@ internal static class MenuSections
             {
                 return WithModded(ByType(category, pieces), pieces, category.Key);
             }
+
+            // The Copies tab: by the folder in each copy's name ("Base/Tower" is in Base).
+            if (pieces.Count > 0 && pieces.All(piece => CopyLibrary.Find(piece) != null))
+            {
+                return ByCopyFolder(pieces, view);
+            }
         }
 
         return [Single(pieces)];
@@ -216,6 +225,32 @@ internal static class MenuSections
 
         sections.Sort((a, b) => a.Order.CompareTo(b.Order));
         return sections;
+    }
+
+    /// <summary>
+    /// Copies by folder: the part of the name before the first "/". Copies without one come first.
+    /// </summary>
+    private static List<SectionSpec> ByCopyFolder(IReadOnlyList<Piece> pieces, string view)
+    {
+        Dictionary<string, SectionSpec> byFolder = [];
+        foreach (Piece piece in pieces)
+        {
+            string name = piece.m_name ?? "";
+            int slash = name.IndexOf('/');
+            string folder = slash > 0 ? name.Substring(0, slash).Trim() : "";
+            if (!byFolder.TryGetValue(folder, out SectionSpec section))
+            {
+                section = new SectionSpec(
+                    view + "/folder/" + folder,
+                    folder.Length > 0 ? folder : Localization.instance.Localize("$betterhammer_copies_no_folder"),
+                    folder.Length > 0 ? 1 : 0);
+                byFolder[folder] = section;
+            }
+
+            section.Pieces.Add(piece);
+        }
+
+        return [.. byFolder.Values.OrderBy(section => section.Order).ThenBy(section => section.Title, StringComparer.CurrentCultureIgnoreCase)];
     }
 
     private static List<SectionSpec> ByMod(IReadOnlyList<Piece> pieces)

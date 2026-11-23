@@ -11,7 +11,7 @@ internal static class CategoryTags
 {
     /// <summary>
     /// After the game (and Jotunn) listed the categories: drops the game's categories that no piece ends
-    /// up in, adds Modded when there are modded pieces, and puts them in group order.
+    /// up in, adds Modded and Hidden when there are modded or hidden pieces, and puts them in group order.
     /// </summary>
     internal static void Update(ByUsagePieceList list, PieceTable table)
     {
@@ -22,12 +22,17 @@ internal static class CategoryTags
 
         PieceCategories.Refresh(list, table);
         List<int> tags = list.m_availableTags;
-        _ = tags.RemoveAll(id => id == PieceCategories.ModdedTagId
+        _ = tags.RemoveAll(id => PieceCategories.IsOwnTag(id)
             || (PieceCategories.IsSortedTag(list, id) && !PieceCategories.HasPieces(list, table, id)));
 
         if (table.m_availablePieces.Any(piece => piece != null && !PieceCategories.IsSpecial(piece) && ModdedPieces.IsModded(piece)))
         {
             tags.Add(PieceCategories.ModdedTagId);
+        }
+
+        if (table.m_availablePieces.Any(piece => piece != null && !PieceCategories.IsSpecial(piece) && HiddenPieces.IsHidden(piece)))
+        {
+            tags.Add(PieceCategories.HiddenTagId);
         }
 
         List<int> ordered = [.. tags.OrderBy(id => PieceCategories.Find(list, table, id)?.Order ?? 1500)];
@@ -36,13 +41,15 @@ internal static class CategoryTags
     }
 
     /// <summary>
-    /// The Modded category: the repair and remove tools, then every modded piece, in the game's order.
+    /// BetterHammer's own categories: the repair and remove tools, then every modded piece (Modded) or
+    /// every hidden piece (Hidden), in the game's order.
     /// </summary>
-    internal static void AddModdedPieces(PieceTable table, IList<Piece> result)
+    internal static void AddOwnPieces(int tagId, PieceTable table, IList<Piece> result)
     {
         foreach (Piece piece in table.m_availablePieces)
         {
-            if (piece != null && (PieceCategories.IsSpecial(piece) || ModdedPieces.IsModded(piece)))
+            if (piece != null && (PieceCategories.IsSpecial(piece)
+                || (tagId == PieceCategories.ModdedTagId ? ModdedPieces.IsModded(piece) : HiddenPieces.IsHidden(piece))))
             {
                 result.Add(piece);
             }

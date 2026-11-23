@@ -49,11 +49,18 @@ internal sealed class SectionedGrid
     /// The menu's search box (the game's own input field type, which derives from this one).
     /// </summary>
     private readonly TMP_InputField _search;
+
+    /// <summary>
+    /// Inactive, so buttons of pieces that aren't shown (hidden, or not buildable with that filter on)
+    /// stay invisible even when the game's search switches them on.
+    /// </summary>
+    private readonly RectTransform _setAside;
     private readonly MenuToolbar _toolbar;
     private readonly List<Section> _sections = [];
     private readonly List<BuildUiPieceButton> _extras = [];
     private readonly Stack<BuildUiPieceButton> _extraPool = new();
     private readonly List<Piece> _pieces = [];
+    private readonly List<Piece> _counted = [];
     private readonly List<List<Selectable>> _rows = [];
     private int _used;
     private int _updateDepth;
@@ -88,6 +95,11 @@ internal sealed class SectionedGrid
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
         root.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        GameObject setAside = new("BetterHammer_SetAside", typeof(RectTransform));
+        setAside.SetActive(false);
+        _setAside = (RectTransform)setAside.transform;
+        _setAside.SetParent(_pool.parent, false);
 
         // The game's own container stays as the place unused buttons wait, out of the scroll view.
         ui.m_pieceScrollRect.content = _root;
@@ -158,8 +170,16 @@ internal sealed class SectionedGrid
 
         _pieces.Clear();
         Dictionary<Piece, BuildUiPieceButton> unplaced = [];
+        bool hiddenView = Ui.m_pieceLists[Ui.m_currentPieceList] is ByUsagePieceList && Ui.m_currentTagId == PieceCategories.HiddenTagId;
+        bool buildableOnly = MenuState.BuildableOnly;
         foreach (BuildUiPieceButton button in Ui.m_pieceButtons)
         {
+            if (!hiddenView && (HiddenPieces.IsHidden(button.Piece) || (buildableOnly && !Buildable(button.Piece))))
+            {
+                button.transform.SetParent(_setAside, false);
+                continue;
+            }
+
             _pieces.Add(button.Piece);
             unplaced[button.Piece] = button;
         }
@@ -228,6 +248,12 @@ internal sealed class SectionedGrid
         return null;
     }
 
+    private static bool Buildable(Piece piece)
+    {
+        Player player = Player.m_localPlayer;
+        return player == null || player.HaveRequirements(piece, Player.RequirementMode.CanBuild);
+    }
+
     private void Place(Section section, BuildUiPieceButton button)
     {
         if (!button.TryGetComponent(out PieceDrag _))
@@ -264,9 +290,23 @@ internal sealed class SectionedGrid
         }
 
         string term = SearchTerm();
-        foreach (BuildUiPieceButton extra in _extras)
+        if (MenuSearch.HasPrefix(term))
         {
-            extra.gameObject.SetActive(Matches(extra, term));
+            // The game searched names and materials; a prefixed search decides for every button.
+            for (int i = 0; i < _used; i++)
+            {
+                foreach (BuildUiPieceButton button in _sections[i].Buttons)
+                {
+                    button.gameObject.SetActive(MenuSearch.Matches(button.Piece, _sections[i].TitleText, term));
+                }
+            }
+        }
+        else
+        {
+            foreach (BuildUiPieceButton extra in _extras)
+            {
+                extra.gameObject.SetActive(Matches(extra, term));
+            }
         }
 
         for (int i = 0; i < _used; i++)
@@ -377,6 +417,53 @@ internal sealed class SectionedGrid
     internal void Rearranged()
     {
         Rebuild();
+    }
+
+    /// <summary>
+    /// Shows how many pieces each entry in the list on the left has, after its name.
+    /// </summary>
+    internal void ShowCounts()
+    {
+        IPieceList list = Ui.m_pieceLists[Ui.m_currentPieceList];
+        PieceTable table = Ui.m_currentBuildTool;
+        if (!list.ShowTags || table == null || !Ui.m_tagListContainer.gameObject.activeSelf)
+        {
+            return;
+        }
+
+        foreach (BuildUiTagButton button in Ui.m_tagButtons)
+        {
+            ShowCount(button, Count(list, button.m_tagId, table));
+        }
+
+        ShowCount(Ui.m_showAllTagsButton, Count(list, -1, table));
+    }
+
+    private int Count(IPieceList list, int tagId, PieceTable table)
+    {
+        _counted.Clear();
+        list.GetAvailablePiecesWithTag(tagId, table, _counted);
+        int count = 0;
+        foreach (Piece piece in _counted)
+        {
+            if (piece != null && !PieceCategories.IsSpecial(piece) && (tagId == PieceCategories.HiddenTagId || !HiddenPieces.IsHidden(piece)))
+            {
+                count++;
+            }
+        }
+
+        _counted.Clear();
+        return count;
+    }
+
+    private static void ShowCount(BuildUiTagButton button, int count)
+    {
+        string text = Localization.instance.Localize(button.m_displayName) + "  <alpha=#88>" + count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        foreach (TextMeshProUGUI mesh in button.m_textMeshes)
+        {
+            mesh.richText = true;
+            mesh.text = text;
+        }
     }
 
     /// <summary>
@@ -557,7 +644,7 @@ internal sealed class SectionedGrid
         grid.transform.SetParent(section.Root.transform, false);
         section.Grid = (RectTransform)grid.transform;
         section.Layout = grid.GetComponent<GridLayoutGroup>();
-        section.Layout.cellSize = _template.cellSize;
+        section.Layout.cellSize = _template.cellSize * BuildMenuConfig.IconScale;
         section.Layout.spacing = _template.spacing;
         section.Layout.startCorner = _template.startCorner;
         section.Layout.startAxis = _template.startAxis;

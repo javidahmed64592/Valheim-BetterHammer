@@ -90,6 +90,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
         GridOverlay.BindConfig(Config);
         ChestMaterials.BindConfig(Config);
         CopyLibrary.BindConfig(Config);
+        HiddenPieces.BindConfig(Config);
         MultiCopy.BindConfig(Config);
         ConnectedPieces.BindConfig(Config);
         UndoHistory.BindConfig(Config);
@@ -153,6 +154,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
         }
 
         CopyLibrary.UpdateMenuInput(player);
+        HiddenPieces.UpdateMenuInput(player);
         MultiCopy.UpdateSelectionKeys(player);
         UndoHistory.UpdateKeys(player);
 

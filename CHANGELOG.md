@@ -10,6 +10,12 @@
 - Group by and Sort by above the pieces lay out each tab your way: group by type, main material, crafting station or not at all, and sort by name, material or crafting station. Click to step through the options and right-click to step back. Each tab remembers its choice.
 - The Recent tab is split by category, with the most recent pieces first in each.
 - The Favorites tab is split into your favourites categories, in your order, then Uncategorised. Drag a piece to rearrange it, or onto another section to move it there; dropping it on Uncategorised takes it out of its categories. Drag a category in the list on the left to reorder it, and right-click it to rename it. Your categories stay in your character as before; only the arranged order is kept by the mod.
+- Hover a piece in the build menu and press `H` to hide it from every tab. Hidden pieces are listed in a Hidden category, where `H` brings them back.
+- Show, in the bar above the pieces, switches between all pieces and only those you have the materials for (counting nearby chests).
+- The lists on the left show how many pieces each category, material or favourites category has.
+- Search prefixes: `@` finds pieces by the mod they come from, `#` by the section they're in, and `$` by a material they need, such as `@half beam`, `#roof` or `$iron`.
+- `Icon Size` under `Build Menu` in the config makes the piece buttons smaller or bigger (60 to 140%).
+- Copies named with a folder, such as `Base/Tower`, are grouped by folder in the Copies tab.
 - The Materials tab lists its materials by biome, from Meadows to Deep North, under a header for each, with other mods' materials last under Other. Its Show All is split by the biome of each piece's main material, and a material by category. Grouping or sorting by material anywhere follows the same biome order.
 - The build menu is taller, so more pieces fit: it grows into the space above it, and the panel with the selected piece's materials sits lower, just above the game's key hints, whether the menu is open or not.
 - The "Snap to piece" key hint is at the top of the right-hand hints instead of in the middle above "Cycle snapping", out of the build panel's way.
