@@ -39,10 +39,6 @@ internal static class ChestMaterials
     /// True while the resources of the placed piece are being consumed.
     /// </summary>
     private static bool _consuming;
-    /// <summary>
-    /// True while the build panel's total is counted: it includes ground items owned by other players.
-    /// </summary>
-    private static bool _countAllGround;
 
     public static void BindConfig(ConfigFile config)
     {
@@ -89,9 +85,20 @@ internal static class ChestMaterials
         _ = Drops.RemoveAll(d => d == null);
         foreach (ItemDrop drop in Drops)
         {
-            ItemDrop.ItemData data = drop.m_itemData;
             ZNetView nview = DropNviewRef(drop);
-            if (data == null || nview == null || !nview.IsValid()
+            if (nview == null || !nview.IsValid())
+            {
+                continue;
+            }
+
+            // Another client may own the item and have changed its stack since it was loaded here.
+            if (!nview.IsOwner())
+            {
+                drop.Load();
+            }
+
+            ItemDrop.ItemData data = drop.m_itemData;
+            if (data == null
                 || drop.IsPiece()
                 || data.m_shared.m_name != name
                 || (quality >= 0 && quality != data.m_quality)
@@ -109,22 +116,6 @@ internal static class ChestMaterials
         return result;
     }
 
-    /// <summary>
-    /// Whether this client may use a ground item now. Like vanilla pickup, only the item's owner may remove it,
-    /// so an item owned by someone else is asked for (vanilla's RequestOwn) and becomes usable once it is
-    /// handed over, usually within a moment. This way nobody can pick up an item that was also used to build.
-    /// </summary>
-    private static bool OwnedOrRequest(ItemDrop drop)
-    {
-        if (DropNviewRef(drop).IsOwner())
-        {
-            return true;
-        }
-
-        drop.RequestOwn();
-        return false;
-    }
-
     private static int TakeFromGround(Player player, string name, int amount, int quality, bool matchWorldLevel)
     {
         foreach (ItemDrop drop in GetGroundMatches(player, name, quality, matchWorldLevel))
@@ -134,11 +125,11 @@ internal static class ChestMaterials
                 break;
             }
 
+            // Only the owner's changes are saved. Ownership is claimed only here, when a piece is placed:
+            // asking for it while counting made every nearby player with a hammer out pass the item back
+            // and forth, and whoever didn't hold it at that moment couldn't build.
             ZNetView nview = DropNviewRef(drop);
-            if (!OwnedOrRequest(drop))
-            {
-                continue;
-            }
+            nview.ClaimOwnership();
 
             int take = Mathf.Min(drop.m_itemData.m_stack, amount);
             amount -= take;
@@ -334,7 +325,6 @@ internal static class ChestMaterials
 
             Player player = Player.m_localPlayer;
             _countDepth++;
-            _countAllGround = true;
             try
             {
                 for (int i = 0; i < piece.m_resources.Length && i < __instance.m_requirementItems.Length; i++)
@@ -360,7 +350,6 @@ internal static class ChestMaterials
             finally
             {
                 _countDepth--;
-                _countAllGround = false;
             }
         }
 
@@ -393,10 +382,7 @@ internal static class ChestMaterials
 
             foreach (ItemDrop drop in GetGroundMatches(player, name, quality, matchWorldLevel))
             {
-                if (_countAllGround || OwnedOrRequest(drop))
-                {
-                    __result += drop.m_itemData.m_stack;
-                }
+                __result += drop.m_itemData.m_stack;
             }
         }
     }
