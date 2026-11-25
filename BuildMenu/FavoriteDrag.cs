@@ -200,6 +200,9 @@ internal sealed class DragGhost
     internal static DragGhost ForText(string text, TextMeshProUGUI source, PointerEventData eventData)
     {
         DragGhost ghost = Create(source, out GameObject root);
+
+        // Added while inactive so TextMeshPro's Awake runs after the font is set, not looking for LiberationSans SDF.
+        root.SetActive(false);
         TextMeshProUGUI label = root.AddComponent<TextMeshProUGUI>();
         if (source != null)
         {
@@ -207,6 +210,8 @@ internal sealed class DragGhost
             label.fontSharedMaterial = source.fontSharedMaterial;
             label.fontSize = source.fontSize;
         }
+
+        root.SetActive(true);
 
         label.text = text;
         label.color = new Color(SectionedGrid.TitleColor.r, SectionedGrid.TitleColor.g, SectionedGrid.TitleColor.b, Alpha);
