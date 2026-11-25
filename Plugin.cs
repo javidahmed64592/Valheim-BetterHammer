@@ -24,6 +24,7 @@ namespace BetterHammer;
 
 [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
 [BepInDependency(Jotunn.Main.ModGuid)]
+[BepInDependency(PaintBridge.PaintBrushGuid, BepInDependency.DependencyFlags.SoftDependency)]
 [NetworkCompatibility(CompatibilityLevel.NotEnforced, VersionStrictness.None)]
 public class BetterHammerPlugin : BaseUnityPlugin
 {
@@ -130,6 +131,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
             _lastBuildPiece = null;
             PieceMover.Reset();
             MultiCopy.Reset();
+            PaintCopy.Reset();
             UndoHistory.Reset();
             Overlay.Hide();
             return;
@@ -138,6 +140,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
         // Build the phantom as soon as ObjectDB is ready.
         EnsurePhantomHammer();
         CopyLibrary.EnsureLoaded(player, _phantomHammer?.m_shared.m_buildPieces);
+        PaintCopy.Update(player);
 
         // Force a recipe scan once per session with the phantom's piece table.
         if (!_knownRecipesRefreshed && _phantomHammer != null)

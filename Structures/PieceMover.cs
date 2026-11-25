@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
+using BetterHammer.Core;
 using BetterHammer.History;
 
 using UnityEngine;
@@ -91,6 +92,11 @@ internal static class PieceMover
     internal static bool Moving => Sources.Count > 0;
 
     private static bool MovingGroup => Sources.Count > 1;
+
+    /// <summary>
+    /// The PaintBrush paint of the single piece being moved, for its ghost; 0 for none or a group.
+    /// </summary>
+    internal static int SinglePaint => Sources.Count == 1 && Sources[0] != null ? PaintBridge.GetPaint(Sources[0].gameObject) : 0;
 
     /// <summary>
     /// Right-clicking while moving cancels the move (or, with Shift or Ctrl, toggles repair mode or the
@@ -277,7 +283,7 @@ internal static class PieceMover
         List<CopyLibrary.Part> parts = [];
         foreach (Piece moving in pieces)
         {
-            parts.Add(CopyLibrary.MakePart(PrefabOf(moving), moving.transform.position, moving.transform.rotation));
+            parts.Add(CopyLibrary.MakePart(PrefabOf(moving), moving.transform.position, moving.transform.rotation, PaintBridge.GetPaint(moving.gameObject)));
         }
 
         GhostGroup.Begin(player, parts, GhostGroup.Owner.Move, reference);
@@ -821,7 +827,7 @@ internal static class PieceMover
         foreach (ZNetView source in Sources)
         {
             Piece piece = source.GetComponent<Piece>();
-            parts.Add(CopyLibrary.MakePart(PrefabOf(piece), piece.transform.position, piece.transform.rotation));
+            parts.Add(CopyLibrary.MakePart(PrefabOf(piece), piece.transform.position, piece.transform.rotation, PaintBridge.GetPaint(piece.gameObject)));
         }
 
         GhostGroup.Begin(player, parts, GhostGroup.Owner.Move, reference, snapPoint);

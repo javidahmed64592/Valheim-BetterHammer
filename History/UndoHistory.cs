@@ -4,6 +4,7 @@ using System.Linq;
 
 using BepInEx.Configuration;
 
+using BetterHammer.Core;
 using BetterHammer.Structures;
 
 using UnityEngine;
@@ -40,6 +41,11 @@ internal static class UndoHistory
         /// The piece was destroyed (by anyone), so there's nothing left to remove or move.
         /// </summary>
         public bool Destroyed;
+
+        /// <summary>
+        /// The piece's PaintBrush paint when last seen, so building it again paints it again; 0 for none.
+        /// </summary>
+        public int Paint;
     }
 
     private sealed class Entry
@@ -179,6 +185,7 @@ internal static class UndoHistory
         if (_placeDepth > 0 && piece != null)
         {
             Placed.Add(piece);
+            PaintCopy.OnPiecePlaced(piece);
         }
     }
 
@@ -346,6 +353,7 @@ internal static class UndoHistory
 
             handle.Prefab = prefab;
             handle.Destroyed = false;
+            handle.Paint = PaintBridge.GetPaint(piece.gameObject);
             entry.Pieces.Add(handle);
             entry.Poses.Add((piece.transform.position, piece.transform.rotation));
         }
@@ -475,8 +483,10 @@ internal static class UndoHistory
             return Outcome.Blocked;
         }
 
-        foreach ((Handle _, Piece piece, int _) in found)
+        foreach ((Handle handle, Piece piece, int _) in found)
         {
+            // It may have been painted since it was noted.
+            handle.Paint = PaintBridge.GetPaint(piece.gameObject);
             MultiCopy.Remove(player, piece);
         }
 
@@ -526,7 +536,16 @@ internal static class UndoHistory
         for (int i = 0; i < prefabs.Count; i++)
         {
             Placed.Clear();
-            player.PlacePiece(prefabs[i], entry.Poses[i].Position, entry.Poses[i].Rotation, doAttack: i == 0);
+            PaintCopy.PendingPaint = entry.Pieces[i].Paint;
+            try
+            {
+                player.PlacePiece(prefabs[i], entry.Poses[i].Position, entry.Poses[i].Rotation, doAttack: i == 0);
+            }
+            finally
+            {
+                PaintCopy.PendingPaint = null;
+            }
+
             ZNetView nview = Placed.Count > 0 && Placed[0] != null ? Placed[0].GetComponent<ZNetView>() : null;
             if (nview != null && nview.IsValid())
             {

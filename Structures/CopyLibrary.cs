@@ -8,6 +8,8 @@ using System.Text;
 using BepInEx;
 using BepInEx.Configuration;
 
+using BetterHammer.Core;
+
 using Jotunn.Managers;
 
 using Newtonsoft.Json;
@@ -74,6 +76,12 @@ internal static class CopyLibrary
 
         /// <summary>x, y, z, w</summary>
         public float[] Rotation;
+
+        /// <summary>
+        /// The piece's PaintBrush paint (see <see cref="PaintBridge"/>), left out of the file when 0 (unpainted).
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int Paint;
     }
 
     internal sealed class Part
@@ -82,6 +90,11 @@ internal static class CopyLibrary
         public Vector3 Position;
         public Quaternion Rotation;
         public int SnapCount;
+
+        /// <summary>
+        /// The piece's PaintBrush paint, or 0.
+        /// </summary>
+        public int Paint;
     }
 
     internal sealed class Copy
@@ -255,7 +268,7 @@ internal static class CopyLibrary
     /// Saves a new copy of the given pieces (prefab, world position, world rotation) and adds it to the
     /// Copies tab.
     /// </summary>
-    internal static Copy Add(Player player, IList<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces, string name)
+    internal static Copy Add(Player player, IList<(Piece Prefab, Vector3 Position, Quaternion Rotation, int Paint)> pieces, string name)
     {
         if (_file == null || pieces.Count == 0)
         {
@@ -265,7 +278,7 @@ internal static class CopyLibrary
         Vector3 origin = pieces[0].Position;
         SavedCopy saved = new() { Number = _file.NextNumber++ };
         saved.Name = CleanName(name, saved.Number);
-        foreach ((Piece prefab, Vector3 position, Quaternion rotation) in pieces)
+        foreach ((Piece prefab, Vector3 position, Quaternion rotation, int paint) in pieces)
         {
             Vector3 offset = position - origin;
             saved.Pieces.Add(new SavedPiece
@@ -273,6 +286,7 @@ internal static class CopyLibrary
                 Prefab = prefab.name,
                 Position = [offset.x, offset.y, offset.z],
                 Rotation = [rotation.x, rotation.y, rotation.z, rotation.w],
+                Paint = paint,
             });
         }
 
@@ -395,13 +409,13 @@ internal static class CopyLibrary
     /// <summary>
     /// A part for the given prefab at the given place, with its snap points counted.
     /// </summary>
-    internal static Part MakePart(Piece prefab, Vector3 position, Quaternion rotation)
+    internal static Part MakePart(Piece prefab, Vector3 position, Quaternion rotation, int paint = 0)
     {
         SnapPoints.Clear();
         prefab.GetSnapPoints(SnapPoints);
         int snapCount = SnapPoints.Count;
         SnapPoints.Clear();
-        return new Part { Prefab = prefab, Position = position, Rotation = rotation, SnapCount = snapCount };
+        return new Part { Prefab = prefab, Position = position, Rotation = rotation, SnapCount = snapCount, Paint = paint };
     }
 
     private static Copy Register(SavedCopy saved)
@@ -431,6 +445,7 @@ internal static class CopyLibrary
                 Position = new Vector3(piece.Position[0], piece.Position[1], piece.Position[2]),
                 Rotation = new Quaternion(piece.Rotation[0], piece.Rotation[1], piece.Rotation[2], piece.Rotation[3]).normalized,
                 SnapCount = SnapPoints.Count,
+                Paint = piece.Paint,
             });
             copy.Prefabs.Add(prefabPiece);
         }
@@ -544,7 +559,8 @@ internal static class CopyLibrary
 
     /// <summary>
     /// A picture of the whole copy. The pieces are put together out of sight with their networking
-    /// switched off (the same way the game makes placement ghosts), rendered, and thrown away.
+    /// switched off (the same way the game makes placement ghosts), painted if PaintBrush is installed,
+    /// rendered, and thrown away.
     /// </summary>
     private static Sprite RenderIcon(Copy copy)
     {
@@ -556,7 +572,8 @@ internal static class CopyLibrary
         {
             foreach (Part part in copy.Parts)
             {
-                _ = Object.Instantiate(part.Prefab.gameObject, root.transform.position + part.Position, part.Rotation, root.transform);
+                GameObject model = Object.Instantiate(part.Prefab.gameObject, root.transform.position + part.Position, part.Rotation, root.transform);
+                PaintBridge.ShowOnGhost(model, part.Paint);
             }
         }
         finally

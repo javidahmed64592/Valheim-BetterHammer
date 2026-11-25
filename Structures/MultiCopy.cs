@@ -4,6 +4,7 @@ using System.Linq;
 
 using BepInEx.Configuration;
 
+using BetterHammer.Core;
 using BetterHammer.History;
 using BetterHammer.UI;
 
@@ -550,7 +551,7 @@ internal static class MultiCopy
     /// </summary>
     private static void Confirm(Player player)
     {
-        if (!TryNoteSelection(player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces))
+        if (!TryNoteSelection(player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation, int Paint)> pieces))
         {
             return;
         }
@@ -582,7 +583,7 @@ internal static class MultiCopy
             return;
         }
 
-        if (!TryNoteSelection(player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces))
+        if (!TryNoteSelection(player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation, int Paint)> pieces))
         {
             return;
         }
@@ -622,7 +623,7 @@ internal static class MultiCopy
     /// Where each selected piece is and which hammer piece builds it, for saving as a copy. Fails (with a
     /// message) if nothing is selected or the hammer can't build one of them.
     /// </summary>
-    private static bool TryNoteSelection(Player player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces)
+    private static bool TryNoteSelection(Player player, out List<(Piece Prefab, Vector3 Position, Quaternion Rotation, int Paint)> pieces)
     {
         Prune();
         pieces = [];
@@ -644,7 +645,7 @@ internal static class MultiCopy
                 return false;
             }
 
-            pieces.Add((prefabPiece, piece.transform.position, piece.transform.rotation));
+            pieces.Add((prefabPiece, piece.transform.position, piece.transform.rotation, PaintBridge.GetPaint(piece.gameObject)));
         }
 
         return true;
@@ -654,7 +655,7 @@ internal static class MultiCopy
     /// Saves the pieces as a new copy, clears the selection and selects the copy. Returns the copy, or
     /// null (with a message) if it couldn't be saved.
     /// </summary>
-    private static CopyLibrary.Copy Save(Player player, List<(Piece Prefab, Vector3 Position, Quaternion Rotation)> pieces, string name)
+    private static CopyLibrary.Copy Save(Player player, List<(Piece Prefab, Vector3 Position, Quaternion Rotation, int Paint)> pieces, string name)
     {
         PieceMover.Abort(player);
         CopyLibrary.Copy copy = CopyLibrary.Add(player, pieces, name);
@@ -841,11 +842,13 @@ internal static class MultiCopy
         {
             for (int i = 0; i < poses.Count; i++)
             {
+                PaintCopy.PendingPaint = _active.Parts[i].Paint;
                 player.PlacePiece(_active.Parts[i].Prefab, poses[i].Position, poses[i].Rotation, doAttack: i == 0);
             }
         }
         finally
         {
+            PaintCopy.PendingPaint = null;
             UndoHistory.EndBuild();
         }
 
