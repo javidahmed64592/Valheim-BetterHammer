@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+- With [PaintBrush](https://thunderstore.io/c/valheim/p/Aestelwen/PaintBrush/) installed, paint goes wherever pieces do: saved copies keep it (and their icons show it), ghosts show it while moving pieces or placing copies, Shift+Middle-Click copies it with the piece, and undoing a removal paints the piece again.
+
 ## 1.3.1
 
 - Works with the latest Valheim update, which stopped the mod from loading (`B` and the build menu changes did nothing).

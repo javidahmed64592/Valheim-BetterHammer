@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Globalization;
 
+using BetterHammer.Core;
+
 using UnityEngine;
 
 using Object = UnityEngine.Object;
@@ -80,7 +82,9 @@ internal static class GhostGroup
         {
             foreach (CopyLibrary.Part part in parts)
             {
-                Members.Add(new Member { Part = part, Ghost = CreateGhost(player, part.Prefab) });
+                GameObject ghost = CreateGhost(player, part.Prefab);
+                PaintBridge.ShowOnGhost(ghost, part.Paint);
+                Members.Add(new Member { Part = part, Ghost = ghost });
             }
         }
         finally

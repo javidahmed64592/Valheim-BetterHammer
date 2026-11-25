@@ -134,6 +134,7 @@ Settings marked "(Synced with server)" use the server's values when the server h
 - Mods that also build from nearby chests or ground items (such as AzuCraftyBoxes, or the craft from chests option in Valheim Plus) overlap with this mod's materials feature. Turn one of them off: here, set `Use Nearby Chests` to false and the ground items `Radius` to 0.
 - Mods that change how pieces snap or add their own build key hints may clash with the build grid or its hints.
 - Other mods that change the build menu's piece grid or categories may clash with the sectioned menu. Set `Sections` to false under `Build Menu` to leave the menu to them.
+- Works with [PaintBrush](https://thunderstore.io/c/valheim/p/Aestelwen/PaintBrush/): saved copies keep each piece's paint (and their icons show it), ghosts show it while moving pieces or placing copies, Shift+Middle-Click copies a piece's paint along with it, and undoing a removal paints the piece again. Without PaintBrush, nothing changes.
 - This mod has not been tested with a gamepad, only with keyboard and mouse.
 
 ## Uninstalling
