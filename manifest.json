@@ -1,7 +1,7 @@
 {
   "name": "BetterHammer",
   "description": "Find pieces fast in a sectioned build menu, snap to a build grid, copy, move and undo builds, build with nearby materials, and open the build menu without a hammer.",
-  "version_number": "1.3.0",
+  "version_number": "1.3.1",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2360",
     "ValheimModding-Jotunn-2.30.2"

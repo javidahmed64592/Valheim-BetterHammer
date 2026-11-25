@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using BetterHammer.BuildMenu;
 
 using HarmonyLib;
@@ -223,17 +225,8 @@ internal static class BuildUiPatches
         RefreshFavorites(__instance);
     }
 
-    [HarmonyPostfix]
-    [HarmonyPatch(nameof(BuildUi.PressedFavoriteButton))]
-    private static void PressedFavoriteButton_Postfix(BuildUi __instance)
-    {
-        if (!__instance.m_favoritesDropdown.IsOpen())
-        {
-            RefreshFavorites(__instance);
-        }
-    }
 
-    private static void RefreshFavorites(BuildUi ui)
+    internal static void RefreshFavorites(BuildUi ui)
     {
         if (SectionedGrid.For(ui) != null && ui.gameObject.activeSelf && ui.m_pieceLists[ui.m_currentPieceList] is FavoritePieceList)
         {
@@ -253,5 +246,28 @@ internal static class BuildUiPatches
     private static void OnFavoritePieceRemoved_Postfix(BuildUi __instance, string pieceName)
     {
         SectionedGrid.For(__instance)?.RefreshFavorite(pieceName);
+    }
+}
+
+/// <summary>
+/// After the favourite button (F) adds or removes a favourite without opening the categories dropdown, the
+/// Favorites tab is refreshed. Valheim's 2026-11-25 update renamed the method from PressedFavoriteButton to
+/// FavoritePiece; both are tried, so the mod works (and builds against the reference package) either way.
+/// </summary>
+[HarmonyPatch]
+internal static class BuildUi_FavoritePiece_Patch
+{
+    private static MethodInfo TargetMethod()
+    {
+        return AccessTools.Method(typeof(BuildUi), "FavoritePiece") ?? AccessTools.Method(typeof(BuildUi), "PressedFavoriteButton");
+    }
+
+    [HarmonyPostfix]
+    private static void Postfix(BuildUi __instance)
+    {
+        if (!__instance.m_favoritesDropdown.IsOpen())
+        {
+            BuildUiPatches.RefreshFavorites(__instance);
+        }
     }
 }

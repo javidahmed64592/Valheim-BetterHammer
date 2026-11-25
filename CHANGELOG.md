@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1
+
+- Works with the latest Valheim update, which stopped the mod from loading (`B` and the build menu changes did nothing).
+
 ## 1.3.0
 
 - The build menu is sectioned: every tab is split into sections with headers you can collapse, and the build menu is taller, with the search box, repair button and new options in a bar above the pieces.
