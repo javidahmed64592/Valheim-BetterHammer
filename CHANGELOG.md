@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.2
+
+- Building from items on the ground works reliably in multiplayer. Before, when other players were nearby with a hammer out, the build menu could show enough materials in red and refuse to build.
+
 ## 1.4.1
 
 - The build menu opens again after the latest Valheim update.
