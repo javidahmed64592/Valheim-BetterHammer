@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Reflection;
 
 using BetterHammer.BuildMenu;
@@ -110,7 +111,7 @@ internal static class BuildUiPatches
             return true;
         }
 
-        GridNavigationUtility.ConfigureExplicitNavigation(__instance.m_tagListScrollContent, __instance.GetTagListEdgeNavigation());
+        ConfigureExplicitNavigation(__instance.m_tagListScrollContent, __instance.GetTagListEdgeNavigation());
         if (__instance.m_specialPieceButton != null)
         {
             __instance.m_specialPieceButton.GetComponent<Button>().navigation = __instance.GetSpecialButtonNavigation();
@@ -225,6 +226,34 @@ internal static class BuildUiPatches
         RefreshFavorites(__instance);
     }
 
+
+    /// <summary>
+    /// GridNavigationUtility.ConfigureExplicitNavigation, called through reflection with any later parameters at
+    /// their defaults. Valheim's 2026-11-25 update added an optional parameter, which changed its signature, so a
+    /// direct call built against the older game (CI's reference package) fails with MissingMethodException.
+    /// </summary>
+    private static void ConfigureExplicitNavigation(RectTransform grid, Navigation edge)
+    {
+        ParameterInfo[] parameters = ConfigureNavigationMethod.GetParameters();
+        object[] arguments = new object[parameters.Length];
+        arguments[0] = grid;
+        arguments[1] = edge;
+        for (int i = 2; i < parameters.Length; i++)
+        {
+            arguments[i] = parameters[i].HasDefaultValue ? parameters[i].DefaultValue : DefaultOf(parameters[i].ParameterType);
+        }
+
+        _ = ConfigureNavigationMethod.Invoke(null, arguments);
+    }
+
+    private static object DefaultOf(System.Type type)
+    {
+        return type.IsValueType ? System.Activator.CreateInstance(type) : null;
+    }
+
+    private static readonly MethodInfo ConfigureNavigationMethod = typeof(GridNavigationUtility)
+        .GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .First(method => method.Name == "ConfigureExplicitNavigation" && method.GetParameters().Length >= 2);
 
     internal static void RefreshFavorites(BuildUi ui)
     {
