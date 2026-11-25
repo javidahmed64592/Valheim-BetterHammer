@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 
 using BetterHammer.History;
 
@@ -571,49 +572,81 @@ internal static class PieceMover
     /// </summary>
     private static void CopyData(ZDOID from, ZDO to)
     {
-        ZDOExtraData.GetData(from,
-            out List<KeyValuePair<int, float>> floats,
-            out List<KeyValuePair<int, Vector3>> vec3s,
-            out List<KeyValuePair<int, Quaternion>> quats,
-            out List<KeyValuePair<int, int>> ints,
-            out List<KeyValuePair<int, long>> longs,
-            out List<KeyValuePair<int, string>> strings,
-            out List<KeyValuePair<int, byte[]>> byteArrays,
-            out _);
+        object[] data = new object[9];
+        data[0] = from;
+        _ = GetDataMethod.Invoke(null, data);
 
-        foreach (KeyValuePair<int, float> pair in floats)
+        foreach (KeyValuePair<int, float> pair in Pairs<float>(data[1]))
         {
             to.Set(pair.Key, pair.Value);
         }
 
-        foreach (KeyValuePair<int, Vector3> pair in vec3s)
+        foreach (KeyValuePair<int, Vector3> pair in Pairs<Vector3>(data[2]))
         {
             to.Set(pair.Key, pair.Value);
         }
 
-        foreach (KeyValuePair<int, Quaternion> pair in quats)
+        foreach (KeyValuePair<int, Quaternion> pair in Pairs<Quaternion>(data[3]))
         {
             to.Set(pair.Key, pair.Value);
         }
 
-        foreach (KeyValuePair<int, int> pair in ints)
+        foreach (KeyValuePair<int, int> pair in Pairs<int>(data[4]))
         {
             to.Set(pair.Key, pair.Value);
         }
 
-        foreach (KeyValuePair<int, long> pair in longs)
+        foreach (KeyValuePair<int, long> pair in Pairs<long>(data[5]))
         {
             to.Set(pair.Key, pair.Value);
         }
 
-        foreach (KeyValuePair<int, string> pair in strings)
+        foreach (KeyValuePair<int, string> pair in Pairs<string>(data[6]))
         {
             to.Set(pair.Key, pair.Value);
         }
 
-        foreach (KeyValuePair<int, byte[]> pair in byteArrays)
+        foreach (KeyValuePair<int, byte[]> pair in Pairs<byte[]>(data[7]))
         {
             to.Set(pair.Key, (byte[])pair.Value.Clone());
+        }
+    }
+
+    /// <summary>
+    /// ZDOExtraData.GetData (the source, its seven kinds of values and its connection). Called through reflection:
+    /// Valheim's 2026-11-25 update changed what it hands back from lists to FastIterableKeyValues, and this way the
+    /// mod works with either, and still builds against the reference package of the older game.
+    /// </summary>
+    private static readonly MethodInfo GetDataMethod = typeof(ZDOExtraData).GetMethods(BindingFlags.Public | BindingFlags.Static)
+        .First(method => method.Name == "GetData" && method.GetParameters().Length == 9);
+
+    /// <summary>
+    /// The pairs in one of GetData's results: a list in older games, or a struct with Count and an indexer.
+    /// </summary>
+    /// <typeparam name="T">The kind of value.</typeparam>
+    private static IEnumerable<KeyValuePair<int, T>> Pairs<T>(object values)
+    {
+        if (values is IEnumerable<KeyValuePair<int, T>> list)
+        {
+            foreach (KeyValuePair<int, T> pair in list)
+            {
+                yield return pair;
+            }
+
+            yield break;
+        }
+
+        if (values == null)
+        {
+            yield break;
+        }
+
+        Type type = values.GetType();
+        int count = (int)type.GetProperty("Count").GetValue(values);
+        PropertyInfo item = type.GetProperty("Item");
+        for (int i = 0; i < count; i++)
+        {
+            yield return (KeyValuePair<int, T>)item.GetValue(values, [i]);
         }
     }
 
