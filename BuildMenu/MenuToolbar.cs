@@ -230,17 +230,22 @@ internal sealed class MenuToolbar
 
     private static CycleLabel CreateLabel(RectTransform parent, TextMeshProUGUI fontSource, string caption)
     {
-        GameObject label = new("Cycle", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(ContentSizeFitter));
+        // TextMeshPro is added while the object is inactive so its Awake runs after the font is set. Otherwise
+        // it looks for its default font (LiberationSans SDF), which Valheim doesn't ship, and logs a warning.
+        GameObject label = new("Cycle", typeof(RectTransform), typeof(ContentSizeFitter));
+        label.SetActive(false);
         label.transform.SetParent(parent, false);
         label.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        TextMeshProUGUI text = label.GetComponent<TextMeshProUGUI>();
+        TextMeshProUGUI text = label.AddComponent<TextMeshProUGUI>();
         if (fontSource != null)
         {
             text.font = fontSource.font;
             text.fontSharedMaterial = fontSource.fontSharedMaterial;
             text.fontSize = fontSource.fontSize * FontScale;
         }
+
+        label.SetActive(true);
 
         text.color = SectionedGrid.TitleColor;
         text.alignment = TextAlignmentOptions.MidlineLeft;

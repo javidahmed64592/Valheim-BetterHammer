@@ -111,7 +111,10 @@ internal sealed class TagListHeaders
 
     private RectTransform Create()
     {
-        GameObject header = new("GroupHeader", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(LayoutElement));
+        // TextMeshPro is added while the object is inactive so its Awake runs after the font is set. Otherwise
+        // it looks for its default font (LiberationSans SDF), which Valheim doesn't ship, and logs a warning.
+        GameObject header = new("GroupHeader", typeof(RectTransform), typeof(LayoutElement));
+        header.SetActive(false);
         RectTransform rect = (RectTransform)header.transform;
         rect.SetParent(_parking, false);
         float width = ((RectTransform)_ui.m_showAllTagsButton.transform).rect.width;
@@ -121,13 +124,15 @@ internal sealed class TagListHeaders
         element.minHeight = Height;
         element.preferredHeight = Height;
 
-        TextMeshProUGUI text = header.GetComponent<TextMeshProUGUI>();
+        TextMeshProUGUI text = header.AddComponent<TextMeshProUGUI>();
         if (_fontSource != null)
         {
             text.font = _fontSource.font;
             text.fontSharedMaterial = _fontSource.fontSharedMaterial;
             text.fontSize = _fontSource.fontSize * FontScale;
         }
+
+        header.SetActive(true);
 
         text.color = SectionedGrid.TitleColor;
         text.alignment = TextAlignmentOptions.BottomLeft;
