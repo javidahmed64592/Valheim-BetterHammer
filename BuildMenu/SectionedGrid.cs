@@ -685,20 +685,25 @@ internal sealed class SectionedGrid
         arrowImage.color = TitleColor;
         arrowImage.raycastTarget = false;
 
-        GameObject title = new("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        // TextMeshPro is added while the object is inactive so its Awake runs after the font is set. Otherwise
+        // it looks for its default font (LiberationSans SDF), which Valheim doesn't ship, and logs a warning.
+        GameObject title = new("Title", typeof(RectTransform));
+        title.SetActive(false);
         RectTransform titleRect = (RectTransform)title.transform;
         titleRect.SetParent(header.transform, false);
         titleRect.anchorMin = Vector2.zero;
         titleRect.anchorMax = Vector2.one;
         titleRect.offsetMin = new Vector2(ArrowSize + 12f, 2f);
         titleRect.offsetMax = Vector2.zero;
-        section.Title = title.GetComponent<TextMeshProUGUI>();
+        section.Title = title.AddComponent<TextMeshProUGUI>();
         if (_fontSource != null)
         {
             section.Title.font = _fontSource.font;
             section.Title.fontSharedMaterial = _fontSource.fontSharedMaterial;
             section.Title.fontSize = _fontSource.fontSize;
         }
+
+        title.SetActive(true);
 
         section.Title.color = TitleColor;
         section.Title.alignment = TextAlignmentOptions.MidlineLeft;
