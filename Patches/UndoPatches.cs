@@ -1,3 +1,4 @@
+using BetterHammer.Core;
 using BetterHammer.History;
 
 using HarmonyLib;
@@ -10,6 +11,7 @@ namespace BetterHammer.Patches;
 /// creator.
 /// </summary>
 [HarmonyPatch(typeof(Player), nameof(Player.PlacePiece))]
+[Feature(UndoHistory.Feature)]
 internal static class Player_PlacePiece_Patch
 {
     [HarmonyPrefix]
@@ -35,6 +37,7 @@ internal static class Player_PlacePiece_Patch
 }
 
 [HarmonyPatch(typeof(Piece), nameof(Piece.SetCreator))]
+[Feature(UndoHistory.Feature)]
 internal static class Piece_SetCreator_Patch
 {
     [HarmonyPostfix]
@@ -49,6 +52,7 @@ internal static class Piece_SetCreator_Patch
 /// itself, and passes it to CheckCanRemovePiece before removing it.
 /// </summary>
 [HarmonyPatch(typeof(Player), "RemovePiece")]
+[Feature(UndoHistory.Feature)]
 internal static class Player_RemovePiece_Patch
 {
     [HarmonyPrefix]
@@ -66,6 +70,7 @@ internal static class Player_RemovePiece_Patch
 }
 
 [HarmonyPatch(typeof(Player), nameof(Player.CheckCanRemovePiece))]
+[Feature(UndoHistory.Feature)]
 internal static class Player_CheckCanRemovePiece_Patch
 {
     [HarmonyPostfix]
@@ -83,6 +88,7 @@ internal static class Player_CheckCanRemovePiece_Patch
 /// far away to reach.
 /// </summary>
 [HarmonyPatch(typeof(ZDOMan), "HandleDestroyedZDO")]
+[Feature(UndoHistory.Feature)]
 internal static class ZDOMan_HandleDestroyedZDO_Patch
 {
     [HarmonyPrefix]

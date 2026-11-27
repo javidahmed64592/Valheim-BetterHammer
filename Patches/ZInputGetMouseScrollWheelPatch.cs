@@ -1,5 +1,7 @@
 using System.Reflection;
 
+using BetterHammer.Core;
+
 using HarmonyLib;
 
 namespace BetterHammer.Patches;
@@ -8,6 +10,7 @@ namespace BetterHammer.Patches;
 /// Ctrl+scroll adjusts the grid, so stop vanilla from also using it to rotate the piece.
 /// </summary>
 [HarmonyPatch]
+[Feature(Player_PieceRayTest_Patch.Feature)]
 internal static class ZInput_GetMouseScrollWheel_Patch
 {
     private static MethodInfo TargetMethod()

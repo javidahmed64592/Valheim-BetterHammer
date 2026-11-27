@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- If a game update breaks part of the mod, only that part turns off and the rest keeps working: the sectioned build menu, the build grid, undo and redo, using nearby materials, copying paint with Shift+Middle-Click, Alt+scroll zoom and the key hints can each turn off while copying, moving and the `B` key still work. The log says which part is off, in one line. If copying, moving or the hammer itself break, the whole mod turns off cleanly instead of throwing errors.
+- New `DisabledFeatures` setting under `[Debug]`, for testing: turns parts of the mod off by name.
+- Updated Jotunn to 2.30.3.
+
 ## 1.4.2
 
 - Building from items on the ground works reliably in multiplayer. Before, when other players were nearby with a hammer out, the build menu could show enough materials in red and refuse to build.

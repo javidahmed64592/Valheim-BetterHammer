@@ -2,6 +2,7 @@ using System.Linq;
 using System.Reflection;
 
 using BetterHammer.BuildMenu;
+using BetterHammer.Core;
 
 using HarmonyLib;
 
@@ -18,6 +19,7 @@ namespace BetterHammer.Patches;
 /// sections turned off, every patch leaves the game's code alone.
 /// </summary>
 [HarmonyPatch(typeof(BuildUi))]
+[Feature(SectionedGrid.Feature)]
 internal static class BuildUiPatches
 {
     [HarmonyPostfix]
@@ -284,6 +286,7 @@ internal static class BuildUiPatches
 /// FavoritePiece; both are tried, so the mod works (and builds against the reference package) either way.
 /// </summary>
 [HarmonyPatch]
+[Feature(SectionedGrid.Feature)]
 internal static class BuildUi_FavoritePiece_Patch
 {
     private static MethodInfo TargetMethod()

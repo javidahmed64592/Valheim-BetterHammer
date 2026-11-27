@@ -15,6 +15,12 @@ namespace BetterHammer.BuildMenu;
 /// </summary>
 internal sealed class SectionedGrid
 {
+    /// <summary>
+    /// The build menu's patches: sections, headers, grouping, favourites, hidden pieces and the Modded and Hidden
+    /// categories. Without it, the build menu is vanilla's.
+    /// </summary>
+    internal const string Feature = "Sectioned build menu";
+
     private const float HeaderHeight = 30f;
     private const float SectionSpacing = 6f;
     private const float ArrowSize = 12f;

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
 using BetterHammer.BuildMenu;
+using BetterHammer.Core;
 
 using HarmonyLib;
 
@@ -12,6 +13,7 @@ namespace BetterHammer.Patches;
 /// turned off, the game's list is left alone.
 /// </summary>
 [HarmonyPatch(typeof(ByUsagePieceList))]
+[Feature(SectionedGrid.Feature)]
 internal static class ByUsagePieceListPatches
 {
     private const string JotunnGuid = "com.jotunn.jotunn";

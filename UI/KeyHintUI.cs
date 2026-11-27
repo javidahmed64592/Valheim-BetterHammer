@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using BetterHammer.Core;
 using BetterHammer.History;
 using BetterHammer.Structures;
 
@@ -24,6 +25,9 @@ namespace BetterHammer.UI;
 /// </summary>
 internal static class KeyHintUI
 {
+    /// <summary>Without it, the game's own build hints are shown.</summary>
+    internal const string Feature = "Key hints";
+
     private const string ContainerName = "BetterHammer_KeyHints";
 
     /// <summary>
@@ -599,6 +603,7 @@ internal static class KeyHintUI
     }
 
     [HarmonyPatch(typeof(KeyHints), "UpdateHints")]
+    [Feature(Feature)]
     private static class KeyHints_UpdateHints_Patch
     {
         [HarmonyPostfix]

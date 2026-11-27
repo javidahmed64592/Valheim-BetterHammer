@@ -2,6 +2,8 @@ using System.Collections.Generic;
 
 using BepInEx.Configuration;
 
+using BetterHammer.Core;
+
 using HarmonyLib;
 
 using TMPro;
@@ -15,6 +17,12 @@ namespace BetterHammer.Materials;
 /// </summary>
 internal static class ChestMaterials
 {
+    /// <summary>
+    /// The checks, counts and payment from ground items and chests, kept together so building is never allowed
+    /// without paying. Without it, building uses only your inventory, as in vanilla.
+    /// </summary>
+    internal const string Feature = "Use nearby materials";
+
     private static ConfigEntry<bool> _enabled;
     private static ConfigEntry<float> _radius;
     private static ConfigEntry<float> _groundRange;
@@ -245,6 +253,7 @@ internal static class ChestMaterials
     }
 
     [HarmonyPatch(typeof(ItemDrop), "Awake")]
+    [Feature(Feature)]
     private static class ItemDrop_Awake_Patch
     {
         [HarmonyPostfix]
@@ -258,6 +267,7 @@ internal static class ChestMaterials
     }
 
     [HarmonyPatch(typeof(Container), "Awake")]
+    [Feature(Feature)]
     private static class Container_Awake_Patch
     {
         [HarmonyPostfix]
@@ -274,6 +284,7 @@ internal static class ChestMaterials
     /// Build checks (can the piece be built / is its button greyed out) count chest contents too.
     /// </summary>
     [HarmonyPatch(typeof(Player), nameof(Player.HaveRequirements), typeof(Piece), typeof(Player.RequirementMode))]
+    [Feature(Feature)]
     private static class Player_HaveRequirements_Patch
     {
         [HarmonyPrefix]
@@ -300,6 +311,7 @@ internal static class ChestMaterials
     /// The requirement list in the build panel shows the combined amount.
     /// </summary>
     [HarmonyPatch(typeof(Hud), "SetupPieceInfo")]
+    [Feature(Feature)]
     private static class Hud_SetupPieceInfo_Patch
     {
         [HarmonyPrefix]
@@ -364,6 +376,7 @@ internal static class ChestMaterials
     }
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.CountItems))]
+    [Feature(Feature)]
     private static class Inventory_CountItems_Patch
     {
         [HarmonyPostfix]
@@ -391,6 +404,7 @@ internal static class ChestMaterials
     /// Only the resources of a piece being placed are drawn from chests, not crafting costs.
     /// </summary>
     [HarmonyPatch(typeof(Player), nameof(Player.ConsumeResources))]
+    [Feature(Feature)]
     private static class Player_ConsumeResources_Patch
     {
         [HarmonyPrefix]
@@ -420,6 +434,7 @@ internal static class ChestMaterials
     /// Uses the player's own stock first and takes only the shortfall from chests.
     /// </summary>
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.RemoveItem), typeof(string), typeof(int), typeof(int), typeof(bool))]
+    [Feature(Feature)]
     private static class Inventory_RemoveItem_Patch
     {
         [HarmonyPrefix]
