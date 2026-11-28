@@ -6,7 +6,6 @@
 - New `DisabledFeatures` setting under `[Debug]`, for testing: turns parts of the mod off by name.
 - The build menu search clears with the red cross at the end of the box.
 - While searching, clicking a section's header closes or opens it. Sections open again when the search changes, and their usual open or closed state is kept.
-- The Modded section follows the search like the others.
 - Alt+Shift+Middle-Click (select connected pieces) no longer also copies the hovered piece.
 - Undo and redo work while moving.
 - Both new behaviours can turn off on their own after a game update: "Selecting doesn't copy" and "Combos skip debug keys".

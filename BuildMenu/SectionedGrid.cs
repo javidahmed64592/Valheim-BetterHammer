@@ -301,7 +301,6 @@ internal sealed class SectionedGrid
         }
 
         string term = SearchTerm();
-        Debug.Log($"BetterHammer [search debug] Refresh term='{term}' field={(_search != null ? _search.name + " active=" + _search.isActiveAndEnabled + " text='" + _search.text + "'" : "null")} sections={_used} extras={_extras.Count}");
         if (MenuSearch.HasPrefix(term))
         {
             // The game searched names and materials; a prefixed search decides for every button.
