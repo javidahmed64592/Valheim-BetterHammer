@@ -79,8 +79,13 @@ internal sealed class SectionedGrid
         _fontSource = FindLabel(ui.m_showAllTagsButton);
         TagHeaders = new TagListHeaders(ui, _fontSource);
         _dividerSource = ui.m_materialSeparator != null ? ui.m_materialSeparator.GetComponent<Image>() : null;
-        _search = ui.m_tagListContainer != null ? ui.m_tagListContainer.GetComponentInChildren<TMP_InputField>(true) : null;
+        // Read by name: its type is in an assembly the mod doesn't reference.
+        _search = HarmonyLib.AccessTools.Field(typeof(BuildUi), "m_searchField")?.GetValue(ui) as TMP_InputField;
         _toolbar = new MenuToolbar(ui, _fontSource, _search, Rebuild);
+        UI.ClearButton.Add(_search);
+
+        // The game's own listener runs first and filters its buttons; then the sections follow the new search.
+        _search?.onValueChanged.AddListener(_ => Refresh());
         MenuLayout.Apply(ui);
 
         GameObject root = new("BetterHammer_Sections", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
@@ -327,8 +332,10 @@ internal sealed class SectionedGrid
                 }
             }
 
-            // While searching every section is open, so no match is hidden.
-            bool collapsed = term.Length == 0 && section.Header.activeSelf && MenuState.IsCollapsed(section.Key);
+            // A search opens every section, so no match is hidden, but sections can still be closed while it lasts.
+            bool collapsed = section.Header.activeSelf && (term.Length == 0
+                ? MenuState.IsCollapsed(section.Key)
+                : SearchCollapsed(term).Contains(section.Key));
             section.Root.SetActive(shown > 0 || (section.KeepEmpty && term.Length == 0));
             section.Grid.gameObject.SetActive(!collapsed);
             section.Title.text = section.TitleText + "  <alpha=#99>" + shown;
@@ -488,14 +495,40 @@ internal sealed class SectionedGrid
 
     private void Toggle(Section section)
     {
-        if (SearchTerm().Length > 0)
+        string term = SearchTerm();
+        if (term.Length > 0)
         {
-            return;
+            HashSet<string> closed = SearchCollapsed(term);
+            if (!closed.Remove(section.Key))
+            {
+                _ = closed.Add(section.Key);
+            }
+        }
+        else
+        {
+            MenuState.SetCollapsed(section.Key, !MenuState.IsCollapsed(section.Key));
         }
 
-        MenuState.SetCollapsed(section.Key, !MenuState.IsCollapsed(section.Key));
         Refresh();
     }
+
+    /// <summary>
+    /// The sections closed during the current search. They open again when the search changes, and the
+    /// saved open or closed state is left as it was.
+    /// </summary>
+    private HashSet<string> SearchCollapsed(string term)
+    {
+        if (term != _collapsedFor)
+        {
+            _collapsedFor = term;
+            _searchCollapsed.Clear();
+        }
+
+        return _searchCollapsed;
+    }
+
+    private readonly HashSet<string> _searchCollapsed = [];
+    private string _collapsedFor = "";
 
     /// <summary>
     /// Every shown piece button, top to bottom.

@@ -54,24 +54,26 @@ public class BetterHammerPlugin : BaseUnityPlugin
     internal static GridPlane _aimPlane;
     internal static float _aimSign;
 
-    private ConfigEntry<KeyCode> _keybind;
+    private KeyBinding _keybind;
     private Harmony _harmony;
     private bool _knownRecipesRefreshed;
     private static Piece _lastBuildPiece;
 
     private void Awake()
     {
-        _keybind = Config.Bind(
+        _keybind = KeyBinding.Bind(
+            Config,
             "Keybinds",
             "Open Build Menu",
             KeyCode.B,
+            KeyModifier.None,
             "Equips a virtual hammer and opens the build menu, without needing a real " +
             "hammer in your inventory. Rebindable from the in-game controls menu.");
 
         InputManager.Instance.AddButton(PluginGUID, new ButtonConfig
         {
             Name = ButtonName,
-            Config = _keybind
+            Config = _keybind.KeyEntry
         });
 
         _gridEnabled = Config.Bind(
@@ -174,7 +176,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
         MultiCopy.UpdateSelectionKeys(player);
         UndoHistory.UpdateKeys(player);
 
-        if (ZInput.GetButtonDown(ButtonQueryName))
+        if (ZInput.GetButtonDown(ButtonQueryName) && _keybind.Accepts())
         {
             ToggleBuildMenu(player);
         }
@@ -281,6 +283,14 @@ public class BetterHammerPlugin : BaseUnityPlugin
     internal static bool AltHeld()
     {
         return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+    }
+
+    /// <summary>
+    /// Alt held while placing with a hammer: clicks are for selecting pieces to copy.
+    /// </summary>
+    internal static bool SelectionInput(Player player)
+    {
+        return player == Player.m_localPlayer && AltHeld() && player.InPlaceMode() && IsHammerEquipped(player);
     }
 
     /// <summary>

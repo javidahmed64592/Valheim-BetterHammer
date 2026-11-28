@@ -126,11 +126,9 @@ internal static class CopyLibrary
     /// characters.
     /// </summary>
     private const int DescriptionLength = 150;
+    private static KeyBinding _renameKey;
 
-    private static ConfigEntry<KeyCode> _deleteKey;
-    private static ConfigEntry<KeyCode> _renameKey;
-
-    internal static KeyCode DeleteKey => _deleteKey != null ? _deleteKey.Value : KeyCode.Delete;
+    internal static KeyBinding DeleteKey { get; private set; }
 
     /// <summary>
     /// Hands the text the player types into the game's text box (the one signs use) to a callback.
@@ -150,16 +148,20 @@ internal static class CopyLibrary
 
     public static void BindConfig(ConfigFile config)
     {
-        _deleteKey = config.Bind(
+        DeleteKey = KeyBinding.Bind(
+            config,
             "Keybinds",
             "Delete",
             KeyCode.Delete,
+            KeyModifier.None,
             "With the build menu open, hover a saved copy in the Copies tab and press this to delete it. " +
             "With the build menu closed, press it to remove every piece selected for copying.");
-        _renameKey = config.Bind(
+        _renameKey = KeyBinding.Bind(
+            config,
             "Keybinds",
             "Rename Copy",
             KeyCode.Insert,
+            KeyModifier.None,
             "With the build menu open, hover a saved copy in the Copies tab and press this to rename it.");
     }
 
@@ -303,7 +305,7 @@ internal static class CopyLibrary
     /// </summary>
     internal static void UpdateMenuInput(Player player)
     {
-        if (_deleteKey == null
+        if (DeleteKey == null
             || !Hud.IsPieceSelectionVisible()
             || UnifiedPopup.IsVisible()
             || TypingInTextField())
@@ -311,8 +313,8 @@ internal static class CopyLibrary
             return;
         }
 
-        bool delete = Input.GetKeyDown(_deleteKey.Value);
-        bool rename = !delete && Input.GetKeyDown(_renameKey.Value);
+        bool delete = DeleteKey.IsDown();
+        bool rename = !delete && _renameKey.IsDown();
         Copy copy = delete || rename ? Find(Hud.instance.m_hoveredPiece) : null;
         if (copy == null)
         {
@@ -354,8 +356,8 @@ internal static class CopyLibrary
 
     internal static string MenuHint()
     {
-        return _deleteKey != null
-            ? Localization.instance.Localize("$betterhammer_copy_menu_hint", _renameKey.Value.ToString(), _deleteKey.Value.ToString())
+        return DeleteKey != null
+            ? Localization.instance.Localize("$betterhammer_copy_menu_hint", _renameKey.ToString(), DeleteKey.ToString())
             : "";
     }
 

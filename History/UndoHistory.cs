@@ -90,28 +90,29 @@ internal static class UndoHistory
     /// material check (which the chest materials feature extends).
     /// </summary>
     private static Piece _costHolder;
-
-    private static ConfigEntry<KeyboardShortcut> _undoKey;
-    private static ConfigEntry<KeyboardShortcut> _redoKey;
     private static ConfigEntry<int> _size;
 
-    internal static KeyboardShortcut UndoKey => _undoKey != null ? _undoKey.Value : new KeyboardShortcut(KeyCode.Z, KeyCode.LeftControl);
-    internal static KeyboardShortcut RedoKey => _redoKey != null ? _redoKey.Value : new KeyboardShortcut(KeyCode.Y, KeyCode.LeftControl);
+    internal static KeyBinding UndoKey { get; private set; }
+    internal static KeyBinding RedoKey { get; private set; }
 
     internal static bool CanUndo => Undos.Count > 0 && SafePatcher.IsOn(Feature);
     internal static bool CanRedo => Redos.Count > 0 && SafePatcher.IsOn(Feature);
 
     public static void BindConfig(ConfigFile config)
     {
-        _undoKey = config.Bind(
+        UndoKey = KeyBinding.Bind(
+            config,
             "Keybinds",
             "Undo",
-            new KeyboardShortcut(KeyCode.Z, KeyCode.LeftControl),
+            KeyCode.Z,
+            KeyModifier.Ctrl,
             "Undoes the last build, move or removal made with the hammer.");
-        _redoKey = config.Bind(
+        RedoKey = KeyBinding.Bind(
+            config,
             "Keybinds",
             "Redo",
-            new KeyboardShortcut(KeyCode.Y, KeyCode.LeftControl),
+            KeyCode.Y,
+            KeyModifier.Ctrl,
             "Redoes the last build, move or removal that was undone.");
         _size = config.Bind(
             "Building",
