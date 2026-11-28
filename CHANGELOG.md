@@ -4,6 +4,14 @@
 
 - If a game update breaks part of the mod, only that part turns off and the rest keeps working: the sectioned build menu, the build grid, undo and redo, using nearby materials, copying paint with Shift+Middle-Click, Alt+scroll zoom and the key hints can each turn off while copying, moving and the `B` key still work. The log says which part is off, in one line. If copying, moving or the hammer itself break, the whole mod turns off cleanly instead of throwing errors.
 - New `DisabledFeatures` setting under `[Debug]`, for testing: turns parts of the mod off by name.
+- The build menu search clears with the red cross at the end of the box.
+- While searching, clicking a section's header closes or opens it. Sections open again when the search changes, and their usual open or closed state is kept.
+- The Modded section follows the search like the others.
+- Alt+Shift+Middle-Click (select connected pieces) no longer also copies the hovered piece.
+- Undo and redo work while moving.
+- Both new behaviours can turn off on their own after a game update: "Selecting doesn't copy" and "Combos skip debug keys".
+- Every keybind is now a key plus an optional modifier (`None`, `Shift`, `Ctrl` or `Alt`), both picked from a list in the config, so combos like Shift + B can be bound without typing them. Settings saved by an older version carry over.
+- With `debugmode` on, this mod's key combos no longer also do what their key does in debug mode, such as Ctrl+Z also toggling flying. A key on its own still does both.
 - Updated Jotunn to 2.30.3.
 
 ## 1.4.2

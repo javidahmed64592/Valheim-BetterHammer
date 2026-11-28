@@ -95,9 +95,7 @@ internal static class MultiCopy
     private static List<Piece> _selectionStations = [];
     private static string _selectionDescription = "";
 
-    private static ConfigEntry<KeyCode> _clearKey;
-
-    internal static KeyCode ClearKey => _clearKey != null ? _clearKey.Value : KeyCode.Backspace;
+    internal static KeyBinding ClearKey { get; private set; }
 
     internal static bool Placing => _active != null && GhostGroup.ActiveOwner == GhostGroup.Owner.Copy;
 
@@ -193,10 +191,12 @@ internal static class MultiCopy
 
     public static void BindConfig(ConfigFile config)
     {
-        _clearKey = config.Bind(
+        ClearKey = KeyBinding.Bind(
+            config,
             "Keybinds",
             "Clear Selection",
             KeyCode.Backspace,
+            KeyModifier.None,
             "Deselects every piece selected for copying, without changing anything else.");
     }
 
@@ -296,7 +296,7 @@ internal static class MultiCopy
 
         if (Selected.Count == 0)
         {
-            if (Input.GetKeyDown(ClearKey))
+            if (ClearKey.IsDown())
             {
                 Reselect(player);
             }
@@ -304,7 +304,7 @@ internal static class MultiCopy
             return;
         }
 
-        if (Input.GetKeyDown(ClearKey))
+        if (ClearKey.IsDown())
         {
             int count = Selected.Count;
             RememberSelection();
@@ -313,7 +313,7 @@ internal static class MultiCopy
             _selectionDirty = true;
             player.Message(MessageHud.MessageType.TopLeft, Localization.instance.Localize("$betterhammer_selection_cleared", Count(count)));
         }
-        else if (Input.GetKeyDown(CopyLibrary.DeleteKey))
+        else if (CopyLibrary.DeleteKey.IsDown())
         {
             Prune();
             UnifiedPopup.Push(new YesNoPopup(

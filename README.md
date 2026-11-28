@@ -40,7 +40,7 @@ The bar above the pieces holds the search box and repair button, and three optio
 - **Recent**: Split by category, with the most recent pieces first in each.
 - **Favorites**: A section for each of your favourites categories, then Uncategorised. Dropping a favourite on Uncategorised takes it out of its categories. Arranging works while Favorites is grouped by Type and sorted by Default.
 - **Modded and Hidden**: Modded has every piece other mods add, with a section per mod; those pieces also show in the sections they fit and in a Modded section at the bottom. Hidden lists the pieces you hid.
-- **Search**: Search by name or material as usual, or with a prefix: `@` for the mod a piece comes from, `#` for its section, and `$` for a material it needs (`@half beam`, `#roof`, `$iron`).
+- **Search**: Search by name or material as usual, or with a prefix: `@` for the mod a piece comes from, `#` for its section, and `$` for a material it needs (`@half beam`, `#roof`, `$iron`). The red cross clears the search, and while searching you can still close a section by clicking its header.
 - **Copies**: Copies named with a folder, such as `Base/Tower`, are grouped by folder in the Copies tab.
 - Collapsed sections, grouping, sorting, hidden pieces and the order of your favourites are remembered for all your characters. Your favourites categories themselves stay in your character, as in the game.
 
@@ -128,6 +128,7 @@ The right panel focuses on the build grid and utility functions:
 
 Settings are in the BepInEx config file `javidahmed64592.betterhammer.cfg`.
 Settings marked "(Synced with server)" use the server's values when the server has the mod installed.
+Each keybind has a key and a `Modifier` (`None`, `Shift`, `Ctrl` or `Alt`), both picked from a list, so combos like Shift + B can be bound.
 `DisabledFeatures` under `[Debug]` is for testing: it turns parts of the mod off by name. Leave it empty to play normally.
 
 ## Compatibility
