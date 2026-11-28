@@ -26,6 +26,11 @@ namespace BetterHammer.History;
 /// </summary>
 internal static class UndoHistory
 {
+    /// <summary>
+    /// The patches that note builds and removals. Without it, Ctrl+Z and Ctrl+Y do nothing and their hints are hidden.
+    /// </summary>
+    internal const string Feature = "Undo and redo";
+
     private enum Kind { Build = 0, Remove = 1, Move = 2 }
 
     /// <summary>
@@ -93,8 +98,8 @@ internal static class UndoHistory
     internal static KeyboardShortcut UndoKey => _undoKey != null ? _undoKey.Value : new KeyboardShortcut(KeyCode.Z, KeyCode.LeftControl);
     internal static KeyboardShortcut RedoKey => _redoKey != null ? _redoKey.Value : new KeyboardShortcut(KeyCode.Y, KeyCode.LeftControl);
 
-    internal static bool CanUndo => Undos.Count > 0;
-    internal static bool CanRedo => Redos.Count > 0;
+    internal static bool CanUndo => Undos.Count > 0 && SafePatcher.IsOn(Feature);
+    internal static bool CanRedo => Redos.Count > 0 && SafePatcher.IsOn(Feature);
 
     public static void BindConfig(ConfigFile config)
     {
@@ -133,6 +138,11 @@ internal static class UndoHistory
     /// </summary>
     internal static void UpdateKeys(Player player)
     {
+        if (!SafePatcher.IsOn(Feature))
+        {
+            return;
+        }
+
         if (!player.InPlaceMode()
             || player.IsDead()
             || Hud.IsPieceSelectionVisible()

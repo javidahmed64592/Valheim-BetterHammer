@@ -128,6 +128,7 @@ The right panel focuses on the build grid and utility functions:
 
 Settings are in the BepInEx config file `javidahmed64592.betterhammer.cfg`.
 Settings marked "(Synced with server)" use the server's values when the server has the mod installed.
+`DisabledFeatures` under `[Debug]` is for testing: it turns parts of the mod off by name. Leave it empty to play normally.
 
 ## Compatibility
 
@@ -135,6 +136,7 @@ Settings marked "(Synced with server)" use the server's values when the server h
 - Mods that change how pieces snap or add their own build key hints may clash with the build grid or its hints.
 - Other mods that change the build menu's piece grid or categories may clash with the sectioned menu. Set `Sections` to false under `Build Menu` to leave the menu to them.
 - Works with [PaintBrush](https://thunderstore.io/c/valheim/p/Aestelwen/PaintBrush/): saved copies keep each piece's paint (and their icons show it), ghosts show it while moving pieces or placing copies, Shift+Middle-Click copies a piece's paint along with it, and undoing a removal paints the piece again. Without PaintBrush, nothing changes.
+- If a game update breaks part of the mod, that part turns off on its own and the log says which one; the rest keeps working.
 - This mod has not been tested with a gamepad, only with keyboard and mouse.
 
 ## Uninstalling

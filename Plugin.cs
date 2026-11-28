@@ -10,6 +10,7 @@ using BetterHammer.Core;
 using BetterHammer.Grid;
 using BetterHammer.History;
 using BetterHammer.Materials;
+using BetterHammer.Patches;
 using BetterHammer.Structures;
 
 using HarmonyLib;
@@ -96,7 +97,6 @@ public class BetterHammerPlugin : BaseUnityPlugin
         ConnectedPieces.BindConfig(Config);
         UndoHistory.BindConfig(Config);
         BuildMenuConfig.Bind(Config);
-        ModdedPieces.Enable();
         Translations.Load();
 
         // Reject hand-edited values that aren't one of the doubling/halving steps.
@@ -106,7 +106,15 @@ public class BetterHammerPlugin : BaseUnityPlugin
         }
 
         _harmony = new Harmony(PluginGUID);
-        _harmony.PatchAll();
+        if (!SafePatcher.PatchAll(_harmony, Config, Logger))
+        {
+            return;
+        }
+
+        if (SafePatcher.IsOn(SectionedGrid.Feature))
+        {
+            ModdedPieces.Enable();
+        }
     }
 
     private void OnDestroy()
@@ -117,6 +125,11 @@ public class BetterHammerPlugin : BaseUnityPlugin
 
     private void Update()
     {
+        if (!SafePatcher.ModEnabled)
+        {
+            return;
+        }
+
         // Keep phantom hammer at full durability so it never breaks or needs repair.
         if (_phantomHammer != null)
         {
@@ -175,7 +188,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
             {
                 ToggleRepairMode(player);
             }
-            else if (CtrlHeld())
+            else if (CtrlHeld() && SafePatcher.IsOn(Player_PieceRayTest_Patch.Feature))
             {
                 ToggleGrid(player);
             }
@@ -187,6 +200,11 @@ public class BetterHammerPlugin : BaseUnityPlugin
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822", Justification = "Unity message")]
     private void LateUpdate()
     {
+        if (!SafePatcher.ModEnabled)
+        {
+            return;
+        }
+
         // The gold of a piece being moved goes on top of the teal of a selected one.
         MultiCopy.UpdateHighlight();
         PieceMover.UpdateHighlight();
@@ -214,6 +232,7 @@ public class BetterHammerPlugin : BaseUnityPlugin
     internal static bool GridActive(Player player)
     {
         return _gridEnabled.Value
+            && SafePatcher.IsOn(Player_PieceRayTest_Patch.Feature)
             && player.InPlaceMode()
             && !player.InRepairMode()
             && player.m_placementGhost != null

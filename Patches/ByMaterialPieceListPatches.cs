@@ -1,4 +1,5 @@
 using BetterHammer.BuildMenu;
+using BetterHammer.Core;
 
 using HarmonyLib;
 
@@ -9,6 +10,7 @@ namespace BetterHammer.Patches;
 /// kept.
 /// </summary>
 [HarmonyPatch(typeof(ByMaterialPieceList))]
+[Feature(SectionedGrid.Feature)]
 internal static class ByMaterialPieceListPatches
 {
     [HarmonyPostfix]

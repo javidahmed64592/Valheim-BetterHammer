@@ -1,5 +1,7 @@
 using System.Reflection;
 
+using BetterHammer.Core;
+
 using HarmonyLib;
 
 namespace BetterHammer.Patches;
@@ -9,6 +11,7 @@ namespace BetterHammer.Patches;
 /// the rotation, so restore the rotation state it had before the call.
 /// </summary>
 [HarmonyPatch(typeof(Player), "UpdatePlacement")]
+[Feature(Player_CanRotatePiece_Patch.Feature)]
 internal static class Player_UpdatePlacement_Patch
 {
     private static readonly FieldInfo ScrollField = AccessTools.Field(typeof(Player), "m_scrollCurrAmount");

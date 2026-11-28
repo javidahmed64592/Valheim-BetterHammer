@@ -1,3 +1,4 @@
+using BetterHammer.Core;
 using BetterHammer.Grid;
 
 using HarmonyLib;
@@ -13,8 +14,15 @@ namespace BetterHammer.Patches;
 /// vanilla's snap range still win over the grid, and validity checks see the final position.
 /// </summary>
 [HarmonyPatch(typeof(Player), "PieceRayTest")]
+[Feature(Feature)]
 internal static class Player_PieceRayTest_Patch
 {
+    /// <summary>
+    /// Snapping to the grid (this patch) and sizing it with Ctrl+scroll. Without it, there is no grid and
+    /// Ctrl+Right-Click doesn't toggle it.
+    /// </summary>
+    public const string Feature = "Build grid";
+
     /// <summary>
     /// Minimum normal component for a vertical face to count as axis-aligned (about 25 degrees).
     /// </summary>
