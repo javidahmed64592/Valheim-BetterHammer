@@ -2,6 +2,7 @@ using System.Collections.Generic;
 
 using BetterHammer.Core;
 using BetterHammer.History;
+using BetterHammer.Patches;
 using BetterHammer.Structures;
 
 using HarmonyLib;
@@ -107,6 +108,11 @@ internal static class KeyHintUI
         /// </summary>
         public string[] Keys;
         public HintVisibility Visibility;
+
+        /// <summary>
+        /// The feature the hint's control belongs to, if not the core: the hint is hidden while that feature is off.
+        /// </summary>
+        public string Feature;
         public GameObject Item;
         public CanvasGroup Group;
         public TextMeshProUGUI LabelText;
@@ -147,9 +153,9 @@ internal static class KeyHintUI
         new Hint { Label = "$betterhammer_hint_undo", Side = Side.Right, Keys = [UndoKey], Visibility = HintVisibility.UndoOnly },
         new Hint { Label = "$betterhammer_hint_redo", Side = Side.Right, Keys = [RedoKey], Visibility = HintVisibility.RedoOnly },
         new Hint { Label = "$betterhammer_hint_repair", Side = Side.Right, Keys = ["Left Shift", "$button_mouse1"], Visibility = HintVisibility.Always },
-        new Hint { Label = "$betterhammer_hint_grid", Side = Side.Right, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly },
-        new Hint { Label = "$betterhammer_hint_grid_distance", Side = Side.Right, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly },
-        new Hint { Label = "$betterhammer_hint_zoom", Side = Side.Right, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always },
+        new Hint { Label = "$betterhammer_hint_grid", Side = Side.Right, Keys = ["Left Ctrl", "$button_mouse1"], Visibility = HintVisibility.BuildOnly, Feature = Player_PieceRayTest_Patch.Feature },
+        new Hint { Label = "$betterhammer_hint_grid_distance", Side = Side.Right, Keys = ["Left Ctrl", ScrollIcon], Visibility = HintVisibility.GridOnly, Feature = Player_PieceRayTest_Patch.Feature },
+        new Hint { Label = "$betterhammer_hint_zoom", Side = Side.Right, Keys = ["Left Alt", ScrollIcon], Visibility = HintVisibility.Always, Feature = Player_CanRotatePiece_Patch.Feature },
     ];
 
     /// <summary>
@@ -219,7 +225,7 @@ internal static class KeyHintUI
                 HintVisibility.UndoOnly => UndoHistory.CanUndo,
                 HintVisibility.RedoOnly => UndoHistory.CanRedo,
                 _ => true,
-            };
+            } && (hint.Feature == null || SafePatcher.IsOn(hint.Feature));
             hint.Group.alpha = shown ? 1f : 0f;
 
             bool altLabel = hint.AltLabel != null && hint.UseAltLabel();
